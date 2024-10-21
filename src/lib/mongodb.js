@@ -7,9 +7,7 @@ let db;
  * @returns {Promise<void>}
  */
 export async function connectToMongoDB() {
-  const client = new MongoClient(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-  });
+  const client = new MongoClient(process.env.MONGO_URI);
   await client.connect();
   db = client.db(process.env.MONGO_DBNAME);
 }
@@ -47,7 +45,7 @@ export async function getExchanges() {
   const collection = db.collection("exchanges");
   return await collection
     .find(
-      { status: 1, slug: "wallex" },
+      { status: 1 },
       {
         projection: {
           slug: 1,
