@@ -1,0 +1,64 @@
+{
+    "data": [
+        {
+            "binanceName": "IRT",
+            "symbol": "IRT",
+            "name": "Toman",
+            "PersianName": "تومان",
+            "newTags": [
+                ""
+            ],
+            "actionBuy": false,
+            "actionSell": false,
+            "actionDeposit": true,
+            "actionWithdraw": false,
+            "buyPrice": 0,
+            "buyTetherPrice": 63150,
+            "changePrice": 0,
+            "sellPrice": 0,
+            "sellTetherPrice": 63650,
+            "tetherPrice": 63150,
+            "valume": 0
+        },
+        {
+            "binanceName": "NOTUSDT",
+            "symbol": "NOT",
+            "name": "Notcoin",
+            "PersianName": "ناتکوین",
+            "newTags": [
+                "other"
+            ],
+            "actionBuy": true,
+            "actionSell": true,
+            "actionDeposit": true,
+            "actionWithdraw": true,
+            "buyPrice": "519.70225",
+            "buyTetherPrice": 0.008165,
+            "changePrice": 3.276,
+            "sellPrice": "515.61975",
+            "sellTetherPrice": 0.008165,
+            "tetherPrice": 0.008165,
+            "valume": 73287119.65068053
+        },
+        {
+            "binanceName": "REZUSDT",
+            "symbol": "REZ",
+            "name": "Renzo",
+            "PersianName": "رنزو",
+            "newTags": [
+                "other"
+            ],
+            "actionBuy": true,
+            "actionSell": true,
+            "actionDeposit": true,
+            "actionWithdraw": true,
+            "buyPrice": "2684.757",
+            "buyTetherPrice": 0.04218,
+            "changePrice": 2.35,
+            "sellPrice": "2663.667",
+            "sellTetherPrice": 0.04218,
+            "tetherPrice": 0.04218,
+            "valume": 11208898.70668503
+        }
+    ]
+}

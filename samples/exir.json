@@ -1,0 +1,170 @@
+{
+    "btc-usdt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 68184.36,
+        "close": 66842.58,
+        "high": 68189.7,
+        "low": 66827.79,
+        "last": 66842.58,
+        "volume": 10.067,
+        "symbol": "btc-usdt"
+    },
+    "eth-usdt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 2638.65,
+        "close": 2601.74,
+        "high": 2645.69,
+        "low": 2595.02,
+        "last": 2601.74,
+        "volume": 234.11,
+        "symbol": "eth-usdt"
+    },
+    "xrp-usdt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 0.54502,
+        "close": 0.55258,
+        "high": 0.56523,
+        "low": 0.54372,
+        "last": 0.55258,
+        "volume": 228331,
+        "symbol": "xrp-usdt"
+    },
+    "btc-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 4307800000,
+        "close": 4244800000,
+        "high": 4342350000,
+        "low": 4219100000,
+        "last": 4244800000,
+        "volume": 1.4568,
+        "symbol": "btc-irt"
+    },
+    "xrp-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 34437,
+        "close": 35349,
+        "high": 36132,
+        "low": 34399,
+        "last": 35349,
+        "volume": 69024,
+        "symbol": "xrp-irt"
+    },
+    "usdt-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 63627,
+        "close": 63930,
+        "high": 64000,
+        "low": 63445,
+        "last": 63930,
+        "volume": 274148,
+        "symbol": "usdt-irt"
+    },
+    "trx-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 10121.5,
+        "close": 10248.3,
+        "high": 10451.3,
+        "low": 10102.5,
+        "last": 10248.3,
+        "volume": 1502972,
+        "symbol": "trx-irt"
+    },
+    "bch-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 23187000,
+        "close": 23136000,
+        "high": 23795000,
+        "low": 23006000,
+        "last": 23136000,
+        "volume": 173.74,
+        "symbol": "bch-irt"
+    },
+    "bnb-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 37663000,
+        "close": 37808000,
+        "high": 38959000,
+        "low": 37229000,
+        "last": 37808000,
+        "volume": 175.16,
+        "symbol": "bnb-irt"
+    },
+    "xlm-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 5956,
+        "close": 6024,
+        "high": 6109,
+        "low": 5956,
+        "last": 6024,
+        "volume": 928028,
+        "symbol": "xlm-irt"
+    },
+    "shib-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 1.1848,
+        "close": 1.1444,
+        "high": 1.2,
+        "low": 1.1396,
+        "last": 1.1444,
+        "volume": 10724307924,
+        "symbol": "shib-irt"
+    },
+    "link-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 720000,
+        "close": 700800,
+        "high": 720000,
+        "low": 700000,
+        "last": 700800,
+        "volume": 2953,
+        "symbol": "link-irt"
+    },
+    "doge-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 7913,
+        "close": 7862,
+        "high": 8280,
+        "low": 7683,
+        "last": 7862,
+        "volume": 1707547,
+        "symbol": "doge-irt"
+    },
+    "ada-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 22730,
+        "close": 22158,
+        "high": 23129,
+        "low": 21363,
+        "last": 22158,
+        "volume": 177009,
+        "symbol": "ada-irt"
+    },
+    "avax-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 1777000,
+        "close": 1742700,
+        "high": 1794200,
+        "low": 1740800,
+        "last": 1742700,
+        "volume": 3068.5,
+        "symbol": "avax-irt"
+    },
+    "axs-irt": {
+        "time": "2024-10-16T11:50:01.112Z",
+        "open": 307000,
+        "close": 297000,
+        "high": 307000,
+        "low": 294000,
+        "last": 297000,
+        "volume": 21814,
+        "symbol": "axs-irt"
+    },
+    "usdc-usdt": {
+        "open": 0.9968,
+        "close": 0.9968,
+        "high": 0.9968,
+        "low": 0.9968,
+        "last": 0.9968,
+        "volume": 0
+    }
+}
