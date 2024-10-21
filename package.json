@@ -10,15 +10,16 @@
     },
     "scripts": {
         "start": "node src/cron.js",
-        "dev": "node -r dotenv/config src/dev.js"
+        "dev": "node -r dotenv/config src/dev.js",
+        "deploy": "liara deploy --debug"
     },
     "dependencies": {
-        "@sentry/node": "^8.34.0",
+        "@sentry/node": "^8.35.0",
         "@sentry/tracing": "^7.114.0",
         "axios": "^1.7.7",
         "decimal.js": "^10.4.3",
         "moment": "^2.30.1",
-        "mongodb": "^6.9.0",
+        "mongodb": "^6.10.0",
         "node-cron": "^3.0.3"
     },
     "devDependencies": {
