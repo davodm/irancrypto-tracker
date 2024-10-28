@@ -60,7 +60,7 @@ export default async function main() {
 
   // Wait for all scraping operations to complete
   const scrapeResults = await Promise.all(scrapePromises);
-  
+
   // Process the collected results
   for (const { exchangeSlug, result } of scrapeResults) {
     if (result && result.length) {
@@ -149,8 +149,27 @@ export default async function main() {
       const result = await db.insertPrices("archive", data);
       logInfo(`Inserted ${result.insertedCount} items to the database`);
     }
+    console.log("stats: ", JSON.stringify(stats));
 
-    console.log(stats);
+    if (stats?.insert) {
+      // Recap view
+      let recaps = [];
+      recaps.push(await db.recapCoin(7, "IRR"));
+      recaps.push(await db.recapCoin(30, "IRR"));
+
+      console.log(`Recap view for coins are ready`);
+
+      // Exchange recap
+      recaps.push(await db.recapExchange(7));
+      recaps.push(await db.recapExchange(30));
+
+      console.log(`Recap view for exchanges are ready`);
+
+      for await (const recap of recaps) {
+        const res = await recap.toArray();
+        console.log(`Recap view: `, JSON.stringify(res));
+      }
+    }
   } catch (error) {
     logError(error);
     captureError(error);
