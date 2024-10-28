@@ -1,4 +1,5 @@
 import axios from "axios";
+import { logInfo } from "./logger.js";
 import { USER_AGENT, USER_AGENT_POSTMAN, TIMEOUT } from "./vars.js";
 
 export async function axiosRequest({
@@ -43,8 +44,10 @@ export async function axiosRequest({
 
     return result;
   } catch (error) {
+    logInfo(`Request to ${url} failed due to ${error.message}`);
     // If failed with 403, Try with Postman USER-AGENT
     if (retry403 && error.response?.status === 403 && !tried) {
+      logInfo(`Retry with Postman USER-AGENT for ${url}`);
       return await request({
         method,
         url,
