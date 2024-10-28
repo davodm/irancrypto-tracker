@@ -77,11 +77,11 @@ Each module should:
 
 Below is a sample module demonstrating the required structure and best practices:
 
+You can use `axiosRequest()` function to send requests to the API which automatically handles the response and throws errors if the response is invalid or convert it to JSON if it's not.
+
 ```javascript
-import axios from "axios";
 import moment from "moment";
-import { JSONizeResponse } from "../lib/utils.js";
-import { TIMEOUT, USER_AGENT } from "../lib/vars.js";
+import { axiosRequest } from "../lib/request.js";
 import num from "../lib/num.js";
 
 const PLATFORM = "Plat Name"; // Should be the same as the filename without .js
@@ -125,29 +125,18 @@ async function getLatest($filterCoins = []) {
 }
 
 /**
- * Sends a request to the Ariomex API
+ * Sends a request to the Exchange API
  * @param {string} $uri - Endpoint URI
  * @param {object} $params - Query parameters
  * @returns {Promise<object>} - API response data
  */
-async function request($uri, $params = []) {
-  let response;
-  try {
-    response = await axios.get(URL + $uri, {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": USER_AGENT,
-      },
-      timeout: TIMEOUT * 1000,
-      params: $params,
-    });
-  } catch (error) {
-    throw new Error(
-      `Failed to send request to ${PLATFORM} due to ${error.message}`
-    );
-  }
-
-  const result = JSONizeResponse(response);
+async function request($uri, $params = {}) {
+  // Send request via axios helper
+  const result = await axiosRequest({
+    method: "get",
+    url: URL + $uri,
+    params: $params,
+  });
 
   if (!result?.status || result.status !== "true") {
     throw new Error(
