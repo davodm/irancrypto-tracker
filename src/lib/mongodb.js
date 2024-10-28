@@ -67,7 +67,7 @@ export async function getCoins() {
   if (!db) {
     await connectToMongoDB();
   }
-  
+
   const collection = db.collection("coins");
   const result = await collection
     .find(
@@ -86,7 +86,7 @@ export async function getCoins() {
  * Generate a recap view based on currency
  * @param {number} duration - Duration in days
  * @param {string} fiat - Fiat currency
- * @returns {Promise<Void>}
+ * @returns {Promise<object>}
  */
 export async function recapCoin(duration, fiat) {
   if (!db) {
@@ -192,13 +192,14 @@ export async function recapCoin(duration, fiat) {
   ];
 
   // Execute the aggregation
-  return await db.collection("archive").aggregate(pipeline);
+  const aggregation = await db.collection("archive").aggregate(pipeline);
+  return await aggregation.toArray();
 }
 
 /**
  * Generate a recap view based on exchange
  * @param {number} duration - Duration in days
- * @returns {Promise<Void>}
+ * @returns {Promise<object>}
  */
 export async function recapExchange(duration) {
   if (!db) {
@@ -265,5 +266,142 @@ export async function recapExchange(duration) {
   ];
 
   // Execute the aggregation
-  return await db.collection("archive").aggregate(pipeline);
+  const aggregation = await db.collection("archive").aggregate(pipeline);
+  return await aggregation.toArray();
+}
+
+/**
+ * Generate a view for each coin price on Iran's market
+ * @returns {Promise<object>}
+ */
+export async function IranMarket() {
+  if (!db) {
+    await connectToMongoDB();
+  }
+
+  const pipeline = [
+    {
+      $lookup: {
+        from: "exchanges",
+        localField: "source",
+        foreignField: "slug",
+        as: "matchedSource",
+      },
+    },
+    {
+      $match: {
+        symbol: { $regex: "^.*-IRR$" },
+        time: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        matchedSource: { $ne: [] },
+      },
+    },
+    {
+      $sort: {
+        time: -1,
+      },
+    },
+    {
+      $group: {
+        _id: ["$source", "$symbol"],
+        doc: { $first: "$$ROOT" },
+      },
+    },
+    {
+      $replaceRoot: { newRoot: "$doc" },
+    },
+    {
+      $group: {
+        _id: "$symbol",
+        symbol: { $last: "$symbol" },
+        price: { $avg: "$price" },
+        price_min: { $min: "$price" },
+        price_max: { $max: "$price" },
+        volume: { $sum: "$volume" },
+        volume_currency: { $sum: "$volume_currency" },
+        change_1d: { $avg: "$change_1d" },
+        change_7d: { $avg: "$change_7d" },
+        time: { $max: "$time" },
+      },
+    },
+    // Merge section
+    {
+      $merge: {
+        into: "iranmarket",
+        on: ["_id"],
+        whenMatched: "replace",
+        whenNotMatched: "insert",
+      },
+    },
+  ];
+
+  // Execute the aggregation
+  const aggregation = await db.collection("archive").aggregate(pipeline);
+  return await aggregation.toArray();
+}
+
+export async function exchangesMarket() {
+  if (!db) {
+    await connectToMongoDB();
+  }
+
+  const pipeline = [
+    {
+      $lookup: {
+        from: "exchanges",
+        localField: "source",
+        foreignField: "slug",
+        as: "matchedSource",
+      },
+    },
+    {
+      $match: {
+        symbol: { $regex: "^.*-IRR$" },
+        time: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        matchedSource: { $ne: [] },
+      },
+    },
+    {
+      $sort: {
+        time: -1,
+      },
+    },
+    {
+      $group: {
+        _id: ["$source", "$symbol"],
+        doc: { $first: "$$ROOT" },
+      },
+    },
+    {
+      $replaceRoot: { newRoot: "$doc" },
+    },
+    {
+      $group: {
+        _id: "$source",
+        data: {
+          $push: {
+            symbol: "$symbol",
+            price: "$price",
+            volume: "$volume",
+            volume_currency: "$volume_currency",
+            change_1d: "$change_1d",
+            change_7d: "$change_7d",
+            time: "$time",
+          },
+        },
+      },
+    },
+    // Merge section
+    {
+      $merge: {
+        into: "exchangemarket",
+        on: ["_id"],
+        whenMatched: "replace",
+        whenNotMatched: "insert",
+      },
+    },
+  ];
+
+  // Execute the aggregation
+  const aggregation = await db.collection("archive").aggregate(pipeline);
+  return await aggregation.toArray();
 }

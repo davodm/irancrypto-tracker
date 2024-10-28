@@ -152,22 +152,25 @@ export default async function main() {
     console.log("stats: ", JSON.stringify(stats));
 
     if (stats?.insert) {
-      // Recap view
-      let recaps = [];
-      recaps.push(await db.recapCoin(7, "IRR"));
-      recaps.push(await db.recapCoin(30, "IRR"));
+      // Update views for different reasons
+      let views = [];
+      // Exchange Market
+      views.push(await db.exchangesMarket());
+      // Iran Market
+      views.push(await db.IranMarket());
+      console.log(`Views for exchanges and Iran market are ready`);
 
-      console.log(`Recap view for coins are ready`);
-
+      // Recaps
+      views.push(await db.recapCoin(7, "IRR"));
+      views.push(await db.recapCoin(30, "IRR"));
       // Exchange recap
-      recaps.push(await db.recapExchange(7));
-      recaps.push(await db.recapExchange(30));
+      views.push(await db.recapExchange(7));
+      views.push(await db.recapExchange(30));
 
       console.log(`Recap view for exchanges are ready`);
 
-      for await (const recap of recaps) {
-        const res = await recap.toArray();
-        console.log(`Recap view: `, JSON.stringify(res));
+      for await (const view of views) {
+        console.log("View runned: ", JSON.stringify(view));
       }
     }
   } catch (error) {
