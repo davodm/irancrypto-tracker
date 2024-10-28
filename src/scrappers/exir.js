@@ -1,8 +1,6 @@
-import axios from "axios";
 import moment from "moment";
-import { TIMEOUT, USER_AGENT } from "../lib/vars.js";
 import num from "../lib/num.js";
-import { JSONizeResponse } from "../lib/utils.js";
+import { axiosRequest } from "../lib/request.js";
 
 const PLATFORM = "Exir";
 const URL = "https://api.exir.io/v2/";
@@ -37,7 +35,7 @@ export async function scrape($coins = []) {
  */
 export async function getLatest($filterCoins = []) {
   const data = await request("ticker/all", {});
-  if(!Object.keys(data).length) {
+  if (!Object.keys(data).length) {
     throw new Error("Response data is empty");
   }
   return processList(data, $filterCoins);
@@ -50,25 +48,13 @@ export async function getLatest($filterCoins = []) {
  * @param {object} $params object of query parameters
  * @returns {Promise<object>} Response data from api
  */
-async function request($uri, $params = []) {
-  let response;
-  try {
-    response = await axios.get(URL + $uri, {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": USER_AGENT,
-      },
-      timeout: TIMEOUT * 1000,
-      params: $params,
-    });
-  } catch (error) {
-    throw new Error(
-      `Failed to send request to ${PLATFORM} server due to ${error.message}`
-    );
-  }
-
-  // Check if the response is valid or convert it to valid JSON
-  const result = JSONizeResponse(response);
+async function request($uri, $params = {}) {
+  // Send request via axios helper
+  const result = await axiosRequest({
+    method: "get",
+    url: URL + $uri,
+    params: $params,
+  });
 
   // Validate response data
   if (!result) {

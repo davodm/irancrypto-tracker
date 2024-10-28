@@ -1,7 +1,5 @@
-import axios from "axios";
 import moment from "moment";
-import { JSONizeResponse } from "../lib/utils.js";
-import { TIMEOUT, USER_AGENT } from "../lib/vars.js";
+import { axiosRequest } from "../lib/request.js";
 import num from "../lib/num.js";
 
 const PLATFORM = "Ariomex"; // Should be the same as the filename without .js
@@ -52,25 +50,13 @@ export async function getLatest($filterCoins = []) {
  * @param {object} $params object of query parameters
  * @returns {Promise<object>} Response data from api
  */
-async function request($uri, $params = []) {
-  let response;
-  try {
-    response = await axios.get(URL + $uri, {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": USER_AGENT,
-      },
-      timeout: TIMEOUT * 1000,
-      params: $params,
-    });
-  } catch (error) {
-    throw new Error(
-      `Failed to send request to ${PLATFORM} server due to ${error.message}`
-    );
-  }
-
-  // Check if the response is valid or convert it to valid JSON
-  const result = JSONizeResponse(response);
+async function request($uri, $params = {}) {
+  // Send request via axios helper
+  const result = await axiosRequest({
+    method: "get",
+    url: URL + $uri,
+    params: $params
+  });
 
   // Validate status
   if (!result?.status || result.status !== "true") {

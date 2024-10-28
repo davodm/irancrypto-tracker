@@ -1,10 +1,8 @@
-import axios from "axios";
 import { logError, logInfo } from "../lib/logger.js";
 import { captureError } from "../lib/sentry.js";
 import moment from "moment";
 import num from "../lib/num.js";
-import { TIMEOUT, USER_AGENT } from "../lib/vars.js";
-import { JSONizeResponse } from "../lib/utils.js";
+import { axiosRequest } from "../lib/request.js";
 
 const PLATFORM = "Nobitex";
 const URL = "https://api.nobitex.ir/";
@@ -74,18 +72,17 @@ export async function getLatest($filterCoins) {
  * @param {object} $params object of query parameters
  * @returns {Promise<object>} Response data from api
  */
-async function request($uri, $params = []) {
-  let response;
-  try {
-    response = await axios.get(URL + $uri, {
-      headers: {
-        Accept: "application/json",
-        "User-Agent": USER_AGENT,
-      },
-      timeout: TIMEOUT * 1000,
+async function request($uri, $params = {}) {
+  // Send request via axios helper
+  let result;
+  try{
+    result = await axiosRequest({
+      method: "get",
+      url: URL + $uri,
       params: $params,
+      throwOriginalError: true,
     });
-  } catch (error) {
+  }catch(error){
     // Check error of invalid currency
     if (
       error?.response?.data?.code === "InvalidCurrency" &&
@@ -100,12 +97,9 @@ async function request($uri, $params = []) {
     }
 
     throw new Error(
-      `Failed to send request to ${PLATFORM} server due to ${error.message}`
+      `Failed to send request to ${URL + $uri} server due to ${error.message}`
     );
   }
-  
-  // Check if the response is valid or convert it to valid JSON
-  const result = JSONizeResponse(response);
 
   // Validate status
   if (result?.status && result.status !== "ok") {

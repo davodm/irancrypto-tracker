@@ -134,28 +134,30 @@ export function toMongoNumber(input) {
   }
 }
 
-
 /**
- * Validate Axios response data and convert it to JSON if necessary.
- * @param {object} response - Axios response object.
- * @returns {object} - JSON response data.
+ * Determines the name of duration based on the number of days.
+ * @param {number} duration - Duration in days.
+ * @returns {string} - Name of the duration: 'weekly', 'monthly', 'quarterly', or 'annually'.
+ * @throws {Error} - Throws error for invalid duration values.
  */
-export function JSONizeResponse(response) {
-  let out;
-  // Check if the response is empty
-  if(!response?.data) {
-    throw new Error("Response is empty");
+export function durationName(duration) {
+  if (!Number.isInteger(duration) || duration <= 0) {
+    throw new Error("Duration must be a positive integer");
   }
-  // Check if the response is JSON
-  if (typeof response.data === "object") {
-    out = response.data;
+  
+  let type;
+  // Definition of duration on recap
+  if (duration <= 7) {
+    type = "weekly";
+  } else if (duration <= 30) {
+    type = "monthly";
+  } else if (duration <= 90) {
+    type = "quarterly";
+  } else if (duration <= 365) {
+    type = "annually";
   } else {
-    // The response is text, but let's attempt to convert it to JSON
-    try {
-      out = JSON.parse(response.data);
-    } catch (e) {
-      throw new Error("Response is not JSON");
-    }
+    console.log('duration is: ', duration, typeof duration);
+    throw new Error("Duration is not valid");
   }
-  return out;
+  return type;
 }

@@ -1,8 +1,6 @@
-import axios from "axios";
 import moment from "moment";
 import num from "../lib/num.js";
-import { TIMEOUT } from "../lib/vars.js";
-import { JSONizeResponse } from "../lib/utils.js";
+import { axiosRequest } from "../lib/request.js";
 
 const PLATFORM = "CoinMarketCap";
 const URL = "https://pro-api.coinmarketcap.com/v1/";
@@ -123,25 +121,16 @@ export async function getGlobalMetrics() {
  * @param {object} $params object of query parameters
  * @returns {Promise<object>} Response data from api
  */
-async function request($uri, $params = []) {
-  let response;
-  try {
-    response = await axios.get(URL + $uri, {
-      headers: {
-        "X-CMC_PRO_API_KEY": KEYS[Math.floor(Math.random() * KEYS.length)],
-        Accept: "application/json",
-      },
-      timeout: TIMEOUT * 1000,
-      params: $params,
-    });
-  } catch (error) {
-    throw new Error(
-      `Failed to send request to ${PLATFORM} server due to ${error.message}`
-    );
-  }
-
-  // Check if the response is valid or convert it to valid JSON
-  const result = JSONizeResponse(response);
+async function request($uri, $params = {}) {
+  // Send request via axios helper
+  const result = await axiosRequest({
+    method: "get",
+    url: URL + $uri,
+    params: $params,
+    headers: {
+      "X-CMC_PRO_API_KEY": KEYS[Math.floor(Math.random() * KEYS.length)],
+    },
+  });
 
   // Validate status
   if (!result?.status || result?.status?.error_code !== 0) {
