@@ -1,6 +1,11 @@
 import axios from "axios";
 import { logInfo } from "./logger.js";
 import { USER_AGENT, USER_AGENT_POSTMAN, TIMEOUT } from "./vars.js";
+import https from 'https';
+
+const agent = new https.Agent({
+  rejectUnauthorized: false, // Disable SSL certificate validation (only if necessary)
+});
 
 export async function axiosRequest({
   method,
@@ -23,6 +28,7 @@ export async function axiosRequest({
     },
     responseType: "json",
     timeout: TIMEOUT * 1000,
+    httpsAgent: agent, // Disable SSL certificate validation (only if necessary)
     maxRedirects: 3,
     validateStatus: function (status) {
       return status >= 200 && status < 300;
