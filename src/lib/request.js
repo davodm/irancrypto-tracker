@@ -48,13 +48,14 @@ export async function axiosRequest({
     // If failed with 403, Try with Postman USER-AGENT
     if (retry403 && error.response?.status === 403 && !tried) {
       logInfo(`Retry with Postman USER-AGENT for ${url}`);
-      return await request({
+      return await axiosRequest({
         method,
         url,
         params,
         data,
         headers,
         userAgent: USER_AGENT_POSTMAN,
+        retry403: false,
       });
     }
     // Throw the original error if requested
