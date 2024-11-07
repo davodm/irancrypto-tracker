@@ -1,11 +1,13 @@
 import axios from "axios";
-import { logInfo } from "./logger.js";
+import { logError, logInfo } from "./logger.js";
 import { USER_AGENT, USER_AGENT_POSTMAN, TIMEOUT } from "./vars.js";
-import https from 'https';
+import https from "https";
 
 const agent = new https.Agent({
   rejectUnauthorized: false, // Disable SSL certificate validation (only if necessary)
 });
+
+const PROXY_URL = process.env.PROXY_URL;
 
 export async function axiosRequest({
   method,
@@ -16,6 +18,7 @@ export async function axiosRequest({
   headers = {},
   retry403 = true,
   throwOriginalError = false,
+  useProxy = false,
 }) {
   let tried = 0;
   const conf = {
@@ -40,9 +43,23 @@ export async function axiosRequest({
   if (data && Object.keys(data).length) {
     conf.data = data;
   }
+
   try {
-    // First Try with Actual USER-AGENT
-    const response = await axios(conf);
+    let response;
+    // Send request via proxy
+    if (useProxy) {
+      // Send with proxy
+      response = await axiosRequestWithProxy({
+        method: conf.method,
+        url: conf.url,
+        params: conf?.params,
+        data: conf?.data,
+        headers: conf.headers,
+      });
+    } else {
+      // First Try with Actual USER-AGENT
+      response = await axios(conf);
+    }
     tried++;
 
     // Check if the response is valid or convert it to valid JSON
@@ -50,9 +67,14 @@ export async function axiosRequest({
 
     return result;
   } catch (error) {
-    logInfo(`Request to ${url} failed due to ${error.message}`);
+    // Access to body of error response
+    if (error?.response) {
+      logInfo(`Request to ${url} failed due to ${error.message}`);
+    } else {
+      logInfo(error.message);
+    }
     // If failed with 403, Try with Postman USER-AGENT
-    if (retry403 && error.response?.status === 403 && !tried) {
+    if (retry403 && error?.response?.status === 403 && !tried) {
       logInfo(`Retry with Postman USER-AGENT for ${url}`);
       return await axiosRequest({
         method,
@@ -99,4 +121,57 @@ export function JSONizeResponse(response) {
     }
   }
   return out;
+}
+
+/**
+ * Send request to the proxy server to bypass Local CORS issue.
+ * @param {object} options - Request options.
+ * @param {string} options.method - HTTP method.
+ * @param {string} options.url - Request URL.
+ * @param {object} options.params - Request query parameters.
+ * @param {object} options.data - Request body data.
+ * @param {object} options.headers - Request headers.
+ *
+ * @returns {Promise<object>} - Response data from the proxy server.
+ */
+export async function axiosRequestWithProxy({
+  method,
+  url,
+  params = {},
+  data = {},
+  headers = {},
+}) {
+  try {
+    return await axios({
+      method: "POST",
+      url: PROXY_URL,
+      data: {
+        url,
+        method: method.toUpperCase(),
+        params,
+        body: data,
+        headers,
+        timeout: TIMEOUT * 1000,
+      },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "x-api-key": process.env.PROXY_API_KEY,
+      },
+      timeout: TIMEOUT * 1000,
+      maxRedirects: 3,
+      validateStatus: function (status) {
+        return status >= 200 && status < 300;
+      },
+    });
+  } catch (error) {
+    const err = error?.response?.data?.error ?? error?.response?.data ?? null;
+    if (err) {
+      logError(err);
+    }
+    throw new Error(
+      `Failed to send request to ${url} server via proxy due to ${error.message}`,
+      error.response?.status
+    );
+  }
 }
