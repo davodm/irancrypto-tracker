@@ -57,6 +57,7 @@ async function request($uri, $params = {}) {
     method: "get",
     url: URL + $uri,
     params: $params,
+    useProxy: true,
   });
 
   // Validate response data
