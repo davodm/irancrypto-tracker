@@ -1,6 +1,6 @@
 {
     "name": "irancrypto-runner",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Irancrypto.market Cryptocurrency scraper for multiple exchanges",
     "main": "index.js",
     "type": "module",
@@ -14,15 +14,15 @@
         "deploy": "liara deploy --debug"
     },
     "dependencies": {
-        "@sentry/node": "^8.37.1",
-        "@sentry/tracing": "^7.114.0",
-        "axios": "^1.7.7",
-        "decimal.js": "^10.4.3",
+        "@sentry/node": "^10.27.0",
+        "@sentry/tracing": "^7.120.4",
+        "axios": "^1.13.2",
+        "decimal.js": "^10.6.0",
         "moment": "^2.30.1",
-        "mongodb": "^6.10.0",
-        "node-cron": "^3.0.3"
+        "mongodb": "^7.0.0",
+        "node-cron": "^4.2.1"
     },
     "devDependencies": {
-        "dotenv": "^16.4.5"
+        "dotenv": "^17.2.3"
     }
 }

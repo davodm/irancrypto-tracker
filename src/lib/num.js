@@ -153,7 +153,7 @@ export default function num(input, options = {}) {
   } else if (typeof numericValue === 'bigint') {
     // BigInt represents integers; no decimal places needed
   } else if (numericValue instanceof Decimal) {
-    numericValue = numericValue.toDecimalPlaces(decimalPlaces)
+    numericValue = numericValue.toDecimalPlaces(decimalPlaces);
   }
 
   return numericValue;

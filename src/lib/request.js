@@ -73,8 +73,8 @@ export async function axiosRequest({
     } else {
       logInfo(error.message);
     }
-    // If failed with 403, Try with Postman USER-AGENT
-    if (retry403 && error?.response?.status === 403 && !tried) {
+    // If failed with 403, Try with Postman USER-AGENT (only if not tried yet)
+    if (retry403 && error?.response?.status === 403 && tried === 0) {
       logInfo(`Retry with Postman USER-AGENT for ${url}`);
       return await axiosRequest({
         method,
@@ -141,6 +141,15 @@ export async function axiosRequestWithProxy({
   data = {},
   headers = {},
 }) {
+  if (!PROXY_URL) {
+    throw new Error("PROXY_URL is not set");
+  }
+
+  const proxyApiKey = process.env.PROXY_API_KEY;
+  if (!proxyApiKey) {
+    throw new Error("PROXY_API_KEY is required when using proxy");
+  }
+
   try {
     return await axios({
       method: "POST",
@@ -156,7 +165,7 @@ export async function axiosRequestWithProxy({
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        "x-api-key": process.env.PROXY_API_KEY,
+        "x-api-key": proxyApiKey,
       },
       timeout: TIMEOUT * 1000,
       maxRedirects: 3,
@@ -169,9 +178,10 @@ export async function axiosRequestWithProxy({
     if (err) {
       logError(err);
     }
-    throw new Error(
-      `Failed to send request to ${url} server via proxy due to ${error.message}`,
-      error.response?.status
-    );
+    const statusCode = error?.response?.status;
+    const errorMessage = statusCode
+      ? `Failed to send request to ${url} server via proxy due to ${error.message} (Status: ${statusCode})`
+      : `Failed to send request to ${url} server via proxy due to ${error.message}`;
+    throw new Error(errorMessage);
   }
 }

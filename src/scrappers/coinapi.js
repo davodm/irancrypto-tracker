@@ -4,7 +4,7 @@ import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
 const URL = "https://rest.coinapi.io/v1/";
-const KEY = process.env.COINAPI_KEY;
+const KEY = process.env.COINAPI_KEY || null;
 const PLATFORM = "CoinAPI";
 
 export const COIN_USE = "all"; // own, all, none
@@ -48,6 +48,10 @@ export async function getLatest($filterCoins = []) {
  * @returns {Promise<object>} Response data from api
  */
 async function request($uri, $params = {}) {
+  if (!KEY) {
+    throw new Error("COINAPI_KEY is not set");
+  }
+  
   // Send request via axios helper
   const result = await axiosRequest({
     method: "get",
