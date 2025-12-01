@@ -156,8 +156,7 @@ export function durationName(duration) {
   } else if (duration <= 365) {
     type = "annually";
   } else {
-    console.log('duration is: ', duration, typeof duration);
-    throw new Error("Duration is not valid");
+    throw new Error(`Duration is not valid: ${duration} days (must be between 1 and 365)`);
   }
   return type;
 }

@@ -4,9 +4,9 @@ import { axiosRequest } from "../lib/request.js";
 
 const PLATFORM = "CoinMarketCap";
 const URL = "https://pro-api.coinmarketcap.com/v1/";
-const KEYS = process.env.COINMARKETCAP_API_KEY.split(",").map((key) =>
-  key.trim()
-);
+const KEYS = process.env.COINMARKETCAP_API_KEY
+  ? process.env.COINMARKETCAP_API_KEY.split(",").map((key) => key.trim())
+  : [];
 
 // Define for automation to which coins to filter are gonna be used
 export const COIN_USE = "all"; // own, all, none
@@ -122,6 +122,10 @@ export async function getGlobalMetrics() {
  * @returns {Promise<object>} Response data from api
  */
 async function request($uri, $params = {}) {
+  if (!KEYS || KEYS.length === 0) {
+    throw new Error("COINMARKETCAP_API_KEY is not set or empty");
+  }
+  
   // Send request via axios helper
   const result = await axiosRequest({
     method: "get",

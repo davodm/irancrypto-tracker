@@ -3,47 +3,92 @@ import moment from "moment";
 import { durationName } from "./utils.js";
 
 let db;
+let client;
+
+/**
+ * Ensure database connection is established
+ * @returns {Promise<void>}
+ */
+async function ensureConnection() {
+  if (!db || !client) {
+    await connectToMongoDB();
+  }
+}
 
 /**
  * Connect to the MongoDB database
  * @returns {Promise<void>}
+ * @throws {Error} - If connection fails
  */
 export async function connectToMongoDB() {
-  const client = new MongoClient(process.env.MONGO_URI);
-  await client.connect();
-  db = client.db(process.env.MONGO_DBNAME);
+  if (client && db) {
+    return; // Already connected
+  }
+
+  const uri = process.env.MONGO_URI;
+  if (!uri) {
+    throw new Error("MONGO_URI environment variable is not set");
+  }
+
+  const dbName = process.env.MONGO_DBNAME;
+  if (!dbName) {
+    throw new Error("MONGO_DBNAME environment variable is not set");
+  }
+
+  try {
+    client = new MongoClient(uri);
+    await client.connect();
+    db = client.db(dbName);
+  } catch (error) {
+    client = null;
+    db = null;
+    throw new Error(`Failed to connect to MongoDB: ${error.message}`);
+  }
+}
+
+/**
+ * Close the MongoDB connection
+ * @returns {Promise<void>}
+ */
+export async function closeConnection() {
+  if (client) {
+    await client.close();
+    client = null;
+    db = null;
+  }
 }
 
 /**
  * Insert prices data into archive collection
  * @param {string} collectionName - Name of the collection
  * @param {object[]} dataList - List of data to insert
- * @returns {Promise<void>}
+ * @returns {Promise<import('mongodb').InsertManyResult>}
  */
 export async function insertPrices(collectionName, dataList) {
-  if (!db) {
-    await connectToMongoDB();
-  }
+  await ensureConnection();
   const collection = db.collection(collectionName);
   return await collection.insertMany(dataList);
 }
 
+/**
+ * Update a single document in a collection
+ * @param {string} collectionName - Name of the collection
+ * @param {object} findQuery - Query to find the document
+ * @param {object} updateQuery - Update operations
+ * @returns {Promise<import('mongodb').UpdateResult>}
+ */
 export async function updateData(collectionName, findQuery, updateQuery) {
-  if (!db) {
-    await connectToMongoDB();
-  }
+  await ensureConnection();
   const collection = db.collection(collectionName);
   return await collection.updateOne(findQuery, updateQuery);
 }
 
 /**
  * Get all active exchanges from the database
- * @returns {Promise<Array>} - Array of active exchanges
+ * @returns {Promise<Array<{slug: string, _id: any, support: any[]}>>} - Array of active exchanges
  */
 export async function getExchanges() {
-  if (!db) {
-    await connectToMongoDB();
-  }
+  await ensureConnection();
   const collection = db.collection("exchanges");
   return await collection
     .find(
@@ -61,13 +106,10 @@ export async function getExchanges() {
 
 /**
  * Get all active coins from the database
- * @returns {Promise<Array>} - Array of active coins
+ * @returns {Promise<string[]>} - Array of active coin symbols
  */
 export async function getCoins() {
-  if (!db) {
-    await connectToMongoDB();
-  }
-
+  await ensureConnection();
   const collection = db.collection("coins");
   const result = await collection
     .find(
@@ -86,12 +128,10 @@ export async function getCoins() {
  * Generate a recap view based on currency
  * @param {number} duration - Duration in days
  * @param {string} fiat - Fiat currency
- * @returns {Promise<object>}
+ * @returns {Promise<Array>} - Array of aggregation results
  */
 export async function recapCoin(duration, fiat) {
-  if (!db) {
-    await connectToMongoDB();
-  }
+  await ensureConnection();
 
   // Define duration name function
   const type = durationName(duration);
@@ -199,12 +239,10 @@ export async function recapCoin(duration, fiat) {
 /**
  * Generate a recap view based on exchange
  * @param {number} duration - Duration in days
- * @returns {Promise<object>}
+ * @returns {Promise<Array>} - Array of aggregation results
  */
 export async function recapExchange(duration) {
-  if (!db) {
-    await connectToMongoDB();
-  }
+  await ensureConnection();
 
   // Define duration name function
   const type = durationName(duration);
@@ -272,12 +310,10 @@ export async function recapExchange(duration) {
 
 /**
  * Generate a view for each coin price on Iran's market
- * @returns {Promise<object>}
+ * @returns {Promise<Array>} - Array of aggregation results
  */
 export async function IranMarket() {
-  if (!db) {
-    await connectToMongoDB();
-  }
+  await ensureConnection();
 
   const pipeline = [
     {
@@ -339,10 +375,12 @@ export async function IranMarket() {
   return await aggregation.toArray();
 }
 
+/**
+ * Generate a view for exchange market data
+ * @returns {Promise<Array>} - Array of aggregation results
+ */
 export async function exchangesMarket() {
-  if (!db) {
-    await connectToMongoDB();
-  }
+  await ensureConnection();
 
   const pipeline = [
     {

@@ -136,6 +136,9 @@ export default async function main() {
         ) {
           // Convert timestamp to Date object
           item["time"] = new Date(d.last_update.timestamp * 1000);
+        } else {
+          // Fallback to current time if no timestamp is provided
+          item["time"] = new Date();
         }
 
         return item;
@@ -149,32 +152,31 @@ export default async function main() {
       const result = await db.insertPrices("archive", data);
       logInfo(`Inserted ${result.insertedCount} items to the database`);
     }
-    console.log("stats: ", JSON.stringify(stats));
+    logInfo(`Stats: ${JSON.stringify(stats)}`);
 
     if (stats?.insert) {
       // Update views for different reasons
-      let views = [];
       // Exchange Market
-      views.push(await db.exchangesMarket());
+      await db.exchangesMarket();
       // Iran Market
-      views.push(await db.IranMarket());
-      console.log(`Views for exchanges and Iran market are ready`);
+      await db.IranMarket();
+      logInfo(`Views for exchanges and Iran market are ready`);
 
       // Recaps
-      views.push(await db.recapCoin(7, "IRR"));
-      views.push(await db.recapCoin(30, "IRR"));
+      await db.recapCoin(7, "IRR");
+      await db.recapCoin(30, "IRR");
       // Exchange recap
-      views.push(await db.recapExchange(7));
-      views.push(await db.recapExchange(30));
+      await db.recapExchange(7);
+      await db.recapExchange(30);
 
-      console.log(`Recap view for exchanges are ready`);
-
-      for await (const view of views) {
-        console.log("View runned: ", JSON.stringify(view));
-      }
+      logInfo(`Recap view for exchanges are ready`);
     }
   } catch (error) {
     logError(error);
     captureError(error);
+    throw error; // Re-throw to allow caller to handle
+  } finally {
+    // Close MongoDB connection if needed (optional, connection is reused)
+    // await db.closeConnection();
   }
 }
