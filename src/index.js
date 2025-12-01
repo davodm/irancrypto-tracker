@@ -4,8 +4,25 @@ import { logError, logInfo } from "./lib/logger.js";
 import { captureError } from "./lib/sentry.js";
 import { toMongoNumber } from "./lib/utils.js";
 
+// Read environment variable to skip specific exchanges (comma-separated list of slugs)
+const IGNORE_EXCHANGES = (process.env.IGNORE_EXCHANGES || "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+
 export default async function main() {
-  const exchanges = await db.getExchanges();
+  let exchanges = await db.getExchanges();
+  if (IGNORE_EXCHANGES.length) {
+    const ignored = exchanges
+      .map((e) => e.slug.toLowerCase())
+      .filter((s) => IGNORE_EXCHANGES.includes(s));
+    if (ignored.length) {
+      logInfo(`Ignoring exchanges: ${ignored.join(",")}`);
+      exchanges = exchanges.filter(
+        (e) => !IGNORE_EXCHANGES.includes(e.slug.toLowerCase())
+      );
+    }
+  }
   const coins = await db.getCoins();
   let stats = {
     insert: 0,

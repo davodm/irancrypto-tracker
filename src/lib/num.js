@@ -36,11 +36,21 @@ export default function num(input, options = {}) {
   // Step 1: Validate and Convert Input
   if (typeof input === 'string') {
     // Trim the input to remove any leading/trailing whitespaces
-    const trimmedInput = input.trim();
+    let trimmedInput = input.trim();
+
+    // Sanitize common separators and parentheses (e.g., "1,234.56", "(123)" )
+    // Treat parentheses as negative numbers
+    const isNegativeParens = /^\(.+\)$/.test(trimmedInput);
+    if (isNegativeParens) {
+      trimmedInput = '-' + trimmedInput.replace(/^\(|\)$/g, '');
+    }
+    // Remove thousands separators and percentage sign
+    trimmedInput = trimmedInput.replace(/,/g, '').replace(/%/g, '');
 
     // Validate if the string is a valid number (integer or decimal)
     if (!/^[-+]?\d+(\.\d+)?$/.test(trimmedInput)) {
-      throw new Error('Invalid number format');
+      // Do not throw by default — return defaultValue to avoid failing whole scraper
+      return defaultValue;
     }
 
     // Determine if the string represents an integer or a decimal

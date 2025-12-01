@@ -44,57 +44,77 @@ export async function axiosRequest({
     conf.data = data;
   }
 
-  try {
-    let response;
-    // Send request via proxy
-    if (useProxy) {
-      // Send with proxy
-      response = await axiosRequestWithProxy({
-        method: conf.method,
-        url: conf.url,
-        params: conf?.params,
-        data: conf?.data,
-        headers: conf.headers,
-      });
-    } else {
-      // First Try with Actual USER-AGENT
-      response = await axios(conf);
-    }
-    tried++;
+  // Retry/backoff configuration
+  // `REQUEST_RETRY_COUNT` defines how many retries to perform on failure (not including the first attempt).
+  // If it's 0 or not set, the function will perform a single attempt and will not retry.
+  const retries = Number.parseInt(process.env.REQUEST_RETRY_COUNT ?? "0", 10) || 0;
+  const baseDelayMs = Number.parseInt(process.env.REQUEST_RETRY_BASE_MS ?? "300", 10) || 300;
+  const maxAttempts = 1 + retries; // total attempts = initial try + retries
 
-    // Check if the response is valid or convert it to valid JSON
-    const result = JSONizeResponse(response);
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      let response;
+      // Send request via proxy
+      if (useProxy) {
+        // Send with proxy
+        response = await axiosRequestWithProxy({
+          method: conf.method,
+          url: conf.url,
+          params: conf?.params,
+          data: conf?.data,
+          headers: conf.headers,
+        });
+      } else {
+        // First Try with Actual USER-AGENT
+        response = await axios(conf);
+      }
 
-    return result;
-  } catch (error) {
-    // Access to body of error response
-    if (error?.response) {
-      logInfo(`Request to ${url} failed due to ${error.message}`);
-    } else {
-      logInfo(error.message);
-    }
-    // If failed with 403, Try with Postman USER-AGENT (only if not tried yet)
-    if (retry403 && error?.response?.status === 403 && tried === 0) {
-      logInfo(`Retry with Postman USER-AGENT for ${url}`);
-      return await axiosRequest({
-        method,
-        url,
-        params,
-        data,
-        headers,
-        userAgent: USER_AGENT_POSTMAN,
-        retry403: false,
-      });
-    }
-    // Throw the original error if requested
-    if (throwOriginalError) {
-      throw error;
-    }
+      // Check if the response is valid or convert it to valid JSON
+      const result = JSONizeResponse(response);
 
-    // Throw custom error
-    throw new Error(
-      `Failed to send request to ${url} server due to ${error.message}`
-    );
+      return result;
+    } catch (error) {
+      // Log the error (include attempt number)
+      const isNetworkError = !!error?.code || /ENOTFOUND|ECONNRESET|ETIMEDOUT/.test(error?.message || '');
+      if (error?.response) {
+        logInfo(`Request to ${url} failed due to ${error.message} (status: ${error.response.status}) [attempt ${attempt}]`);
+      } else {
+        logInfo(`${error.message} [attempt ${attempt}]`);
+      }
+
+      // If failed with 403, Try with Postman USER-AGENT (only on first attempt)
+      if (retry403 && error?.response?.status === 403 && attempt === 1) {
+        logInfo(`Retry with Postman USER-AGENT for ${url}`);
+        return await axiosRequest({
+          method,
+          url,
+          params,
+          data,
+          headers,
+          userAgent: USER_AGENT_POSTMAN,
+          retry403: false,
+        });
+      }
+
+      // If network error and attempts left, wait and retry
+      if (isNetworkError && attempt < maxAttempts) {
+        const delay = baseDelayMs * Math.pow(2, attempt - 1);
+        await new Promise((res) => setTimeout(res, delay));
+        continue;
+      }
+
+      // If throwOriginalError requested, rethrow the original axios error
+      if (throwOriginalError) {
+        throw error;
+      }
+
+      // Otherwise throw a normalized error
+      const statusCode = error?.response?.status;
+      const msg = statusCode
+        ? `Failed to send request to ${url} server due to ${error.message} (Status: ${statusCode})`
+        : `Failed to send request to ${url} server due to ${error.message}`;
+      throw new Error(msg);
+    }
   }
 }
 
