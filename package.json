@@ -1,6 +1,6 @@
 {
     "name": "irancrypto-runner",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "description": "Irancrypto.market Cryptocurrency scraper for multiple exchanges",
     "main": "index.js",
     "type": "module",
