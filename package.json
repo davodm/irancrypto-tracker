@@ -1,6 +1,6 @@
 {
     "name": "irancrypto-runner",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "Irancrypto.market Cryptocurrency scraper for multiple exchanges",
     "main": "index.js",
     "type": "module",
@@ -14,7 +14,7 @@
         "deploy": "liara deploy --debug"
     },
     "dependencies": {
-        "@sentry/node": "^10.27.0",
+        "@sentry/node": "^10.30.0",
         "axios": "^1.13.2",
         "decimal.js": "^10.6.0",
         "moment": "^2.30.1",

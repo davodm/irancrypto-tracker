@@ -3,7 +3,8 @@ import { axiosRequest } from "../lib/request.js";
 import num from "../lib/num.js";
 
 const PLATFORM = "Ariomex"; // Should be the same as the filename without .js
-const URL = "https://ariomex.com/home_page/";
+const URL =
+  "https://data.ariomex.com/exchange_data/markets_details?maxRowsPerPage=200&page=1&resolution=1d&quote=irt";
 
 // Define for automation to which coins to filter are gonna be used
 export const COIN_USE = "all"; // own, all, none
@@ -35,27 +36,23 @@ export async function scrape($coins = []) {
  * @returns {Promise<object>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
-  // Should be exactly with last slash
-  const data = await request("get_home_page_data", {});
-  if (!data?.market_data?.irt || !data?.market_data?.irt.length) {
+  const data = await request();
+  if (!data || !data.length) {
     throw new Error("Response data is empty");
   }
-  return processList(data.market_data.irt, $filterCoins);
+  return processList(data, $filterCoins);
 }
 
 /**
  * Send request to Ariomex API
  *
- * @param {string} $uri URI of the endpoint
- * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<object[]>} Response data from api
  */
-async function request($uri, $params = {}) {
+async function request() {
   // Send request via axios helper
   const result = await axiosRequest({
     method: "get",
-    url: URL + $uri,
-    params: $params
+    url: URL,
   });
 
   // Validate status
@@ -66,11 +63,11 @@ async function request($uri, $params = {}) {
   }
 
   // Validate response data
-  if (!result?.message || !Object.keys(result.message).length) {
+  if (!result?.result || !Array.isArray(result.result)) {
     throw new Error("Invalid response data");
   }
 
-  return result.message;
+  return result.result;
 }
 
 /**
@@ -88,24 +85,29 @@ function processList($list, $coinsFilter = []) {
       // Check if the coin list is empty or includes the coin filter list
       return (
         $coinsFilter.length === 0 ||
-        $coinsFilter.includes(data.coin.toUpperCase())
+        $coinsFilter.includes(data.base.toUpperCase())
       );
     })
     .map((data) => {
       // Handle last update with moment.js
       const date = moment();
 
+      // Volume is in coin, calculate currency volume = coin_volume * price
+      // Then multiply by 10 to convert IRT to IRR
+      const coinVolume = num(data.volume) || 0;
+      const priceIRT = num(data.last_price) || 0;
+      const volumeIRT = coinVolume * priceIRT;
+
       // Initialize the transformed object
       return {
         currency: "IRR",
-        symbol: data.coin.toUpperCase(),
-        // * 10 to convert to IRR
+        symbol: data.base.toUpperCase(),
+        // * 10 to convert IRT to IRR
         price: num(data.last_price, { decimalPlaces: 8, multiply: 10 }) || 0,
-        // * 10 to convert to IRR
-        volume_1d:
-          num(data["24h_volume_total"], { multiply: 10, roundUp: true }) || 0,
-        coin_volume_1d: num(data["volume_24_hour"]) || 0,
-        change_1d: num(data.change_24_hour, { decimalPlaces: 2 }),
+        // * 10 to convert IRT to IRR
+        volume_1d: num(volumeIRT, { multiply: 10, roundUp: true }) || 0,
+        coin_volume_1d: coinVolume,
+        change_1d: num(data.change_percentage, { decimalPlaces: 2 }),
         last_update: {
           date: date.toISOString(),
           timestamp: date.unix(),
