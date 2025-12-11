@@ -1,12 +1,11 @@
-import { logError, logInfo } from "../lib/logger.js";
+import { logError } from "../lib/logger.js";
 import { captureError } from "../lib/sentry.js";
 import moment from "moment";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
 const PLATFORM = "Nobitex";
-const URL = "https://api.nobitex.ir/";
-const RESEND_REQUEST = true;
+const URL = "https://apiv2.nobitex.ir/";
 
 // Define for automation to which coins to filter are gonna be used
 export const COIN_USE = "own"; // own, all, none
@@ -33,36 +32,20 @@ export async function scrape($coins) {
 /**
  * Get latest prices of cryptocurrencies
  *
- * @param {string[]} $filterCoins List of coins to query and filter
+ * @param {string[]} $filterCoins List of coins to filter (optional)
  * @returns {Promise<object>} Response data from api
  */
-export async function getLatest($filterCoins) {
-  try {
-    if(!$filterCoins || !$filterCoins.length) {
-      throw new Error("No coins to query");
-    }
+export async function getLatest($filterCoins = []) {
+  // Fetch all RLS pairs and filter on our side
+  const data = await request("market/stats", {
+    dstCurrency: "rls",
+  });
 
-    const data = await request("market/stats", {
-      srcCurrency: $filterCoins.join(","),
-      dstCurrency: "RLS", // IRR
-    });
-
-    if(!data?.stats || !Object.keys(data.stats).length) {
-      throw new Error("Response data is empty");
-    }
-
-    return processList(data.stats, $filterCoins);
-  } catch (error) {
-    // Check if the error is due to invalid currency
-    if (RESEND_REQUEST && error.message.includes("Invalid currency")) {
-      const invalidSymbol = error.message.split(":")[1].trim();
-      logInfo("Requesting again without invalid currency: " + invalidSymbol);
-      $filterCoins = $filterCoins.filter((coin) => coin !== invalidSymbol);
-      return await getLatest($filterCoins);
-    } else {
-      throw error;
-    }
+  if(!data?.stats || !Object.keys(data.stats).length) {
+    throw new Error("Response data is empty");
   }
+
+  return processList(data.stats, $filterCoins);
 }
 
 /**
@@ -75,26 +58,22 @@ export async function getLatest($filterCoins) {
 async function request($uri, $params = {}) {
   // Send request via axios helper
   let result;
-  try{
+  try {
     result = await axiosRequest({
       method: "get",
       url: URL + $uri,
       params: $params,
+      headers: {
+        "Origin": "https://nobitex.ir",
+        "Referer": "https://nobitex.ir/",
+      },
       throwOriginalError: true,
     });
-  }catch(error){
-    // Check error of invalid currency
-    if (
-      error?.response?.data?.code === "InvalidCurrency" &&
-      error?.response?.data?.message
-    ) {
-      logError(`Nobitex Invalid currency: ${error.response.data.message}`);
-      captureError(`Nobitex Invalid currency: ${error.response.data.message}`);
-      const invalidSymbol = extractInvalidSymbol(error.response.data.message);
-      if (invalidSymbol) {
-        throw new Error(`Invalid currency: ${invalidSymbol}`);
-      }
-    }
+  } catch(error) {
+    // Log and capture the error
+    const errorMsg = error?.response?.data?.message || error.message;
+    logError(`Nobitex API error: ${errorMsg}`);
+    captureError(`Nobitex API error: ${errorMsg}`);
 
     throw new Error(
       `Failed to send request to ${URL + $uri} server due to ${error.message}`
@@ -130,7 +109,7 @@ function processList($list, $coinsFilter = []) {
   return $list
     .filter((data) => {
       // Check if is closed
-      if (data.closed) return false;
+      if (data.isClosed) return false;
       // Check if the coin list is empty or includes the coin filter list
       return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol);
     })
@@ -155,14 +134,3 @@ function processList($list, $coinsFilter = []) {
     });
 }
 
-/**
- * Extracts the invalid symbol from the error message.
- * Assumes the error message format: 'The symbol "symbol" is not a valid currency.'
- * @param {string} message - The error message from the API.
- * @returns {string|null} - The invalid symbol or null if not found.
- */
-function extractInvalidSymbol(message) {
-  const regex = /The symbol "(.+?)" is not a valid currency\./i;
-  const match = message.match(regex);
-  return match ? match[1] : null;
-}
