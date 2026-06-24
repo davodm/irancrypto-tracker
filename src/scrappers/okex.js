@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -86,7 +86,7 @@ function processList($list, $coinsFilter = []) {
     })
     .map((data) => {
       // Handle last update with moment.js - get timestamp
-      const date = moment.unix(num(data.ts, { divide: 1000 }));
+      const date = dayjs.unix(num(data.ts, { divide: 1000 }));
       const split = data.symbol.toUpperCase().split("-");
 
       // Calculate the change between open and last price in percentage

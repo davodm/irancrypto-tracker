@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -100,7 +100,7 @@ function processList($list, $coinsFilter = []) {
         (market) => market.second_currency.symbol === "IRT"
       )[0];
       // Handle last update with moment.js
-      const date = moment();
+      const date = dayjs();
 
       // Initialize the transformed object
       return {

@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -88,10 +88,10 @@ function processList($list, $coinsFilter = []) {
     .map((data) => {
       // Handle last update with moment.js
       const date = data?.internal_price_info?.created_at
-        ? moment.unix(
+        ? dayjs.unix(
             num(data.internal_price_info.created_at, { roundUp: true })
           )
-        : moment();
+        : dayjs();
       // Initialize the transformed object
       return {
         currency: "IRR",

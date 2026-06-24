@@ -1,6 +1,6 @@
 import { logError } from "../lib/logger.js";
 import { captureError } from "../lib/sentry.js";
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -115,7 +115,7 @@ function processList($list, $coinsFilter = []) {
     })
     .map((data) => {
       // Handle last update with moment.js - get the current time
-      const date = moment();
+      const date = dayjs();
 
       // Initialize the transformed object
       return {

@@ -2,10 +2,10 @@ import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
-const PLATFORM = "Hitobit";
-const URL = "https://hitobit.com/hapi/exchange/v1/public/";
+const PLATFORM = "Saraf";
+const URL = "https://api.saraf.app/v3/prices/crypto";
 
-// Define for automation to which coins to filter are gonna be used
+// Define for automation which coins filter list is gonna be used
 export const COIN_USE = "all"; // own, all, none
 
 /**
@@ -31,43 +31,34 @@ export async function scrape($coins = []) {
  * Get latest prices of cryptocurrencies
  *
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<object[]>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
-  // Should be exactly with last slash
-  const data = await request("alltickers/24hr", {});
-  if (!data?.length) {
+  const items = await request();
+  if (!items || !items.length) {
     throw new Error("Response data is empty");
   }
-  return processList(data, $filterCoins);
+  return processList(items, $filterCoins);
 }
 
 /**
- * Send request to Hitobit API
+ * Send request to Saraf API
  *
- * @param {string} $uri URI of the endpoint
- * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<object[]>} Response data from api
  */
-async function request($uri, $params = {}) {
+async function request() {
   // Send request via axios helper
   const result = await axiosRequest({
     method: "get",
-    url: URL + $uri,
-    params: $params,
+    url: URL,
   });
 
-  // Validate response error
-  if (result?.error) {
-    throw new Error(`Response failed due to ${result?.message}`);
-  }
-
   // Validate response data
-  if (!result) {
+  if (!result || !result.price?.Items) {
     throw new Error("Invalid response data");
   }
 
-  return result;
+  return Object.values(result.price.Items);
 }
 
 /**
@@ -79,31 +70,42 @@ async function request($uri, $params = {}) {
  */
 function processList($list, $coinsFilter = []) {
   return $list
-    .filter((data) => {
-      // Check it's in IRT quote
-      if (data?.quoteCurrencySymbol !== "IRT") return false;
-      // Check price exists
-      if (!data?.lastPrice) return false;
+    .filter((item) => {
+      // Make sure the asset is crypto
+      if (item?.assetType?.toUpperCase() !== "CRYPTO") return false;
+      // Check if price exists
+      if (!item?.p) return false;
       // Check if the coin list is empty or includes the coin filter list
       return (
         $coinsFilter.length === 0 ||
-        $coinsFilter.includes(data.baseCurrencySymbol.toUpperCase())
+        $coinsFilter.includes(item.s.toUpperCase())
       );
     })
-    .map((data) => {
-      // Handle last update with moment.js - get miliseconds timestamp
-      const date = dayjs(data?.lastMarketInfoChangeDate || undefined);
+    .map((item) => {
+      // Parse last update (ut is in milliseconds)
+      const date = item.ut ? dayjs(Number(item.ut)) : dayjs();
+
+      // Convert price from Tomans (IRT) to Iranian Rials (IRR) by * 10
+      const priceIRT = Number(num(item.p)) || 0;
+      const price = num(item.p, { decimalPlaces: 8, multiply: 10 }) || 0;
+
+      // Convert volume (mc) from IRT to IRR by * 10
+      const volume_1d = num(item.mc, { roundUp: true, multiply: 10 }) || 0;
+
+      // Calculate coin volume = volume (IRT) / price (IRT)
+      const coin_volume_1d = priceIRT > 0 ? num(item.mc, { divide: priceIRT }) : 0;
+
+      // Map 24h change
+      const change_1d = num(item.c, { decimalPlaces: 2 }) || 0;
 
       // Initialize the transformed object
       return {
         currency: "IRR",
-        symbol: data.baseCurrencySymbol.toUpperCase(),
-        // * 10 to convert to IRR
-        price: num(data.lastPrice, { decimalPlaces: 8, multiply: 10 }) || 0,
-        // * 10 to convert to IRR
-        volume_1d: num(data.quoteVolume, { multiply: 10, roundUp: true }) || 0,
-        coin_volume_1d: num(data.baseVolume) || 0,
-        change_1d: num(data.priceChangePercent, { decimalPlaces: 2 }),
+        symbol: item.s.toUpperCase(),
+        price,
+        volume_1d,
+        coin_volume_1d,
+        change_1d,
         last_update: {
           date: date.toISOString(),
           timestamp: date.unix(),

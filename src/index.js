@@ -1,5 +1,5 @@
 import * as db from "./lib/mongodb.js";
-import moment from "moment";
+import dayjs from "dayjs";
 import { logError, logInfo } from "./lib/logger.js";
 import { captureError } from "./lib/sentry.js";
 import { toMongoNumber } from "./lib/utils.js";
@@ -37,7 +37,7 @@ export default async function main() {
     (async () => {
       try {
         // Calc the processing time
-        const start = moment();
+        const start = dayjs();
         logInfo(`Processing ${exchange.slug} exchange started`);
         // Find scrapper exists for the exchange
         const scrapper = await import(
@@ -52,7 +52,7 @@ export default async function main() {
         );
 
         // Calc the processing time
-        const end = moment();
+        const end = dayjs();
         logInfo(
           `Processing ${exchange.slug} exchange finished in ${end.diff(
             start,
@@ -142,7 +142,7 @@ export default async function main() {
         }
         // Last update
         if (d?.last_update?.moment) {
-          // Convert moment to Date object
+          // Convert dayjs/moment to Date object
           item["time"] = d.last_update.moment.toDate();
         } else if (d?.last_update?.date) {
           // Convert date string to Date object

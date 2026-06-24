@@ -70,12 +70,12 @@ You are strongly encouraged to use the provided internal helpers for consistency
 | :--- | :--- | :--- |
 | `axiosRequest(config)` | `import { axiosRequest } from "../lib/request.js";` | Wrapper around `axios` that handles retries (via `REQUEST_RETRY_COUNT`), logging, and error throwing for invalid HTTP responses. |
 | `num(value)` | `import num from "../lib/num.js";` | Utility for reliable numeric parsing and handling. |
-| `moment()` | `import moment from "moment";` | Used for handling and formatting timestamps. |
+| `dayjs()` | `import dayjs from "dayjs";` | Used for handling and formatting timestamps. |
 
 ### Example Scraper Structure
 
 ```javascript
-import moment from "moment";
+import dayjs from "dayjs";
 import { axiosRequest } from "../lib/request.js";
 import num from "../lib/num.js";
 
@@ -130,7 +130,7 @@ function processList(rawData, $filterCoins) {
             volume_1d: num(item.volume_base).get(),
             coin_volume_1d: num(item.volume_coin).get(),
             change_1d: num(item.change_percent).get(),
-            last_update: moment().toISOString(),
+            last_update: dayjs().toISOString(),
         }));
 }
 ```

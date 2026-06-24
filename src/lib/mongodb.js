@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-import moment from "moment";
+import dayjs from "dayjs";
 import { durationName } from "./utils.js";
 
 let db;
@@ -137,7 +137,7 @@ export async function recapCoin(duration, fiat) {
   const type = durationName(duration);
 
   // Calculate the start date based on the duration (adjusting date format as required)
-  const startDate = moment().subtract(duration, "days").startOf("day");
+  const startDate = dayjs().subtract(duration, "days").startOf("day");
 
   // Build the aggregation pipeline
   const pipeline = [
@@ -248,7 +248,7 @@ export async function recapExchange(duration) {
   const type = durationName(duration);
 
   // Calculate the start date based on the duration (adjusting date format as required)
-  const startDate = moment().subtract(duration, "days").startOf("day");
+  const startDate = dayjs().subtract(duration, "days").startOf("day");
 
   // Build the aggregation pipeline
   const pipeline = [
