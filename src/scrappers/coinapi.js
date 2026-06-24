@@ -1,5 +1,5 @@
 // It's not quite a good replacement for CoinMarketCap.
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -105,7 +105,7 @@ function processList($list, $coinsFilter = []) {
     })
     .map((item) => {
       // Handle date from string 2024-10-15T00:00:00.0000000Z
-      const date = moment(item.data_quote_end || item.data_end || undefined);
+      const date = dayjs(item.data_quote_end || item.data_end || undefined);
 
       return {
         name: item.name,

@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -104,7 +104,7 @@ export async function getGlobalMetrics() {
   return {
     last_update: {
       date: $data.last_updated,
-      timestamp: moment($data.last_updated).unix(),
+      timestamp: dayjs($data.last_updated).unix(),
     },
     dominance: {
       btc: $data.btc_dominance,
@@ -179,7 +179,7 @@ function processList($list, $coinsFilter = []) {
       const price = num(quoteUSD.price, { decimalPlaces: 8 }) || 0;
 
       // Handle last update with moment.js - 2024-10-16T22:07:00.000Z
-      const date = moment(data.last_updated);
+      const date = dayjs(data.last_updated);
 
       // Initialize the transformed object
       const transformed = {

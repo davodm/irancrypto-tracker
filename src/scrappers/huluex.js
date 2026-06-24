@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -92,7 +92,7 @@ function processList($list, $coinsFilter = []) {
     })
     .map((data) => {
       // Handle last update with moment.js
-      const date = moment();
+      const date = dayjs();
       let price =
         num(data.sellPrice || data.buyPrice, {
           decimalPlaces: 8,
@@ -124,7 +124,7 @@ function processList($list, $coinsFilter = []) {
 }
 
 function priceUSDT($list) {
-  const item = $list.find((data) => data.symbol === "USDT");
-  if (!item.length) return 0;
-  return item.sellTetherPrice || item.tetherPrice;
+  const item = $list.find((data) => data.symbol === "USDT" || data.symbol === "IRT");
+  if (!item) return 0;
+  return item.sellTetherPrice || item.tetherPrice || 0;
 }

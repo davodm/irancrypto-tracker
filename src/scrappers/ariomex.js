@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 import { axiosRequest } from "../lib/request.js";
 import num from "../lib/num.js";
 
@@ -90,7 +90,7 @@ function processList($list, $coinsFilter = []) {
     })
     .map((data) => {
       // Handle last update with moment.js
-      const date = moment();
+      const date = dayjs();
 
       // Volume is in coin, calculate currency volume = coin_volume * price
       // Then multiply by 10 to convert IRT to IRR

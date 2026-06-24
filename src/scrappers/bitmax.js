@@ -1,4 +1,4 @@
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -93,7 +93,7 @@ function processList($data, $coinsFilter = []) {
     })
     .map(([symbol, data]) => {
       // Handle last update with moment.js
-      const date = moment();
+      const date = dayjs();
 
       // Initialize the transformed object
       return {

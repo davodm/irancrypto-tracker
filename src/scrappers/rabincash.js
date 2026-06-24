@@ -1,5 +1,5 @@
 // They don't have volume anymore
-import moment from "moment";
+import dayjs from "dayjs";
 import num from "../lib/num.js";
 import { axiosRequest } from "../lib/request.js";
 
@@ -88,7 +88,7 @@ function processList($list, $coinsFilter = []) {
     })
     .map((data) => {
       // Handle last update with moment.js
-      const date = moment();
+      const date = dayjs();
 
       // Calculate the price that might be used in calculations of volume
       const price =
