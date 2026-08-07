@@ -1003,7 +1003,7 @@ function scrape_ariomex(array $coins): array
         if (!assert_time_budget(HTTP_TIMEOUT_SEC + 5)) {
             break;
         }
-        $response = http_get_json('https://data.ariomex.com/exchange_data/markets_details', [
+        $response = http_get_json('https://data.ariomex.ir/exchange_data/markets_details', [
             'maxRowsPerPage' => $maxRows,
             'page' => $page,
             'resolution' => '1d',

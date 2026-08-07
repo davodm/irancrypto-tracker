@@ -566,7 +566,7 @@ def scrape_ariomex(coins: list[str]) -> list[dict[str, Any]]:
     max_pages = 20
     for page in range(1, max_pages + 1):
         response = http_get_json(
-            "https://data.ariomex.com/exchange_data/markets_details",
+            "https://data.ariomex.ir/exchange_data/markets_details",
             query={
                 "maxRowsPerPage": max_rows,
                 "page": page,

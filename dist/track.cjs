@@ -20475,7 +20475,7 @@ function num(input, options = {}) {
 
 // scrapers/ariomex/scrape.js
 var PLATFORM = "Ariomex";
-var BASE_URL = "https://data.ariomex.com/exchange_data/markets_details";
+var BASE_URL = "https://data.ariomex.ir/exchange_data/markets_details";
 var MAX_ROWS = 200;
 var MAX_PAGES = 20;
 var COIN_USE = "all";
