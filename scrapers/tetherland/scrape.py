@@ -1,47 +1,42 @@
-import time
-from datetime import datetime, timezone
-import requests
-
-PLATFORM = "tetherland"
-URL = "https://api.tetherland.com/currencies"
-
-def get_latest(filter_coins=None):
-    if filter_coins is None:
-        filter_coins = []
-    res = requests.get(URL, timeout=15)
-    data = res.json()
+def parse_tetherland(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(data, dict):
+        raise RuntimeError("Tetherland: empty response")
     currencies = data.get("data", {}).get("currencies", {})
-    if not currencies:
-        raise RuntimeError("Response data is empty")
-    return process_list(currencies, filter_coins)
-
-def process_list(currencies, coins_filter):
-    result = []
-    now = datetime.now(timezone.utc)
-    iso_date = now.isoformat()
-    ts = int(now.timestamp())
+    if not isinstance(currencies, dict) or not currencies:
+        raise RuntimeError("Tetherland: empty currencies")
+    out: list[dict[str, Any]] = []
 
     for symbol, item in currencies.items():
-        upper_symbol = symbol.upper()
-        if coins_filter and upper_symbol not in coins_filter:
+        if not isinstance(item, dict):
+            continue
+        upper_symbol = str(symbol).upper()
+        if not coin_allowed(coins, upper_symbol):
             continue
 
         raw_price = item.get("price") or item.get("buy_price") or 0
-        price = float(raw_price) * 10
-        change_1d = float(item.get("diff24d", 0) or 0)
+        price = num(raw_price, {"multiply": 10, "decimalPlaces": 8})
+        change_1d = num(item.get("diff24d", 0), {"decimalPlaces": 2})
 
-        result.append({
-            "source": PLATFORM,
+        out.append({
             "currency": "IRR",
             "symbol": upper_symbol,
             "price": price,
             "volume_1d": 0,
             "coin_volume_1d": 0,
-            "change_1d": round(change_1d, 2),
-            "last_update": {
-                "date": iso_date,
-                "timestamp": ts,
-            }
+            "change_1d": change_1d,
+            "source": "tetherland",
         })
 
-    return result
+    return out
+
+
+def job_tetherland() -> dict[str, Any]:
+    return {"url": "https://api.tetherland.com/currencies"}
+
+
+def register_tetherland() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "job": job_tetherland,
+        "parse": parse_tetherland,
+    }

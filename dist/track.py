@@ -595,155 +595,125 @@ def register_ariomex() -> dict[str, Any]:
 
 # --- arzpaya ---
 
-import time
-from datetime import datetime, timezone
-import requests
-
-PLATFORM = "arzpaya"
-URL = "https://na1.arzpaya.com/orderbook/buy/irt/"
-
-POPULAR_COINS = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"]
-
-def get_latest(filter_coins=None):
-    if filter_coins is None or len(filter_coins) == 0:
-        target_coins = POPULAR_COINS
-    else:
-        target_coins = filter_coins
-
-    result = []
-    now = datetime.now(timezone.utc)
-    iso_date = now.isoformat()
-    ts = int(now.timestamp())
+def scrape_arzpaya(coins: list[str]) -> list[dict[str, Any]]:
+    popular_coins = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"]
+    target_coins = coins if coins else popular_coins
+    out: list[dict[str, Any]] = []
 
     for coin in target_coins:
         if coin.upper() in ("IRT", "IRR"):
             continue
         try:
-            res = requests.get(f"{URL}{coin.lower()}", timeout=5)
-            data = res.json()
-            if data and "Data" in data and isinstance(data["Data"], list) and len(data["Data"]) > 0:
-                top_bid = data["Data"][0]
-                price = float(top_bid["p"]) * 10
-                result.append({
-                    "source": PLATFORM,
-                    "currency": "IRR",
-                    "symbol": coin.upper(),
-                    "price": price,
-                    "volume_1d": 0,
-                    "coin_volume_1d": 0,
-                    "change_1d": 0,
-                    "last_update": {
-                        "date": iso_date,
-                        "timestamp": ts,
-                    }
-                })
+            url = f"https://na1.arzpaya.com/orderbook/buy/irt/{coin.lower()}"
+            res = http_get_json(url)
+            if isinstance(res, dict) and isinstance(res.get("Data"), list) and res["Data"]:
+                top_bid = res["Data"][0]
+                price = num(top_bid.get("p"), {"multiply": 10, "decimalPlaces": 8})
+                if price > 0:
+                    out.append({
+                        "currency": "IRR",
+                        "symbol": coin.upper(),
+                        "price": price,
+                        "volume_1d": 0,
+                        "coin_volume_1d": 0,
+                        "change_1d": 0,
+                        "source": "arzpaya",
+                    })
         except Exception:
             pass
 
-    return result
+    return out
+
+
+def register_arzpaya() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "scrape": scrape_arzpaya,
+    }
 
 # --- bidarz ---
 
-import re
-import time
-from datetime import datetime, timezone
-import requests
-
-PLATFORM = "bidarz"
-URL = "https://bidarz.ir/price/"
-
-POPULAR_COINS = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"]
-
-def get_latest(filter_coins=None):
-    if filter_coins is None or len(filter_coins) == 0:
-        target_coins = POPULAR_COINS
-    else:
-        target_coins = filter_coins
-
-    result = []
-    now = datetime.now(timezone.utc)
-    iso_date = now.isoformat()
-    ts = int(now.timestamp())
+def scrape_bidarz(coins: list[str]) -> list[dict[str, Any]]:
+    popular_coins = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"]
+    target_coins = coins if coins else popular_coins
+    out: list[dict[str, Any]] = []
 
     for coin in target_coins:
         if coin.upper() in ("IRT", "IRR"):
             continue
         try:
-            res = requests.get(f"{URL}{coin.lower()}", timeout=5)
-            html = res.text
+            url = f"https://bidarz.ir/price/{coin.lower()}"
+            res = http_request("GET", url, timeout=5)
+            html = res.get("body", "")
             match = re.search(r'quoteId:"IRR"[^}]*?last:"([0-9.]+)"', html)
             if match:
-                price = float(match.group(1))
-                result.append({
-                    "source": PLATFORM,
-                    "currency": "IRR",
-                    "symbol": coin.upper(),
-                    "price": price,
-                    "volume_1d": 0,
-                    "coin_volume_1d": 0,
-                    "change_1d": 0,
-                    "last_update": {
-                        "date": iso_date,
-                        "timestamp": ts,
-                    }
-                })
+                price = num(match.group(1), {"decimalPlaces": 8})
+                if price > 0:
+                    out.append({
+                        "currency": "IRR",
+                        "symbol": coin.upper(),
+                        "price": price,
+                        "volume_1d": 0,
+                        "coin_volume_1d": 0,
+                        "change_1d": 0,
+                        "source": "bidarz",
+                    })
         except Exception:
             pass
 
-    return result
+    return out
+
+
+def register_bidarz() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "scrape": scrape_bidarz,
+    }
 
 # --- bitimen ---
 
-import time
-from datetime import datetime, timezone
-import requests
-
-PLATFORM = "bitimen"
-URL = "https://api2.bitimen.com/api/market/stats?quote_asset=IRT"
-
-def get_latest(filter_coins=None):
-    if filter_coins is None:
-        filter_coins = []
-    res = requests.get(URL, timeout=15)
-    data = res.json()
+def parse_bitimen(data: Any, coins: list[str]) -> list[dict[str, Any]]:
     if not isinstance(data, dict) or not data:
-        raise RuntimeError("Response data is empty")
-    return process_list(data, filter_coins)
-
-def process_list(dict_data, coins_filter):
-    result = []
-    now = datetime.now(timezone.utc)
-    iso_date = now.isoformat()
-    ts = int(now.timestamp())
-
-    for key, item in dict_data.items():
-        symbol = item.get("base_asset_ticker", "").upper()
-        if not symbol:
+        raise RuntimeError("Bitimen: empty response")
+    out: list[dict[str, Any]] = []
+    for key, item in data.items():
+        if not isinstance(item, dict):
             continue
-        if coins_filter and symbol not in coins_filter:
+        symbol = str(item.get("base_asset_ticker", "")).upper()
+        if not symbol or not coin_allowed(coins, symbol):
             continue
-
         raw_price = item.get("last_price") or item.get("best_bid_raw") or 0
-        price = float(raw_price) * 10
+        price = num(raw_price, {"multiply": 10, "decimalPlaces": 8})
         raw_vol = str(item.get("volume", "0") or "0").replace(",", "")
-        volume_1d = float(raw_vol) * 10
-        change_1d = float(item.get("change_display") or item.get("change") or 0)
+        volume_1d = num(raw_vol, {"multiply": 10, "roundUp": True})
+        change_1d = num(item.get("change_display") or item.get("change") or 0, {"decimalPlaces": 2})
 
-        result.append({
-            "source": PLATFORM,
+        out.append({
             "currency": "IRR",
             "symbol": symbol,
             "price": price,
-            "volume_1d": round(volume_1d),
+            "volume_1d": volume_1d,
             "coin_volume_1d": 0,
-            "change_1d": round(change_1d, 2),
-            "last_update": {
-                "date": iso_date,
-                "timestamp": ts,
-            }
+            "change_1d": change_1d,
+            "source": "bitimen",
         })
 
-    return result
+    return out
+
+
+def job_bitimen() -> dict[str, Any]:
+    return {
+        "url": "https://api2.bitimen.com/api/market/stats",
+        "query": {"quote_asset": "IRT"},
+    }
+
+
+def register_bitimen() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "job": job_bitimen,
+        "parse": parse_bitimen,
+    }
 
 # --- bitmax ---
 
@@ -1220,60 +1190,53 @@ def register_nobitex() -> dict[str, Any]:
 
 # --- ompfinex ---
 
-import time
-from datetime import datetime, timezone
-import requests
-
-PLATFORM = "ompfinex"
-URL = "https://api.ompfinex.com/v1/market"
-
-def get_latest(filter_coins=None):
-    if filter_coins is None:
-        filter_coins = []
-    res = requests.get(URL, timeout=15)
-    data = res.json()
-    list_data = data.get("data", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+def parse_ompfinex(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(data, dict):
+        raise RuntimeError("Ompfinex: empty response")
+    list_data = data.get("data", []) if isinstance(data.get("data"), list) else []
     if not list_data:
-        raise RuntimeError("Response data is empty")
-    return process_list(list_data, filter_coins)
+        raise RuntimeError("Ompfinex: empty data list")
+    out: list[dict[str, Any]] = []
 
-def process_list(list_data, coins_filter):
-    result = []
-    now = datetime.now(timezone.utc)
-    iso_date = now.isoformat()
-    ts = int(now.timestamp())
-
-    for data in list_data:
-        quote = data.get("quote_currency", {}).get("id", "").upper()
+    for item in list_data:
+        if not isinstance(item, dict):
+            continue
+        quote = str(item.get("quote_currency", {}).get("id", "")).upper()
         if quote not in ("IRR", "IRT"):
             continue
-        if "last_price" not in data or data["last_price"] is None:
+        if "last_price" not in item or item["last_price"] is None:
             continue
-        symbol = data.get("base_currency", {}).get("id", "").upper()
-        if not symbol:
-            continue
-        if coins_filter and symbol not in coins_filter:
+        symbol = str(item.get("base_currency", {}).get("id", "")).upper()
+        if not symbol or not coin_allowed(coins, symbol):
             continue
 
-        price = float(data["last_price"]) * 10
-        volume_1d = float(data.get("last_volume", 0) or 0) * 10
-        change_1d = float(data.get("day_change_percent", 0) or 0)
+        price = num(item.get("last_price", 0), {"multiply": 10, "decimalPlaces": 8})
+        volume_1d = num(item.get("last_volume", 0), {"multiply": 10, "roundUp": True})
+        change_1d = num(item.get("day_change_percent", 0), {"decimalPlaces": 2})
 
-        result.append({
-            "source": PLATFORM,
+        out.append({
             "currency": "IRR",
             "symbol": symbol,
             "price": price,
-            "volume_1d": round(volume_1d),
+            "volume_1d": volume_1d,
             "coin_volume_1d": 0,
-            "change_1d": round(change_1d, 2),
-            "last_update": {
-                "date": iso_date,
-                "timestamp": ts,
-            }
+            "change_1d": change_1d,
+            "source": "ompfinex",
         })
 
-    return result
+    return out
+
+
+def job_ompfinex() -> dict[str, Any]:
+    return {"url": "https://api.ompfinex.com/v1/market"}
+
+
+def register_ompfinex() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "job": job_ompfinex,
+        "parse": parse_ompfinex,
+    }
 
 # --- ramzinex ---
 
@@ -1365,29 +1328,14 @@ def register_saraf() -> dict[str, Any]:
 
 # --- sarmayex ---
 
-import re
-import time
-from datetime import datetime, timezone
-import requests
-
-PLATFORM = "sarmayex"
-URL = "https://sarmayex.com/crypto-price"
-
-def get_latest(filter_coins=None):
-    if filter_coins is None:
-        filter_coins = []
+def scrape_sarmayex(coins: list[str]) -> list[dict[str, Any]]:
     headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
-    res = requests.get(URL, headers=headers, timeout=15)
-    html = res.text
+    res = http_request("GET", "https://sarmayex.com/crypto-price", headers=headers, timeout=15)
+    html = res.get("body", "")
     if not html:
-        raise RuntimeError("Response data is empty")
-    return process_html(html, filter_coins)
+        raise RuntimeError("Sarmayex: empty response")
 
-def process_html(html, coins_filter):
-    result = []
-    now = datetime.now(timezone.utc)
-    iso_date = now.isoformat()
-    ts = int(now.timestamp())
+    out: list[dict[str, Any]] = []
     seen = set()
 
     matches = re.findall(r'"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"', html)
@@ -1395,27 +1343,30 @@ def process_html(html, coins_filter):
         symbol = symbol_raw.upper()
         if symbol in ("IRT", "IRR") or symbol in seen:
             continue
-        if coins_filter and symbol not in coins_filter:
+        if not coin_allowed(coins, symbol):
             continue
 
         seen.add(symbol)
-        price = float(price_raw)
+        price = num(price_raw, {"decimalPlaces": 8})
 
-        result.append({
-            "source": PLATFORM,
+        out.append({
             "currency": "IRR",
             "symbol": symbol,
             "price": price,
             "volume_1d": 0,
             "coin_volume_1d": 0,
             "change_1d": 0,
-            "last_update": {
-                "date": iso_date,
-                "timestamp": ts,
-            }
+            "source": "sarmayex",
         })
 
-    return result
+    return out
+
+
+def register_sarmayex() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "scrape": scrape_sarmayex,
+    }
 
 # --- tabdeal ---
 
@@ -1482,53 +1433,48 @@ def register_tabdeal() -> dict[str, Any]:
 
 # --- tetherland ---
 
-import time
-from datetime import datetime, timezone
-import requests
-
-PLATFORM = "tetherland"
-URL = "https://api.tetherland.com/currencies"
-
-def get_latest(filter_coins=None):
-    if filter_coins is None:
-        filter_coins = []
-    res = requests.get(URL, timeout=15)
-    data = res.json()
+def parse_tetherland(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(data, dict):
+        raise RuntimeError("Tetherland: empty response")
     currencies = data.get("data", {}).get("currencies", {})
-    if not currencies:
-        raise RuntimeError("Response data is empty")
-    return process_list(currencies, filter_coins)
-
-def process_list(currencies, coins_filter):
-    result = []
-    now = datetime.now(timezone.utc)
-    iso_date = now.isoformat()
-    ts = int(now.timestamp())
+    if not isinstance(currencies, dict) or not currencies:
+        raise RuntimeError("Tetherland: empty currencies")
+    out: list[dict[str, Any]] = []
 
     for symbol, item in currencies.items():
-        upper_symbol = symbol.upper()
-        if coins_filter and upper_symbol not in coins_filter:
+        if not isinstance(item, dict):
+            continue
+        upper_symbol = str(symbol).upper()
+        if not coin_allowed(coins, upper_symbol):
             continue
 
         raw_price = item.get("price") or item.get("buy_price") or 0
-        price = float(raw_price) * 10
-        change_1d = float(item.get("diff24d", 0) or 0)
+        price = num(raw_price, {"multiply": 10, "decimalPlaces": 8})
+        change_1d = num(item.get("diff24d", 0), {"decimalPlaces": 2})
 
-        result.append({
-            "source": PLATFORM,
+        out.append({
             "currency": "IRR",
             "symbol": upper_symbol,
             "price": price,
             "volume_1d": 0,
             "coin_volume_1d": 0,
-            "change_1d": round(change_1d, 2),
-            "last_update": {
-                "date": iso_date,
-                "timestamp": ts,
-            }
+            "change_1d": change_1d,
+            "source": "tetherland",
         })
 
-    return result
+    return out
+
+
+def job_tetherland() -> dict[str, Any]:
+    return {"url": "https://api.tetherland.com/currencies"}
+
+
+def register_tetherland() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "job": job_tetherland,
+        "parse": parse_tetherland,
+    }
 
 # --- wallex ---
 
