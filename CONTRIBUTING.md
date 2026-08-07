@@ -1,136 +1,104 @@
-# 🤝 Contribution Guidelines
+# Contribution guidelines
 
-We welcome contributions to the IranCrypto.Market Tracker\! Whether you are fixing a bug, improving documentation, or adding a new exchange module, please follow these guidelines.
+## Platform exchange status
 
-## 🐛 Reporting Bugs
+Only add scrapers for exchanges that are **active** (`status: 1`) in the platform `exchanges` collection. Ingest config already omits non-active sources.
 
-If you find a bug, please open a new issue on GitHub. Include:
+Removed from this repo (do not re-add without reactivating in the platform):
 
-1.  A clear and descriptive title.
-2.  The steps to reproduce the behavior.
-3.  The expected behavior.
-4.  The actual behavior.
-5.  Your environment details (Node.js version, OS).
+| Slug | Reason | Approx. platform date |
+|------|--------|------------------------|
+| `okex` | closed (`status: -1`) | 2024-02-17 |
+| `rabincash` | limited (`status: 0`); volume API gone | 2024-02-17 |
+| `phinix` | closed (`status: -1`) | 2024-05-08 |
+| `citex`, `coinnik`, `exbito` | closed earlier; never restored here | 2024 |
 
-## 🚀 Suggesting Enhancements
+## Adding an exchange
 
-For new features or enhancements (like support for a new database or integration), please open an issue to discuss the proposal before starting work.
+Create a directory with **all three** language scrapers (CI enforces parity):
 
-## 🧩 Adding a New Exchange Module (Scraper)
+```text
+scrapers/<slug>/
+  scrape.js
+  scrape.php
+  scrape.py
+  sample.json   # raw API response dump (recommended)
+```
 
-The core of this project is its modular scraping architecture. To add a new exchange, you need to create a new module in the `src/scrappers` directory.
+Save a real response body from the exchange URL as `sample.json` so parsers can be debugged without hitting the live API. Prefer the current endpoint shape (if you previously had `*v2` dumps, use that).
 
-### Module Requirements
+Then run `npm run build` and commit `scrapers/`, `generated/`, and `dist/`.
 
-Each module must adhere to the following structure and requirements:
+### JavaScript (`scrape.js`)
 
-1.  **Location:** Place the file in `src/scrappers/<exchange_slug>.js`.
-2.  **Naming:** The module's primary export constant, `PLATFORM`, should match the filename (without the `.js` extension).
-3.  **Exports:**
-      * `PLATFORM`: A string constant representing the exchange name (e.g., `"Plat Name"`).
-      * `COIN_USE`: A constant defining which coins the scraper handles:
-          * `'all'`: The scraper returns data for all available coins.
-          * `'own'`: The scraper only returns data for coins it is explicitly configured to track internally.
-          * `'none'`: The scraper is disabled.
-      * `scrape`: An asynchronous function that executes the main scraping logic.
+```js
+export const PLATFORM = "Example";
+export const COIN_USE = "all"; // or "own"
 
-### `scrape` Function Signature
-
-```javascript
-/**
- * Scrape function to be used in automation
- * @param {string[]} $coins - List of coins to filter (only relevant if COIN_USE is 'all')
- * @returns {Promise<object[]>} - Array of standardized cryptocurrency data records.
- */
-export async function scrape($coins = []) {
-    // ... implementation ...
+export async function scrape(coins = []) {
+  // return [{ symbol, currency, price, volume_1d, source, ... }]
 }
 ```
 
-### Standardized Data Format
+Import helpers from `../../runtime/js/` (`num.js`, `request.js`, `logger.js`).
 
-The `scrape` function *must* return an array of objects, where each object represents a market pair and includes the following minimum fields:
+### PHP (`scrape.php`)
 
-| Field | Type | Description |
-| :--- | :--- | :--- |
-| `symbol` | `string` | The cryptocurrency symbol (e.g., `"BTC"`). |
-| `currency` | `string` | The base currency (e.g., `"IRT"`, `"USDT"`). |
-| `price` | `number` | Latest price of the asset. |
-| `volume_1d` | `number` | 24-hour volume in the base currency (e.g., IRT). |
-| `coin_volume_1d` | `number` | 24-hour volume in the asset coin (e.g., BTC). |
-| `change_1d` | `number` | 24-hour price change percentage. |
-| `last_update` | `string` | ISO 8601 timestamp of the data point. |
-| `source` | `string` | Automatically added from `PLATFORM.toLowerCase()`. |
+Provide `parse_<slug>`, `job_<slug>` (or `scrape_<slug>` for custom pagination), optional `skip_<slug>`, and:
 
-### Helper Functions
-
-You are strongly encouraged to use the provided internal helpers for consistency and resilience:
-
-| Helper | Usage | Description |
-| :--- | :--- | :--- |
-| `axiosRequest(config)` | `import { axiosRequest } from "../lib/request.js";` | Wrapper around `axios` that handles retries (via `REQUEST_RETRY_COUNT`), logging, and error throwing for invalid HTTP responses. |
-| `num(value)` | `import num from "../lib/num.js";` | Utility for reliable numeric parsing and handling. |
-| `dayjs()` | `import dayjs from "dayjs";` | Used for handling and formatting timestamps. |
-
-### Example Scraper Structure
-
-```javascript
-import dayjs from "dayjs";
-import { axiosRequest } from "../lib/request.js";
-import num from "../lib/num.js";
-
-const PLATFORM = "ExampleExchange";
-const API_URL = "https://api.example.com/v1/";
-
-// Define for automation which coins to use
-export const COIN_USE = "all";
-
-/**
- * Scrape function to be used in automation
- * @param {string[]} $coins - List of coins to filter
- */
-export async function scrape($coins = []) {
-  try {
-    const rawData = await fetchLatestData();
-    const processedData = processList(rawData, $coins);
-
-    // IMPORTANT: Add the source platform
-    processedData.forEach((d) => {
-      d.source = PLATFORM.toLowerCase();
-    });
-
-    return processedData;
-  } catch (error) {
-    // Throw errors to be handled by the main script
-    throw error;
-  }
+```php
+function register_<slug>(): array {
+  return [
+    'coin_use' => 'all',
+    'job' => 'job_<slug>',      // string function name
+    'parse' => 'parse_<slug>',
+    // 'skip' => 'skip_<slug>',
+    // 'scrape' => 'scrape_<slug>',
+  ];
 }
+```
 
-async function fetchLatestData() {
-    // Use the resilient axiosRequest helper
-    const response = await axiosRequest({
-        method: "get",
-        url: API_URL + "marketdata"
-    });
+Shared HTTP helpers live in `runtime/php/helpers.php` (concatenated at build time).
 
-    if (!response || !response.success) {
-        throw new Error("Invalid or empty API response.");
+### Python (`scrape.py`)
+
+```python
+def parse_<slug>(data, coins): ...
+def job_<slug>(): ...
+def register_<slug>():
+    return {
+        "coin_use": "all",
+        "job": job_<slug>,
+        "parse": parse_<slug>,
     }
-    return response.data;
-}
-
-function processList(rawData, $filterCoins) {
-    // Your transformation logic here to match the standardized format
-    return rawData
-        .filter(item => $filterCoins.includes(item.symbol)) // Example filtering
-        .map(item => ({
-            symbol: item.symbol,
-            currency: item.currency,
-            price: num(item.last_price).get(), // Using the num helper
-            volume_1d: num(item.volume_base).get(),
-            coin_volume_1d: num(item.volume_coin).get(),
-            change_1d: num(item.change_percent).get(),
-            last_update: dayjs().toISOString(),
-        }));
-}
 ```
+
+Helpers (`num`, `http_request`, …) come from `runtime/python/helpers.py` when assembled.
+
+## Standardized row fields
+
+| Field | Required | Notes |
+|-------|----------|--------|
+| symbol | yes | e.g. `BTC` |
+| currency | yes | e.g. `IRR` / `USD` |
+| price | yes | &gt; 0 |
+| volume_1d | yes | &gt; 0 |
+| source | yes | exchange slug lowercase |
+| coin_volume_1d, change_1d, change_7d, market_cap, supply, max_supply | no | |
+
+Workers POST these to the Next.js ingest API (`INGEST_URL`, default `https://irancrypto.market/api/ingest`).
+
+## Reporting bugs
+
+Include OS, runtime (node/php/python version), command line, and relevant JSONL log lines (no secrets).
+
+## Releases
+
+Maintainers cut releases with semver tags aligned to `package.json`:
+
+```bash
+npm version patch   # 0.2.0 → 0.2.1
+git push origin main --follow-tags
+```
+
+GitHub Actions builds `dist/` and publishes a release with changelog (commits since the previous tag) and the three worker files as download assets. Tags must be pushed from **main** only.

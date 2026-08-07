@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, dev]
+  pull_request:
+    branches: [main, master, dev]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: curl, json
+          coverage: none
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Scraper parity (js + php + py per slug)
+        run: npm run check:parity
+
+      - name: Parse fixtures
+        run: npm run check:fixtures
+
+      - name: Build dist workers
+        run: npm run build
+
+      - name: PHP syntax
+        run: php -l dist/track.php
+
+      - name: Python syntax
+        run: python3 -c "compile(open('dist/track.py',encoding='utf-8').read(),'dist/track.py','exec')"
+
+      - name: Smoke --help
+        run: |
+          node dist/track.js --help
+          php dist/track.php --help
+          python3 dist/track.py --help
+
+      - name: Dist freshness (run npm run build locally if this fails)
+        run: |
+          git add dist/track.js dist/track.php dist/track.py dist/package.json generated/
+          git diff --cached --exit-code -- dist/track.js dist/track.php dist/track.py dist/package.json generated/ \
+            || (echo "::error::dist workers or generated/ are stale — run npm run build and commit" && git diff --cached --stat && exit 1)

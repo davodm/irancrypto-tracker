@@ -16,7 +16,10 @@ Thumbs.db
 coverage
 .nyc_output
 .serverless
-package-lock.json
 .env
 dev.env
 gcp-key.json
+logs/
+**/logs/
+dist/logs/
+irancrypto-tracker-lambda.zip

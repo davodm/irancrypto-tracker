@@ -1,0 +1,26 @@
+{
+  "status": "ok",
+  "stats": {
+    "btc-rls": {
+      "latest": "1000",
+      "volumeDst": "10",
+      "volumeSrc": "0.01",
+      "dayChange": "1",
+      "isClosed": false
+    },
+    "eth-rls": {
+      "latest": "0",
+      "volumeDst": "1",
+      "volumeSrc": "1",
+      "dayChange": "0",
+      "isClosed": false
+    },
+    "xrp-rls": {
+      "latest": "50",
+      "volumeDst": "20",
+      "volumeSrc": "2",
+      "dayChange": "-3",
+      "isClosed": true
+    }
+  }
+}

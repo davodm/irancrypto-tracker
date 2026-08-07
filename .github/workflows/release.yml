@@ -1,0 +1,102 @@
+name: Release
+
+# Tag a commit on main only:
+#   npm version patch
+#   git push origin main --follow-tags
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main
+        run: |
+          git fetch origin main
+          if ! git branch -r --contains "${GITHUB_SHA}" | grep -qE 'origin/main$'; then
+            echo "::error::Release tags must point to a commit on main (commit ${GITHUB_SHA})"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: curl, json
+          coverage: none
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Verify tag matches package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag v${TAG} does not match package.json version ${PKG}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build dist workers
+        run: npm run build
+
+      - name: Smoke --help
+        run: |
+          node dist/track.js --help
+          php dist/track.php --help
+          python3 dist/track.py --help
+
+      - name: Write release notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          PREV=$(git tag --sort=-version:refname | awk -v cur="$TAG" '$0==cur {getline; print; exit}')
+          {
+            echo "## Changes since ${PREV:-first release}"
+            echo
+            if [ -n "$PREV" ]; then
+              git log "${PREV}..${TAG}" --pretty=format:"- %s (%h)" --no-merges
+            else
+              git log --pretty=format:"- %s (%h)" --no-merges
+            fi
+            echo
+            echo
+            echo "## Deploy"
+            echo
+            echo "Download **one** worker (\`track.js\`, \`track.php\`, or \`track.py\`)."
+            echo "Set \`INGEST_SECRET\` (and optional \`INGEST_NODE\`). \`INGEST_URL\` defaults to https://irancrypto.market/api/ingest"
+            echo "Run e.g. \`INGEST_SECRET=… node track.js --all --finalize\`."
+            echo "See [README](https://github.com/${{ github.repository }}/blob/${TAG}/README.md)."
+          } > release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          name: "${{ github.ref_name }}"
+          body_path: release-notes.md
+          files: |
+            dist/track.js
+            dist/track.php
+            dist/track.py
+          draft: false
+          prerelease: false

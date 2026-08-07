@@ -1,27 +1,36 @@
 {
-    "name": "irancrypto-runner",
-    "version": "0.1.0",
-    "description": "Irancrypto.market Cryptocurrency scraper for multiple exchanges",
-    "main": "index.js",
-    "type": "module",
-    "author": {
-        "name": "Davod Mozafari",
-        "email": "i@davod.me"
-    },
-    "scripts": {
-        "start": "node src/cron.js",
-        "dev": "node -r dotenv/config src/dev.js",
-        "deploy": "liara deploy --debug"
-    },
-    "dependencies": {
-        "@sentry/node": "^10.60.0",
-        "axios": "^1.18.1",
-        "decimal.js": "^10.6.0",
-        "dayjs": "^1.11.21",
-        "mongodb": "^7.3.0",
-        "node-cron": "^4.5.0"
-    },
-    "devDependencies": {
-        "dotenv": "^17.4.2"
-    }
+  "name": "irancrypto-runner",
+  "version": "0.2.0",
+  "description": "IranCrypto.market API-only exchange collectors (JS/PHP/Python single-file workers)",
+  "main": "runtime/js/entry.js",
+  "type": "module",
+  "author": {
+    "name": "Davod Mozafari",
+    "email": "i@davod.me"
+  },
+  "scripts": {
+    "check:parity": "node scripts/check-parity.mjs",
+    "check:fixtures": "node scripts/check-parse-fixtures.mjs",
+    "generate": "node scripts/generate-registry.mjs",
+    "build": "node scripts/build-all.mjs",
+    "build:js": "node scripts/generate-registry.mjs && node scripts/build-js.mjs",
+    "build:php": "node scripts/generate-registry.mjs && node scripts/build-php.mjs",
+    "build:python": "node scripts/generate-registry.mjs && node scripts/build-python.mjs",
+    "track": "node dist/track.js",
+    "start": "node dist/track.js --all --finalize",
+    "dev": "node scripts/generate-registry.mjs && node --import dotenv/config runtime/js/entry.js --all --dry-run",
+    "lambda:package": "bash scripts/lambda-package.sh"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "axios": "^1.19.0",
+    "dayjs": "^1.11.21",
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2",
+    "esbuild": "^0.28.1"
+  }
 }
