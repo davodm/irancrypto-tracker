@@ -2,6 +2,7 @@ name: irancrypto-satellite
 
 services:
   satellite:
+    image: ghcr.io/davodm/irancrypto-satellite:latest
     build:
       context: .
       dockerfile: Dockerfile

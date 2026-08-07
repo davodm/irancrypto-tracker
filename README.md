@@ -1,411 +1,304 @@
 # IranCrypto Tracker
 
 [![CI](https://github.com/davodm/irancrypto-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/davodm/irancrypto-tracker/actions/workflows/ci.yml)
+[![Docker CI/CD](https://github.com/davodm/irancrypto-tracker/actions/workflows/docker.yml/badge.svg)](https://github.com/davodm/irancrypto-tracker/actions/workflows/docker.yml)
 [![Release](https://github.com/davodm/irancrypto-tracker/actions/workflows/release.yml/badge.svg)](https://github.com/davodm/irancrypto-tracker/actions/workflows/release.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 ![Node](https://img.shields.io/badge/node-%3E%3D24-339933?logo=node.js&logoColor=white)
+![Docker Multi-Arch](https://img.shields.io/badge/docker-amd64%20%7C%20arm64-2496ed?logo=docker&logoColor=white)
 ![Workers](https://img.shields.io/badge/workers-JS%20%7C%20PHP%20%7C%20Python-f7df1e)
 ![Exchanges](https://img.shields.io/badge/scrapers-15-blue)
 
-Lightweight **exchange collectors** for [IranCrypto.market](https://irancrypto.market). Each worker scrapes prices from Iranian and global sources, then POSTs normalized rows to the site **ingest API**. Workers never touch MongoDB — only `INGEST_SECRET` is required (`INGEST_URL` defaults to `https://irancrypto.market/api/ingest`).
-
-That split is intentional: you can run many small nodes (VPS, shared PHP hosting, a home cron box) without handing out database credentials. The platform owns persistence and market rebuilds; nodes only scrape and ship JSON.
+**IranCrypto Tracker** is a lightweight, high-availability market data collection system powering [IranCrypto.market](https://irancrypto.market). It periodically fetches real-time ticker prices, order books, and 24-hour trading volumes across 15 Iranian cryptocurrency exchanges and global data feeds, standardizes raw payloads into a unified schema, and securely ships them to the platform **Ingest API**.
 
 ---
 
-## What we are building
+## Key Features & Design Philosophy
 
-| Layer | Responsibility |
-|-------|----------------|
-| **This repo (workers)** | Scrape exchanges → filter rows → POST to ingest → local JSONL logs |
-| **Ingest API (site)** | Auth, archive upserts, run ledger, finalize → market / recap views |
-
-Each deployable unit is **one file** (`track.cjs`, `track.php`, or `track.py`) plus an optional `logs/` directory. Pick the runtime that fits the host — same behavior, same CLI, same API contract. JS workers target **Node.js 24** (including AWS Lambda `nodejs24.x`).
+- **Zero Database Access on Scraper Nodes**: Worker nodes **never** connect to MongoDB or hold database credentials. Nodes only require an `INGEST_SECRET` bearer token and standard outbound HTTPS access.
+- **Multi-Language Single-File Workers**: Every collection pass can be executed via Node.js (`track.cjs`), PHP (`track.php`), or Python (`track.py`). All three runtimes implement identical CLI flags, HTTP behavior, and parsing rules.
+- **Ultra-Compact Docker Satellites**: Pre-built multi-architecture Docker images (`amd64` and `arm64`) compiled down to zero-dependency executables (< 40 MB image size, ~15 MB RAM overhead).
+- **Decoupled & Fault-Tolerant Architecture**: Multiple scraping nodes (VPS, home servers, shared hosting, Raspberry Pi) can submit metrics for the same hour. The central Ingest API manages atomic hourly deduplication and ledger state.
 
 ---
 
-## Runtime flow
+## Workflow & System Architecture
 
-```mermaid
-sequenceDiagram
-  participant W as Worker node
-  participant API as Ingest API
-  participant X as Exchange APIs
+### How We Work
 
-  W->>API: GET /api/ingest/config
-  API-->>W: run_id, exchanges, coins, limits
+System telemetry operates in **UTC hourly buckets** identified by a `run_id` (e.g. `2026-08-08T00`).
 
-  loop Each enabled exchange
-    W->>X: HTTP scrape
-    X-->>W: Raw ticker / order book data
-    W->>W: Parse, validate, filter rows
-    W->>API: POST /api/ingest (mode: partial)
-  end
-
-  opt --finalize
-    W->>API: GET /api/ingest/status until missing empty
-    W->>API: POST /api/ingest/finalize
-  end
-
-  W->>W: Append JSONL log (counts only, 7-day prune)
+```text
+Scrape Phase (Minute :00 - :05) ──► Ingest Partial Payload ──► Status Verification & Wait ──► Finalize & Rebuild Markets
 ```
 
-All nodes for a given UTC hour share the same `run_id` (e.g. `2026-08-07T15`). See [How nodes work](#how-nodes-work).
+1. **Scrape & Normalize**: Worker nodes query enabled exchange endpoints, parse raw tickers, filter out invalid rows, and normalize data into standard fields (`symbol`, `currency`, `price`, `volume_1d`, `source`).
+2. **Atomic Ingestion**: Nodes POST normalized rows to `/api/ingest`. For a given `run_id`, subsequent submissions from any node for an exchange **replace** that exchange's rows for the hour (last successful POST wins).
+3. **Ledger Tracking**: The central Ingest API tracks expected vs received sources for the active hour.
+4. **Finalization & Market Rebuild**: A designated **Full Node / Finalizer** issues a `POST /api/ingest/finalize`. Upon finalization, the platform rebuilds public market indexes and recap views from the hourly archive.
 
 ---
-## Architecture
+
+### Node Roles
+
+| Role | Execution Command | Description & Operational Pattern |
+|------|-------------------|----------------------------------|
+| **Full Node / Finalizer** | `--all --finalize` | **One per hour**. Scrapes all sources, polls `/api/ingest/status` until all expected exchange sources arrive (or until `FINALIZE_WAIT_SEC` elapses), then triggers `POST /finalize`. Typically deployed as an **AWS Lambda function** (scheduled at `:05` UTC) or primary server. |
+| **Satellite Nodes** | `--all` | **Zero or more**. Distributed collector nodes running on VPS hosts, home servers (Raspberry Pi), shared PHP hosts, or Docker containers. Submits partial source data to fill potential network gaps before finalization. Never issues finalize calls. |
+| **Ingest API (Platform)** | central web service | Handles authentication, payload validation, hourly payload replacements, persistent archival in MongoDB, and market index generation. |
+
+---
+
+### System Architecture Diagram
 
 ```mermaid
 flowchart TB
-  subgraph nodes["Small worker nodes (no Mongo)"]
+  subgraph satellites["Satellite Worker Nodes (Pure Collectors - No DB Access)"]
     direction LR
-    N1["VPS<br/>track.js"]
-    N2["Shared PHP<br/>track.php"]
-    N3["Cron box<br/>track.py"]
-    N4["AWS Lambda<br/>track.handler"]
+    S1["Docker Container<br/>(Raspberry Pi / x86)<br/>ghcr.io/davodm/irancrypto-satellite"]
+    S2["Cron Box<br/>(Python 3)<br/>track.py"]
+    S3["Shared PHP Host<br/>(PHP 8.2+)<br/>track.php"]
   end
 
-  subgraph exchanges["15 scrapers (exchanges + external feeds)"]
-    E["nobitex · wallex · bitpin · …"]
+  subgraph finalizer["Full Node / Finalizer"]
+    F1["AWS Lambda / Scheduled Server<br/>Node.js 24+<br/>track.cjs --all --finalize"]
   end
 
-  subgraph platform["IranCrypto platform"]
-    API["/api/ingest/*"]
-    DB[(MongoDB)]
-    SITE["irancrypto.market"]
+  subgraph exchanges["15 Exchange APIs & Feeds"]
+    E["nobitex · wallex · bitpin · abantether · …"]
   end
 
-  N1 & N2 & N3 & N4 --> E
-  N1 & N2 & N3 & N4 -->|"Bearer INGEST_SECRET"| API
-  API --> DB
-  DB --> SITE
+  subgraph platform["IranCrypto.market Platform"]
+    API["Ingest API Endpoint<br/>/api/ingest/*"]
+    DB[(MongoDB Archive)]
+    SITE["Public Site & Market Recaps<br/>irancrypto.market"]
+  end
+
+  satellites -->|"1. HTTP Scrape Tickers"| exchanges
+  finalizer -->|"1. HTTP Scrape Tickers"| exchanges
+
+  satellites -->|"2. POST /api/ingest<br/>(Bearer INGEST_SECRET)"| API
+  finalizer -->|"2. POST /api/ingest<br/>3. POST /api/ingest/finalize"| API
+
+  API -->|"Write Archive & Ledger"| DB
+  DB -->|"Rebuild Market Views"| SITE
 ```
-
-**Security model:** workers hold ingest credentials (and optional per-exchange API keys). No `MONGO_URI`, no direct writes. TLS verification on by default (`SSL_VERIFY_INGEST=true`).
 
 ---
 
-## Build pipeline
-
-Source of truth lives in `scrapers/` (per-exchange logic) and `runtime/` (shared CLI, HTTP, orchestration). Build scripts assemble **single-file workers** into `dist/`.
+### Hourly Collection Sequence
 
 ```mermaid
-flowchart LR
-  subgraph sources
-    SC["scrapers/&lt;slug&gt;/scrape.{js,php,py}"]
-    RT["runtime/{js,php,python}"]
+sequenceDiagram
+  autonumber
+  participant Satellite as Satellite Node
+  participant Finalizer as Full Node / Finalizer
+  participant Exchange as Exchange APIs
+  participant Ingest as Platform Ingest API
+
+  rect rgb(240, 248, 255)
+    Note over Satellite, Exchange: Minute :00 - Satellite Scrape Phase
+    Satellite->>Ingest: GET /api/ingest/config
+    Ingest-->>Satellite: run_id, active exchanges, limits
+    Satellite->>Exchange: HTTP Scrape Tickers & Order Books
+    Exchange-->>Satellite: Raw Response
+    Satellite->>Satellite: Normalize Rows
+    Satellite->>Ingest: POST /api/ingest (mode: partial)
+    Ingest-->>Satellite: 200 OK (Source ledger updated)
   end
 
-  P["check:parity<br/>15 slugs × 3 langs"]
-  G["generate-registry"]
-  GEN["generated/<br/>imports & registries"]
-  B["build-all"]
-  D["dist/track.{js,php,py}<br/>+ package.json"]
+  rect rgb(255, 250, 240)
+    Note over Finalizer, Ingest: Minute :05 - Finalizer Phase
+    Finalizer->>Ingest: GET /api/ingest/config
+    Ingest-->>Finalizer: run_id, active exchanges
+    Finalizer->>Exchange: HTTP Scrape Tickers
+    Exchange-->>Finalizer: Raw Response
+    Finalizer->>Ingest: POST /api/ingest (mode: partial)
+    
+    loop Status Poll (up to FINALIZE_WAIT_SEC)
+      Finalizer->>Ingest: GET /api/ingest/status
+      Ingest-->>Finalizer: missing: [] or missing: ["excoino"]
+    end
 
-  SC --> P
-  RT --> P
-  P --> G --> GEN --> B --> D
+    alt All expected sources received
+      Finalizer->>Ingest: POST /api/ingest/finalize
+      Ingest-->>Finalizer: 200 OK (Markets Rebuilt)
+    else Timeout reached
+      Finalizer->>Finalizer: Exit with error (Hour not finalized)
+    end
+  end
 ```
-
-| Step | Command | Output |
-|------|---------|--------|
-| Parity | `npm run check:parity` | Fails if any slug is missing JS, PHP, or Python |
-| Generate | `npm run generate` | `generated/*` registries from `scrapers/` |
-| Bundle JS | `npm run build:js` | `dist/track.js` via esbuild (Node 24+, no `node_modules` on worker) |
-| Assemble PHP | `npm run build:php` | `dist/track.php` (PHP 8.2+ + curl) |
-| Assemble Python | `npm run build:python` | `dist/track.py` (stdlib + urllib) |
-| Full build | `npm run build` | All of the above |
-
-CI runs parity → build → smoke `--help` → **freshness check** (committed `dist/` and `generated/` must match a fresh build). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## Deploy a worker
+## Setup, Installation & Operation
 
-Copy **one** built file to the host. Download from [GitHub Releases](https://github.com/davodm/irancrypto-tracker/releases) or use the committed files in `dist/`.
+### Option A: Docker & Docker Compose (Recommended Satellite)
+
+Multi-architecture images (`linux/amd64` and `linux/arm64`) are automatically published to **GitHub Container Registry (GHCR)**. Ideal for Raspberry Pi (3B+/4/5 running 64-bit OS), Linux VPS, Windows, or Apple Silicon.
+
+#### 1. Quickstart with Pre-built Image
+
+Create a `.env` file:
+
+```bash
+cat << 'EOF' > .env
+INGEST_SECRET=your-ingest-secret-key
+INGEST_NODE=satellite-docker-01
+EOF
+```
+
+Download `docker-compose.yml` and start the satellite container:
+
+```bash
+curl -fsSL -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/docker-compose.yml
+docker compose up -d
+```
+
+Or run directly with `docker run`:
+
+```bash
+docker run -d \
+  --name irancrypto-satellite \
+  --restart unless-stopped \
+  --env-file .env \
+  ghcr.io/davodm/irancrypto-satellite:latest
+```
+
+#### 2. Build Locally from Source Code
+
+```bash
+git clone https://github.com/davodm/irancrypto-tracker.git
+cd irancrypto-tracker
+cp .env.example .env
+# Edit .env with your INGEST_SECRET
+docker compose up -d --build
+```
+
+The container executes a scrape pass upon startup, sleeps for 1 hour (3600s), and automatically resumes.
+
+---
+
+### Option B: Standalone Single-File Workers (JS / PHP / Python)
+
+Single-file worker bundles live in `dist/` and can be downloaded from [GitHub Releases](https://github.com/davodm/irancrypto-tracker/releases).
 
 ```text
 /opt/irancrypto-tracker/
-  track.js | track.php | track.py
-  package.json       # only needed for track.js (CommonJS)
-  logs/              # auto-created at runtime — do not commit
-  .env               # optional (INGEST_SECRET, INGEST_NODE, …)
+  ├── track.cjs          # Single-file Node.js CommonJS bundle
+  ├── track.php          # Single-file PHP 8.2+ script
+  ├── track.py           # Single-file Python 3 standard library script
+  └── .env               # Environment configuration
 ```
 
-### One-liner
+#### Running Workers via CLI
 
-Only `INGEST_SECRET` is required. `INGEST_URL` defaults to `https://irancrypto.market/api/ingest`.
-
+**Node.js (Node 24+ required):**
 ```bash
-INGEST_SECRET='your-secret' INGEST_NODE=vps-1 node track.js --all --finalize
+INGEST_SECRET='your-secret' INGEST_NODE=vps-node node track.cjs --all
 ```
 
+**PHP (PHP 8.2+ with cURL extension):**
 ```bash
-INGEST_SECRET='your-secret' INGEST_NODE=liara-php php track.php --all --finalize
+INGEST_SECRET='your-secret' INGEST_NODE=vps-php php track.php --all
 ```
 
+**Python (Python 3.8+ stdlib):**
 ```bash
-INGEST_SECRET='your-secret' INGEST_NODE=home-py python3 track.py --all --finalize
+INGEST_SECRET='your-secret' INGEST_NODE=vps-py python3 track.py --all
 ```
 
-Override the ingest base for staging or a self-hosted API:
+#### Satellite Cron Example (Hourly Scraper)
 
-```bash
-INGEST_URL=https://staging.example.com/api/ingest INGEST_SECRET='…' node track.js --all --finalize
-```
-
-Workers disable PHP/Python execution time limits where the runtime allows it, so long scrape runs are not cut off by default.
-
-### How nodes work
-
-Think in **UTC hours**, not “clock sync between machines.”
-
-Every run uses `run_id = YYYY-MM-DDTHH` (current UTC hour). The ingest API treats that hour as one collection bucket:
-
-1. Each `POST /api/ingest` for a source **replaces** that source’s rows for the hour (not append forever). Same exchange posted twice → last successful POST wins.
-2. The API ledger tracks which exchange slugs arrived (`expected` vs `received` / `missing`).
-3. `POST /api/ingest/finalize` rebuilds market views from the archive for that hour. It **refuses** if any expected source is still missing (unless ops force). After finalize, further POSTs for that hour are rejected.
-
-#### Roles
-
-| Role | What it runs | Purpose |
-|------|----------------|---------|
-| **Finalizer (one)** | `--all --finalize` | Scrapes every exchange, then waits for a complete hour, then finalizes. Usually AWS Lambda once per hour. |
-| **Scraper (zero or more)** | `--all` **without** `--finalize` | Extra scrapes for the same hour. Backup if Lambda fails an exchange, or a second network path. Never finalizes. |
-
-Finalize is **not** what prevents duplicate ticks — hour replace on each POST does. Finalize only rebuilds the public market tables once the hour’s sources are in.
-
-#### What Lambda actually does each hour
-
-Example: EventBridge at minute `:05` UTC, `FINALIZE_WAIT_SEC=300` (5 minutes).
-
-1. Scrape all exchanges → POST each source for this hour’s `run_id`.
-2. Poll `GET /api/ingest/status`:
-   - If every expected source is already received → finalize immediately.
-   - If some are still `missing` → keep polling for up to **5 minutes**, hoping a scraper node posts those sources.
-3. When `missing: []` → `POST /finalize`.
-4. If still missing after the wait → exit with error (hour not finalized; fix scrapers / raise wait / rerun).
-
-So `FINALIZE_WAIT_SEC` is **not** “satellites run every 5 minutes.” It is only **how long the finalizer is willing to wait for missing sources after its own scrape**. Default 300s is a short grace window so a VPS that started a bit earlier (or finished a slow exchange) can still fill gaps before markets rebuild.
-
-#### How scraper schedules fit
-
-Scrapers help the **same** `run_id` only if they POST **before** the finalizer completes step 3.
-
-Recommended pattern:
-
-| Node | Schedule (UTC) | Flags |
-|------|----------------|--------|
-| Scraper(s) | `:00` (or `:02`) each hour | `--all` |
-| Lambda finalizer | `:05` each hour | `--all --finalize`, wait ≤ 5 min |
-
-Then scrapers usually finish posting before Lambda finalizes (~`:05`–`:10`).
-
-If a scraper runs every 30 minutes at `:00` and `:30`:
-
-- `:00` → helps the current hour (good).
-- `:30` → same hour is often **already finalized** → API returns 409; that run does nothing useful for that hour. Prefer hourly scrapers aligned before the finalizer, or only use `:00`.
-
-You do **not** need scrapers at all if Lambda alone is reliable — then `missing` is empty after Lambda’s own POSTs and the wait is effectively zero.
-
-| Env | Default | Meaning |
-|-----|---------|---------|
-| `INGEST_NODE` | hostname / Lambda name | Label in ledger + logs (use a unique name per host) |
-| `FINALIZE_WAIT_SEC` | `300` | Finalizer only: max seconds to wait for `missing: []` |
-| `FINALIZE_POLL_SEC` | `15` | Finalizer only: status poll interval while waiting |
-
-### Cron (scraper nodes)
-
-Scrape only — **no** `--finalize`:
+Add an entry to `crontab -e` on your scraping host (scheduled at `:00` UTC):
 
 ```cron
-0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=vps-1 /usr/bin/node track.cjs --all >> /var/log/irancrypto-tracker.log 2>&1
+0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=vps-cron /usr/bin/node track.cjs --all >> /var/log/irancrypto.log 2>&1
 ```
-
-```cron
-0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=liara-php /usr/bin/php track.php --all >> /var/log/irancrypto-tracker.log 2>&1
-```
-
-```cron
-0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=home-py /usr/bin/python3 track.py --all >> /var/log/irancrypto-tracker.log 2>&1
-```
-
-Or put secrets in `.env` and keep the cron line minimal:
-
-```cron
-0 * * * * cd /opt/irancrypto-tracker && /usr/bin/node track.cjs --all >> /var/log/irancrypto-tracker.log 2>&1
-```
-
-### Docker & Docker Compose (Ultra-Tiny JS Satellite)
-
-You can run the JS worker as an ultra-compact standalone binary using **Docker Compose** with zero runtime overhead (**< 40 MB image size, ~15 MB RAM**).
-
-Because satellite scrapers only query exchange APIs and POST rows to `INGEST_URL`, **no open ports, web servers, or inbound networking are required** — only standard outbound internet access.
-
-The container builds a single zero-dependency executable via Bun multi-stage compilation (`bun build --compile`) from `dist/track.cjs`.
-
-#### 1. Quickstart with Repository Files
-
-1. **Configure `.env`**:
-   ```bash
-   cp .env.example .env
-   # Set INGEST_SECRET='your-secret' and INGEST_NODE='vps-docker-js'
-   ```
-
-2. **Launch Service**:
-   ```bash
-   docker compose up -d --build
-   ```
-
-   The container runs a scrape pass immediately upon boot, sleeps 1 hour (3600s), and repeats indefinitely. `restart: unless-stopped` ensures the satellite automatically resumes scraping after system reboots or crashes.
-
-#### 2. Standalone Setup (Without cloning full repo)
-
-To deploy on a remote host using release assets:
-
-1. Create a workspace directory (e.g. `/opt/irancrypto-satellite`):
-   ```bash
-   mkdir -p /opt/irancrypto-satellite && cd /opt/irancrypto-satellite
-   ```
-2. Download the latest `track.cjs` release worker into `dist/` and fetch the deployment manifests (`Dockerfile`, `docker-compose.yml`):
-   ```bash
-   curl -fsSL --create-dirs https://github.com/davodm/irancrypto-tracker/releases/latest/download/track.cjs -o dist/track.cjs
-   curl -fsSL -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/Dockerfile
-   curl -fsSL -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/docker-compose.yml
-   ```
-3. Create `.env` with your `INGEST_SECRET` (and optional `INGEST_NODE`), then start the container:
-   ```bash
-   docker compose up -d --build
-   ```
-
-### AWS Lambda (recommended finalizer)
-
-`track.cjs` ships an **async** `track.handler` (required on Node.js 24 — no callback handlers). Default: `--all --finalize` (scrape → status wait → finalize).
-
-**Package & upload:**
-
-```bash
-npm run build
-npm run lambda:package    # writes irancrypto-tracker-lambda.zip
-```
-
-Zip contents: `track.cjs` (~620 KB). No `node_modules`.
-
-| Setting | Value |
-|---------|--------|
-| Runtime | **Node.js 24.x** (`nodejs24.x`) |
-| Handler | `track.handler` |
-| Timeout | **900 s** (scrape + up to `FINALIZE_WAIT_SEC`) |
-| Memory | 512 MB+ |
-| Reserved concurrency | **1** |
-| IAM | `AWSLambdaBasicExecutionRole` (CloudWatch Logs only) |
-
-**Environment:**
-
-```text
-INGEST_SECRET=your-secret
-INGEST_NODE=irancrypto-lambda
-LOG_DIR=/tmp/irancrypto-logs
-TRACK_ARGS=--all --finalize
-FINALIZE_WAIT_SEC=300
-FINALIZE_POLL_SEC=15
-```
-
-**Schedule (EventBridge):** `cron(5 * * * ? *)` → this function, input `{}` (minute 5 so scrapers at `:00` can finish first).
-
-Default event `{}` runs `--all --finalize`. Optional payloads:
-
-```json
-{ "exchange": "nobitex" }
-{ "exchange": "nobitex", "finalize": true }
-{ "finalize_only": true, "run_id": "2026-08-07T10" }
-{ "dry_run": true }
-```
-
-**Test after deploy:**
-
-```bash
-aws lambda invoke --function-name irancrypto-tracker --payload '{}' /tmp/out.json && cat /tmp/out.json
-```
-
-Expect `{ "ok": true, "exitCode": 0 }`. Logs go to CloudWatch; JSONL under `/tmp/irancrypto-logs` is ephemeral. If `--all` exceeds 15 minutes, split scrapes with `EXCHANGES` across hosts and keep **one** finalizer.
-
-Full env reference: [.env.example](.env.example).
 
 ---
 
-## Repository layout
+### Option C: AWS Lambda Function (Recommended Finalizer)
 
-```text
-scrapers/<slug>/
-  scrape.js          # PLATFORM, COIN_USE, scrape()
-  scrape.php         # parse job + register_<slug>()
-  scrape.py          # parse job + register_<slug>()
-  sample.json        # raw API response dump for debugging parsers
-runtime/
-  js/                # entry, HTTP, ingest client (bundled into track.js)
-  php/               # boot, helpers, orchestrator
-  python/            # helpers, orchestrator
-scripts/             # parity, generate-registry, build-*
-generated/           # auto registries (committed, CI-checked)
-dist/                # shippable workers (committed + release assets)
-fixtures/parse/      # small golden fixtures for CI parse checks
-```
+The Node.js worker (`track.cjs`) exposes an async entry point (`track.handler`) designed for **AWS Lambda (Node.js 24.x)**.
 
-**Add an exchange:** create `scrapers/<newslug>/` with all three scrape files (+ `sample.json`) → `npm run build` → commit `generated/` + `dist/`.
+#### Packaging & Deployment
+
+1. **Build and package Lambda ZIP**:
+   ```bash
+   npm run build
+   npm run lambda:package
+   ```
+   This generates `irancrypto-tracker-lambda.zip` (~620 KB, zero `node_modules`).
+
+2. **Upload to AWS Lambda**:
+   - **Runtime**: `Node.js 24.x` (`nodejs24.x`)
+   - **Handler**: `track.handler`
+   - **Timeout**: `900 seconds` (15 minutes)
+   - **Memory**: `512 MB+`
+   - **Reserved Concurrency**: `1`
+
+3. **Configure Lambda Environment Variables**:
+   ```text
+   INGEST_SECRET=your-secret-key
+   INGEST_NODE=aws-lambda-finalizer
+   TRACK_ARGS=--all --finalize
+   FINALIZE_WAIT_SEC=300
+   FINALIZE_POLL_SEC=15
+   LOG_DIR=/tmp/irancrypto-logs
+   ```
+
+4. **EventBridge Schedule**: `cron(5 * * * ? *)` (Triggers hourly at minute `:05` UTC).
 
 ---
 
-## Develop locally
+### Environment Variables Reference
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `INGEST_SECRET` | *(Required)* | Bearer authentication secret key for Ingest API |
+| `INGEST_URL` | `https://irancrypto.market/api/ingest` | Base URL of platform Ingest API |
+| `INGEST_NODE` | system hostname / Lambda name | Identifier label recorded in ingest ledger logs |
+| `FINALIZE_WAIT_SEC` | `300` | Finalizer only: Max seconds to wait for missing sources before finalizing |
+| `FINALIZE_POLL_SEC` | `15` | Finalizer only: Poll interval (seconds) while awaiting missing sources |
+| `SSL_VERIFY_INGEST` | `true` | Set to `false` to disable SSL certificate checks (staging environments) |
+| `LOG_DIR` | `./logs` | Directory for writing JSONL execution logs |
+| `TRACK_ARGS` | `--all` | Default CLI argument flags for execution |
+
+---
+
+## Development & Contribution
+
+### Developer Setup
 
 ```bash
+# Install development dependencies
 npm ci
+
+# Run parity check across JS, PHP, and Python scrapers
 npm run check:parity
+
+# Build registries and bundle single-file workers into dist/
 npm run build
-npm run dev                    # dry-run JS entry with dotenv
-node dist/track.js --exchange=nobitex --dry-run
+
+# Dry-run local JS development entry point
+npm run dev
 ```
 
-| Script | Purpose |
-|--------|---------|
-| `npm run build` | Parity → generate → js / php / python |
-| `npm run build:js` | Bundle `dist/track.js` only |
-| `npm run build:php` | Assemble `dist/track.php` |
-| `npm run build:python` | Assemble `dist/track.py` |
-| `npm run dev` | Dry-run modular JS entry |
-| `npm run track` | Run built `dist/track.js` |
-| `npm start` | `dist/track.js --all --finalize` |
+### Adding New Exchange Scrapers
+
+All exchange scrapers must maintain strict **three-language parity** across JavaScript, PHP, and Python.
+
+For step-by-step instructions on creating scraper files, registering modules, row schema definitions, and submitting pull requests, please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide.
 
 ---
 
-## CLI
+## License
 
-```text
-track --all [--finalize]
-track --exchange=nobitex
-track --finalize-only [--run-id=YYYY-MM-DDTHH]
-track --from-json=rows.json
-track --prune-logs
-track --dry-run …
-```
+This project is open-source software licensed under the **GNU Affero General Public License v3.0** ([AGPL-3.0-or-later](LICENSE)).
 
----
+### Short License Summary
 
-## Releases
-
-Tags on **main** only. Version must match `package.json`.
-
-```bash
-npm version patch          # or minor / major
-git push origin main --follow-tags
-```
-
-The release workflow builds fresh workers, writes a changelog since the previous tag, and attaches `track.js`, `track.php`, and `track.py` to the GitHub Release. See [CONTRIBUTING.md](CONTRIBUTING.md) for adding scrapers.
-
----
-
-## Security notes
-
-- Workers need `INGEST_SECRET` only — no database URI on scrape hosts.
-- Ingest requests use `Authorization: Bearer …`; enable TLS verify in production.
-- Local logs record counts and timing, not secrets; pruned after 7 days by default.
-- Exchange API keys (where required) stay in env on the node that needs them.
+- **Copyleft for Network Services**: If you run a modified version of IranCrypto Tracker on a server or network service, you **must** make the complete source code of your modified version available to all network users under the AGPL v3 license.
+- **Freedom & Modifications**: You are free to inspect, modify, adapt, and distribute this software, provided all modifications retain AGPL v3 copyleft terms and copyright notices.
+- See the full license text in the [LICENSE](LICENSE) file.

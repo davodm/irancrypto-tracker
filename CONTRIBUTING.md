@@ -1,4 +1,10 @@
-# Contribution guidelines
+# Contributing to IranCrypto Tracker
+
+Thank you for your interest in contributing! This document details how to add or update exchange scrapers, enforce multi-language parity, and submit contributions.
+
+For system architecture, node deployment options, and runtime workflows, see the main [README.md](README.md).
+
+---
 
 ## Platform exchange status
 

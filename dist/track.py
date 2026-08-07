@@ -593,6 +593,128 @@ def register_ariomex() -> dict[str, Any]:
         "scrape": scrape_ariomex,
     }
 
+# --- arzpaya ---
+
+def scrape_arzpaya(coins: list[str]) -> list[dict[str, Any]]:
+    popular_coins = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"]
+    target_coins = coins if coins else popular_coins
+    out: list[dict[str, Any]] = []
+
+    for coin in target_coins:
+        if coin.upper() in ("IRT", "IRR"):
+            continue
+        try:
+            url = f"https://na1.arzpaya.com/orderbook/buy/irt/{coin.lower()}"
+            res = http_get_json(url)
+            if isinstance(res, dict) and isinstance(res.get("Data"), list) and res["Data"]:
+                top_bid = res["Data"][0]
+                price = num(top_bid.get("p"), {"multiply": 10, "decimalPlaces": 8})
+                if price > 0:
+                    out.append({
+                        "currency": "IRR",
+                        "symbol": coin.upper(),
+                        "price": price,
+                        "volume_1d": 0,
+                        "coin_volume_1d": 0,
+                        "change_1d": 0,
+                        "source": "arzpaya",
+                    })
+        except Exception:
+            pass
+
+    return out
+
+
+def register_arzpaya() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "scrape": scrape_arzpaya,
+    }
+
+# --- bidarz ---
+
+def scrape_bidarz(coins: list[str]) -> list[dict[str, Any]]:
+    popular_coins = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"]
+    target_coins = coins if coins else popular_coins
+    out: list[dict[str, Any]] = []
+
+    for coin in target_coins:
+        if coin.upper() in ("IRT", "IRR"):
+            continue
+        try:
+            url = f"https://bidarz.ir/price/{coin.lower()}"
+            res = http_request("GET", url, timeout=5)
+            html = res.get("body", "")
+            match = re.search(r'quoteId:"IRR"[^}]*?last:"([0-9.]+)"', html)
+            if match:
+                price = num(match.group(1), {"decimalPlaces": 8})
+                if price > 0:
+                    out.append({
+                        "currency": "IRR",
+                        "symbol": coin.upper(),
+                        "price": price,
+                        "volume_1d": 0,
+                        "coin_volume_1d": 0,
+                        "change_1d": 0,
+                        "source": "bidarz",
+                    })
+        except Exception:
+            pass
+
+    return out
+
+
+def register_bidarz() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "scrape": scrape_bidarz,
+    }
+
+# --- bitimen ---
+
+def parse_bitimen(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(data, dict) or not data:
+        raise RuntimeError("Bitimen: empty response")
+    out: list[dict[str, Any]] = []
+    for key, item in data.items():
+        if not isinstance(item, dict):
+            continue
+        symbol = str(item.get("base_asset_ticker", "")).upper()
+        if not symbol or not coin_allowed(coins, symbol):
+            continue
+        raw_price = item.get("last_price") or item.get("best_bid_raw") or 0
+        price = num(raw_price, {"multiply": 10, "decimalPlaces": 8})
+        raw_vol = str(item.get("volume", "0") or "0").replace(",", "")
+        volume_1d = num(raw_vol, {"multiply": 10, "roundUp": True})
+        change_1d = num(item.get("change_display") or item.get("change") or 0, {"decimalPlaces": 2})
+
+        out.append({
+            "currency": "IRR",
+            "symbol": symbol,
+            "price": price,
+            "volume_1d": volume_1d,
+            "coin_volume_1d": 0,
+            "change_1d": change_1d,
+            "source": "bitimen",
+        })
+
+    return out
+
+
+def job_bitimen() -> dict[str, Any]:
+    return {
+        "url": "https://api2.bitimen.com/api/market/stats",
+        "query": {"quote_asset": "IRT"},
+    }
+
+
+def register_bitimen() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "job": job_bitimen,
+        "parse": parse_bitimen,
+    }
+
 # --- bitmax ---
 
 def parse_bitmax(data: Any, coins: list[str]) -> list[dict[str, Any]]:
@@ -837,49 +959,6 @@ def register_coinmarketcap() -> dict[str, Any]:
         "parse": parse_coinmarketcap,
     }
 
-# --- excoino ---
-
-def parse_excoino(data: Any, coins: list[str]) -> list[dict[str, Any]]:
-    if not isinstance(data, list) or not data:
-        raise RuntimeError("Excoino: empty")
-    out: list[dict[str, Any]] = []
-    for row in data:
-        if not isinstance(row, dict):
-            continue
-        split = str(row.get("symbol") or "").upper().split("/")
-        if len(split) == 2 and split[1] != "IRR":
-            continue
-        if not row.get("trend") or not isinstance(row["trend"], list):
-            continue
-        raw_symbol = str(row.get("symbol") or "").split("/")[0]
-        symbol = raw_symbol.upper()
-        if not symbol or not coin_allowed(coins, symbol):
-            continue
-        out.append(
-            {
-                "currency": "IRR",
-                "symbol": symbol,
-                "price": num(row["trend"][0] if row["trend"] else 0, {"decimalPlaces": 8}),
-                "volume_1d": num(row.get("twentyFourHourTurnover", 0), {"roundUp": True}),
-                "coin_volume_1d": num(row.get("twentyFourHourVolume", 0)),
-                "change_1d": num(row.get("chg", 0), {"decimalPlaces": 2}),
-                "source": "excoino",
-            }
-        )
-    return out
-
-
-def job_excoino() -> dict[str, Any]:
-    return {"url": "https://market-api.excoino.com/market/symbol-thumb-trend"}
-
-
-def register_excoino() -> dict[str, Any]:
-    return {
-        "coin_use": "all",
-        "job": job_excoino,
-        "parse": parse_excoino,
-    }
-
 # --- exir ---
 
 def parse_exir(data: Any, coins: list[str]) -> list[dict[str, Any]]:
@@ -1109,6 +1188,56 @@ def register_nobitex() -> dict[str, Any]:
         "parse": parse_nobitex,
     }
 
+# --- ompfinex ---
+
+def parse_ompfinex(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(data, dict):
+        raise RuntimeError("Ompfinex: empty response")
+    list_data = data.get("data", []) if isinstance(data.get("data"), list) else []
+    if not list_data:
+        raise RuntimeError("Ompfinex: empty data list")
+    out: list[dict[str, Any]] = []
+
+    for item in list_data:
+        if not isinstance(item, dict):
+            continue
+        quote = str(item.get("quote_currency", {}).get("id", "")).upper()
+        if quote not in ("IRR", "IRT"):
+            continue
+        if "last_price" not in item or item["last_price"] is None:
+            continue
+        symbol = str(item.get("base_currency", {}).get("id", "")).upper()
+        if not symbol or not coin_allowed(coins, symbol):
+            continue
+
+        price = num(item.get("last_price", 0), {"multiply": 10, "decimalPlaces": 8})
+        volume_1d = num(item.get("last_volume", 0), {"multiply": 10, "roundUp": True})
+        change_1d = num(item.get("day_change_percent", 0), {"decimalPlaces": 2})
+
+        out.append({
+            "currency": "IRR",
+            "symbol": symbol,
+            "price": price,
+            "volume_1d": volume_1d,
+            "coin_volume_1d": 0,
+            "change_1d": change_1d,
+            "source": "ompfinex",
+        })
+
+    return out
+
+
+def job_ompfinex() -> dict[str, Any]:
+    return {"url": "https://api.ompfinex.com/v1/market"}
+
+
+def register_ompfinex() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "job": job_ompfinex,
+        "parse": parse_ompfinex,
+    }
+
 # --- ramzinex ---
 
 def parse_ramzinex(data: Any, coins: list[str]) -> list[dict[str, Any]]:
@@ -1197,6 +1326,48 @@ def register_saraf() -> dict[str, Any]:
         "parse": parse_saraf,
     }
 
+# --- sarmayex ---
+
+def scrape_sarmayex(coins: list[str]) -> list[dict[str, Any]]:
+    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+    res = http_request("GET", "https://sarmayex.com/crypto-price", headers=headers, timeout=15)
+    html = res.get("body", "")
+    if not html:
+        raise RuntimeError("Sarmayex: empty response")
+
+    out: list[dict[str, Any]] = []
+    seen = set()
+
+    matches = re.findall(r'"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"', html)
+    for price_raw, symbol_raw in matches:
+        symbol = symbol_raw.upper()
+        if symbol in ("IRT", "IRR") or symbol in seen:
+            continue
+        if not coin_allowed(coins, symbol):
+            continue
+
+        seen.add(symbol)
+        price = num(price_raw, {"decimalPlaces": 8})
+
+        out.append({
+            "currency": "IRR",
+            "symbol": symbol,
+            "price": price,
+            "volume_1d": 0,
+            "coin_volume_1d": 0,
+            "change_1d": 0,
+            "source": "sarmayex",
+        })
+
+    return out
+
+
+def register_sarmayex() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "scrape": scrape_sarmayex,
+    }
+
 # --- tabdeal ---
 
 def parse_tabdeal(data: Any, coins: list[str]) -> list[dict[str, Any]]:
@@ -1260,6 +1431,51 @@ def register_tabdeal() -> dict[str, Any]:
         "parse": parse_tabdeal,
     }
 
+# --- tetherland ---
+
+def parse_tetherland(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(data, dict):
+        raise RuntimeError("Tetherland: empty response")
+    currencies = data.get("data", {}).get("currencies", {})
+    if not isinstance(currencies, dict) or not currencies:
+        raise RuntimeError("Tetherland: empty currencies")
+    out: list[dict[str, Any]] = []
+
+    for symbol, item in currencies.items():
+        if not isinstance(item, dict):
+            continue
+        upper_symbol = str(symbol).upper()
+        if not coin_allowed(coins, upper_symbol):
+            continue
+
+        raw_price = item.get("price") or item.get("buy_price") or 0
+        price = num(raw_price, {"multiply": 10, "decimalPlaces": 8})
+        change_1d = num(item.get("diff24d", 0), {"decimalPlaces": 2})
+
+        out.append({
+            "currency": "IRR",
+            "symbol": upper_symbol,
+            "price": price,
+            "volume_1d": 0,
+            "coin_volume_1d": 0,
+            "change_1d": change_1d,
+            "source": "tetherland",
+        })
+
+    return out
+
+
+def job_tetherland() -> dict[str, Any]:
+    return {"url": "https://api.tetherland.com/currencies"}
+
+
+def register_tetherland() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "job": job_tetherland,
+        "parse": parse_tetherland,
+    }
+
 # --- wallex ---
 
 def parse_wallex(data: Any, coins: list[str]) -> list[dict[str, Any]]:
@@ -1317,19 +1533,24 @@ def register_wallex() -> dict[str, Any]:
 def scraper_registry():
     return {
     "ariomex": register_ariomex(),
+    "arzpaya": register_arzpaya(),
+    "bidarz": register_bidarz(),
+    "bitimen": register_bitimen(),
     "bitmax": register_bitmax(),
     "bitpin": register_bitpin(),
     "coinapi": register_coinapi(),
     "coinmarketcap": register_coinmarketcap(),
-    "excoino": register_excoino(),
     "exir": register_exir(),
     "hitobit": register_hitobit(),
     "huluex": register_huluex(),
     "kifpool": register_kifpool(),
     "nobitex": register_nobitex(),
+    "ompfinex": register_ompfinex(),
     "ramzinex": register_ramzinex(),
     "saraf": register_saraf(),
+    "sarmayex": register_sarmayex(),
     "tabdeal": register_tabdeal(),
+    "tetherland": register_tetherland(),
     "wallex": register_wallex(),
     }
 

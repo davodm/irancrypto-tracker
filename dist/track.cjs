@@ -1345,12 +1345,12 @@ var init_AxiosError = __esm({
     init_AxiosHeaders();
     REDACTED = "[REDACTED ****]";
     AxiosError = class _AxiosError extends Error {
-      static from(error, code, config2, request14, response, customProps) {
+      static from(error, code, config2, request17, response, customProps) {
         let message = error.message;
         if (!message && utils_default.isArray(error.errors) && error.errors.length) {
           message = aggregateErrorMessage(error);
         }
-        const axiosError = new _AxiosError(message, code || error.code, config2, request14, response);
+        const axiosError = new _AxiosError(message, code || error.code, config2, request17, response);
         Object.defineProperty(axiosError, "cause", {
           __proto__: null,
           value: error,
@@ -1376,7 +1376,7 @@ var init_AxiosError = __esm({
        *
        * @returns {Error} The created error.
        */
-      constructor(message, code, config2, request14, response) {
+      constructor(message, code, config2, request17, response) {
         super(message);
         Object.defineProperty(this, "message", {
           // Null-proto descriptor so a polluted Object.prototype.get cannot turn
@@ -1391,7 +1391,7 @@ var init_AxiosError = __esm({
         this.isAxiosError = true;
         code && (this.code = code);
         config2 && (this.config = config2);
-        request14 && (this.request = request14);
+        request17 && (this.request = request17);
         if (response) {
           this.response = response;
           this.status = response.status;
@@ -11649,7 +11649,7 @@ var require_form_data = __commonJS({
       });
     };
     FormData3.prototype.submit = function(params, cb) {
-      var request14;
+      var request17;
       var options;
       var defaults2 = { method: "post" };
       if (typeof params === "string") {
@@ -11668,9 +11668,9 @@ var require_form_data = __commonJS({
       }
       options.headers = this.getHeaders(params.headers);
       if (options.protocol === "https:") {
-        request14 = https3.request(options);
+        request17 = https3.request(options);
       } else {
-        request14 = http3.request(options);
+        request17 = http3.request(options);
       }
       this.getLength(function(err, length) {
         if (err && err !== "Unknown stream") {
@@ -11678,22 +11678,22 @@ var require_form_data = __commonJS({
           return;
         }
         if (length) {
-          request14.setHeader("Content-Length", length);
+          request17.setHeader("Content-Length", length);
         }
-        this.pipe(request14);
+        this.pipe(request17);
         if (cb) {
           var onResponse;
           var callback = function(error, responce) {
-            request14.removeListener("error", callback);
-            request14.removeListener("response", onResponse);
+            request17.removeListener("error", callback);
+            request17.removeListener("response", onResponse);
             return cb.call(this, error, responce);
           };
           onResponse = callback.bind(this, null);
-          request14.on("error", callback);
-          request14.on("response", onResponse);
+          request17.on("error", callback);
+          request17.on("response", onResponse);
         }
       }.bind(this));
-      return request14;
+      return request17;
     };
     FormData3.prototype._error = function(err) {
       if (!this.error) {
@@ -12419,8 +12419,8 @@ var init_CanceledError = __esm({
        *
        * @returns {CanceledError} The created error.
        */
-      constructor(message, config2, request14) {
-        super(message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config2, request14);
+      constructor(message, config2, request17) {
+        super(message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config2, request17);
         this.name = "CanceledError";
         this.__CANCEL__ = true;
       }
@@ -13741,7 +13741,7 @@ var require_debug = __commonJS({
 var require_follow_redirects = __commonJS({
   "node_modules/follow-redirects/index.js"(exports2, module2) {
     var url2 = require("url");
-    var URL16 = url2.URL;
+    var URL21 = url2.URL;
     var http3 = require("http");
     var https3 = require("https");
     var Writable = require("stream").Writable;
@@ -13757,7 +13757,7 @@ var require_follow_redirects = __commonJS({
     })();
     var useNativeURL = false;
     try {
-      assert(new URL16(""));
+      assert(new URL21(""));
     } catch (error) {
       useNativeURL = error.code === "ERR_INVALID_URL";
     }
@@ -13997,10 +13997,10 @@ var require_follow_redirects = __commonJS({
         var scheme = protocol.slice(0, -1);
         this._options.agent = this._options.agents[scheme];
       }
-      var request14 = this._currentRequest = nativeProtocol.request(this._options, this._onNativeResponse);
-      request14._redirectable = this;
+      var request17 = this._currentRequest = nativeProtocol.request(this._options, this._onNativeResponse);
+      request17._redirectable = this;
       for (var event of events) {
-        request14.on(event, eventHandlers[event]);
+        request17.on(event, eventHandlers[event]);
       }
       this._currentUrl = /^\//.test(this._options.path) ? url2.format(this._options) : (
         // When making a request to a proxy, […]
@@ -14012,16 +14012,16 @@ var require_follow_redirects = __commonJS({
         var self2 = this;
         var buffers = this._requestBodyBuffers;
         (function writeNext(error) {
-          if (request14 === self2._currentRequest) {
+          if (request17 === self2._currentRequest) {
             if (error) {
               self2.emit("error", error);
             } else if (i < buffers.length) {
               var buffer = buffers[i++];
-              if (!request14.finished) {
-                request14.write(buffer.data, buffer.encoding, writeNext);
+              if (!request17.finished) {
+                request17.write(buffer.data, buffer.encoding, writeNext);
               }
             } else if (self2._ended) {
-              request14.end();
+              request17.end();
             }
           }
         })();
@@ -14103,7 +14103,7 @@ var require_follow_redirects = __commonJS({
         var protocol = scheme + ":";
         var nativeProtocol = nativeProtocols[protocol] = protocols[scheme];
         var wrappedProtocol = exports3[scheme] = Object.create(nativeProtocol);
-        function request14(input, options, callback) {
+        function request17(input, options, callback) {
           if (isURL(input)) {
             input = spreadUrlObject(input);
           } else if (isString2(input)) {
@@ -14135,7 +14135,7 @@ var require_follow_redirects = __commonJS({
           return wrappedRequest;
         }
         Object.defineProperties(wrappedProtocol, {
-          request: { value: request14, configurable: true, enumerable: true, writable: true },
+          request: { value: request17, configurable: true, enumerable: true, writable: true },
           get: { value: get, configurable: true, enumerable: true, writable: true }
         });
       });
@@ -14146,7 +14146,7 @@ var require_follow_redirects = __commonJS({
     function parseUrl2(input) {
       var parsed;
       if (useNativeURL) {
-        parsed = new URL16(input);
+        parsed = new URL21(input);
       } else {
         parsed = validateUrl(url2.parse(input));
         if (!isString2(parsed.protocol)) {
@@ -14156,7 +14156,7 @@ var require_follow_redirects = __commonJS({
       return parsed;
     }
     function resolveUrl(relative, base) {
-      return useNativeURL ? new URL16(relative, base) : parseUrl2(url2.resolve(base, relative));
+      return useNativeURL ? new URL21(relative, base) : parseUrl2(url2.resolve(base, relative));
     }
     function validateUrl(input) {
       if (/^\[/.test(input.hostname) && !/^\[[:0-9a-f]+\]$/i.test(input.hostname)) {
@@ -14213,12 +14213,12 @@ var require_follow_redirects = __commonJS({
       });
       return CustomError;
     }
-    function destroyRequest(request14, error) {
+    function destroyRequest(request17, error) {
       for (var event of events) {
-        request14.removeListener(event, eventHandlers[event]);
+        request17.removeListener(event, eventHandlers[event]);
       }
-      request14.on("error", noop2);
-      request14.destroy(error);
+      request17.on("error", noop2);
+      request17.destroy(error);
     }
     function isSubdomain(subdomain, domain) {
       assert(isString2(subdomain) && isString2(domain));
@@ -14238,7 +14238,7 @@ var require_follow_redirects = __commonJS({
       return typeof value === "object" && "length" in value;
     }
     function isURL(value) {
-      return URL16 && value instanceof URL16;
+      return URL21 && value instanceof URL21;
     }
     function escapeRegex(regex) {
       return regex.replace(/[\]\\/()*+?.$]/g, "\\$&");
@@ -16477,24 +16477,24 @@ var init_xhr = __esm({
           _config.cancelToken && _config.cancelToken.unsubscribe(onCanceled);
           _config.signal && _config.signal.removeEventListener("abort", onCanceled);
         }
-        let request14 = new XMLHttpRequest();
-        request14.open(_config.method.toUpperCase(), _config.url, true);
-        request14.timeout = _config.timeout;
+        let request17 = new XMLHttpRequest();
+        request17.open(_config.method.toUpperCase(), _config.url, true);
+        request17.timeout = _config.timeout;
         function onloadend() {
-          if (!request14) {
+          if (!request17) {
             return;
           }
           const responseHeaders = AxiosHeaders_default.from(
-            "getAllResponseHeaders" in request14 && request14.getAllResponseHeaders()
+            "getAllResponseHeaders" in request17 && request17.getAllResponseHeaders()
           );
-          const responseData = !responseType || responseType === "text" || responseType === "json" ? request14.responseText : request14.response;
+          const responseData = !responseType || responseType === "text" || responseType === "json" ? request17.responseText : request17.response;
           const response = {
             data: responseData,
-            status: request14.status,
-            statusText: request14.statusText,
+            status: request17.status,
+            statusText: request17.statusText,
             headers: responseHeaders,
             config: config2,
-            request: request14
+            request: request17
           };
           settle(
             function _resolve(value) {
@@ -16507,38 +16507,38 @@ var init_xhr = __esm({
             },
             response
           );
-          request14 = null;
+          request17 = null;
         }
-        if ("onloadend" in request14) {
-          request14.onloadend = onloadend;
+        if ("onloadend" in request17) {
+          request17.onloadend = onloadend;
         } else {
-          request14.onreadystatechange = function handleLoad() {
-            if (!request14 || request14.readyState !== 4) {
+          request17.onreadystatechange = function handleLoad() {
+            if (!request17 || request17.readyState !== 4) {
               return;
             }
-            if (request14.status === 0 && !(request14.responseURL && request14.responseURL.startsWith("file:"))) {
+            if (request17.status === 0 && !(request17.responseURL && request17.responseURL.startsWith("file:"))) {
               return;
             }
             setTimeout(onloadend);
           };
         }
-        request14.onabort = function handleAbort() {
-          if (!request14) {
+        request17.onabort = function handleAbort() {
+          if (!request17) {
             return;
           }
-          reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config2, request14));
+          reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config2, request17));
           done();
-          request14 = null;
+          request17 = null;
         };
-        request14.onerror = function handleError(event) {
+        request17.onerror = function handleError(event) {
           const msg = event && event.message ? event.message : "Network Error";
-          const err = new AxiosError_default(msg, AxiosError_default.ERR_NETWORK, config2, request14);
+          const err = new AxiosError_default(msg, AxiosError_default.ERR_NETWORK, config2, request17);
           err.event = event || null;
           reject(err);
           done();
-          request14 = null;
+          request17 = null;
         };
-        request14.ontimeout = function handleTimeout() {
+        request17.ontimeout = function handleTimeout() {
           let timeoutErrorMessage = _config.timeout ? "timeout of " + _config.timeout + "ms exceeded" : "timeout exceeded";
           const transitional2 = _config.transitional || transitional_default;
           if (_config.timeoutErrorMessage) {
@@ -16549,42 +16549,42 @@ var init_xhr = __esm({
               timeoutErrorMessage,
               transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
               config2,
-              request14
+              request17
             )
           );
           done();
-          request14 = null;
+          request17 = null;
         };
         requestData === void 0 && requestHeaders.setContentType(null);
-        if ("setRequestHeader" in request14) {
+        if ("setRequestHeader" in request17) {
           utils_default.forEach(toByteStringHeaderObject(requestHeaders), function setRequestHeader(val, key) {
-            request14.setRequestHeader(key, val);
+            request17.setRequestHeader(key, val);
           });
         }
         if (!utils_default.isUndefined(_config.withCredentials)) {
-          request14.withCredentials = !!_config.withCredentials;
+          request17.withCredentials = !!_config.withCredentials;
         }
         if (responseType && responseType !== "json") {
-          request14.responseType = _config.responseType;
+          request17.responseType = _config.responseType;
         }
         if (onDownloadProgress) {
           [downloadThrottled, flushDownload] = progressEventReducer(onDownloadProgress, true);
-          request14.addEventListener("progress", downloadThrottled);
+          request17.addEventListener("progress", downloadThrottled);
         }
-        if (onUploadProgress && request14.upload) {
+        if (onUploadProgress && request17.upload) {
           [uploadThrottled, flushUpload] = progressEventReducer(onUploadProgress);
-          request14.upload.addEventListener("progress", uploadThrottled);
-          request14.upload.addEventListener("loadend", flushUpload);
+          request17.upload.addEventListener("progress", uploadThrottled);
+          request17.upload.addEventListener("loadend", flushUpload);
         }
         if (_config.cancelToken || _config.signal) {
           onCanceled = (cancel) => {
-            if (!request14) {
+            if (!request17) {
               return;
             }
-            reject(!cancel || cancel.type ? new CanceledError_default(null, config2, request14) : cancel);
-            request14.abort();
+            reject(!cancel || cancel.type ? new CanceledError_default(null, config2, request17) : cancel);
+            request17.abort();
             done();
-            request14 = null;
+            request17 = null;
           };
           _config.cancelToken && _config.cancelToken.subscribe(onCanceled);
           if (_config.signal) {
@@ -16603,7 +16603,7 @@ var init_xhr = __esm({
           done();
           return;
         }
-        request14.send(requestData || null);
+        request17.send(requestData || null);
       });
     };
   }
@@ -16822,7 +16822,7 @@ var init_fetch = __esm({
       const encodeText = isFetchSupported && (typeof TextEncoder2 === "function" ? /* @__PURE__ */ ((encoder) => (str) => encoder.encode(str))(new TextEncoder2()) : async (str) => new Uint8Array(await new Request(str).arrayBuffer()));
       const supportsRequestStream = isRequestSupported && isReadableStreamSupported && test(() => {
         let duplexAccessed = false;
-        const request14 = new Request(platform_default.origin, {
+        const request17 = new Request(platform_default.origin, {
           body: new ReadableStream2(),
           method: "POST",
           get duplex() {
@@ -16830,9 +16830,9 @@ var init_fetch = __esm({
             return "half";
           }
         });
-        const hasContentType = request14.headers.has("Content-Type");
-        if (request14.body != null) {
-          request14.body.cancel();
+        const hasContentType = request17.headers.has("Content-Type");
+        if (request17.body != null) {
+          request17.body.cancel();
         }
         return duplexAccessed && !hasContentType;
       });
@@ -16909,7 +16909,7 @@ var init_fetch = __esm({
           [signal, cancelToken && cancelToken.toAbortSignal()],
           timeout
         );
-        let request14 = null;
+        let request17 = null;
         const unsubscribe = composedSignal && composedSignal.unsubscribe && (() => {
           composedSignal.unsubscribe();
         });
@@ -16919,7 +16919,7 @@ var init_fetch = __esm({
           "Request body larger than maxBodyLength limit",
           AxiosError_default.ERR_BAD_REQUEST,
           config2,
-          request14
+          request17
         );
         try {
           let auth = void 0;
@@ -16962,7 +16962,7 @@ var init_fetch = __esm({
                 "maxContentLength size of " + maxContentLength + " exceeded",
                 AxiosError_default.ERR_BAD_RESPONSE,
                 config2,
-                request14
+                request17
               );
             }
           }
@@ -17014,7 +17014,7 @@ var init_fetch = __esm({
               "Stream request bodies are not supported by the current fetch implementation",
               AxiosError_default.ERR_NOT_SUPPORT,
               config2,
-              request14
+              request17
             );
           }
           if (!utils_default.isString(withCredentials)) {
@@ -17037,8 +17037,8 @@ var init_fetch = __esm({
             duplex: "half",
             credentials: isCredentialsSupported ? withCredentials : void 0
           };
-          request14 = isRequestSupported && new Request(url2, resolvedOptions);
-          let response = await (isRequestSupported ? _fetch(request14, fetchOptions) : _fetch(url2, resolvedOptions));
+          request17 = isRequestSupported && new Request(url2, resolvedOptions);
+          let response = await (isRequestSupported ? _fetch(request17, fetchOptions) : _fetch(url2, resolvedOptions));
           const responseHeaders = AxiosHeaders_default.from(response.headers);
           if (hasMaxContentLength) {
             const declaredLength = utils_default.toFiniteNumber(responseHeaders.getContentLength());
@@ -17047,7 +17047,7 @@ var init_fetch = __esm({
                 "maxContentLength size of " + maxContentLength + " exceeded",
                 AxiosError_default.ERR_BAD_RESPONSE,
                 config2,
-                request14
+                request17
               );
             }
           }
@@ -17071,7 +17071,7 @@ var init_fetch = __esm({
                     "maxContentLength size of " + maxContentLength + " exceeded",
                     AxiosError_default.ERR_BAD_RESPONSE,
                     config2,
-                    request14
+                    request17
                   );
                 }
               }
@@ -17106,7 +17106,7 @@ var init_fetch = __esm({
                 "maxContentLength size of " + maxContentLength + " exceeded",
                 AxiosError_default.ERR_BAD_RESPONSE,
                 config2,
-                request14
+                request17
               );
             }
           }
@@ -17118,7 +17118,7 @@ var init_fetch = __esm({
               status: response.status,
               statusText: response.statusText,
               config: config2,
-              request: request14
+              request: request17
             });
           });
         } catch (err) {
@@ -17126,7 +17126,7 @@ var init_fetch = __esm({
           if (composedSignal && composedSignal.aborted && composedSignal.reason instanceof AxiosError_default) {
             const canceledError = composedSignal.reason;
             canceledError.config = config2;
-            request14 && (canceledError.request = request14);
+            request17 && (canceledError.request = request17);
             if (err !== canceledError) {
               Object.defineProperty(canceledError, "cause", {
                 __proto__: null,
@@ -17139,11 +17139,11 @@ var init_fetch = __esm({
             throw canceledError;
           }
           if (pendingBodyError) {
-            request14 && !pendingBodyError.request && (pendingBodyError.request = request14);
+            request17 && !pendingBodyError.request && (pendingBodyError.request = request17);
             throw pendingBodyError;
           }
           if (err instanceof AxiosError_default) {
-            request14 && !err.request && (err.request = request14);
+            request17 && !err.request && (err.request = request17);
             throw err;
           }
           if (err && err.name === "TypeError" && /Load failed|fetch/i.test(err.message)) {
@@ -17151,7 +17151,7 @@ var init_fetch = __esm({
               "Network Error",
               AxiosError_default.ERR_NETWORK,
               config2,
-              request14,
+              request17,
               err && err.response
             );
             Object.defineProperty(networkError, "cause", {
@@ -17163,7 +17163,7 @@ var init_fetch = __esm({
             });
             throw networkError;
           }
-          throw AxiosError_default.from(err, err && err.code, config2, request14, err && err.response);
+          throw AxiosError_default.from(err, err && err.code, config2, request17, err && err.response);
         }
       };
     };
@@ -17666,11 +17666,11 @@ var init_CancelToken = __esm({
           };
           return promise;
         };
-        executor(function cancel(message, config2, request14) {
+        executor(function cancel(message, config2, request17) {
           if (token.reason) {
             return;
           }
-          token.reason = new CanceledError_default(message, config2, request14);
+          token.reason = new CanceledError_default(message, config2, request17);
           resolvePromise(token.reason);
         });
       }
@@ -20545,7 +20545,7 @@ function processList($list, $coinsFilter = []) {
   });
 }
 
-// scrapers/bitmax/scrape.js
+// scrapers/arzpaya/scrape.js
 var scrape_exports2 = {};
 __export(scrape_exports2, {
   COIN_USE: () => COIN_USE2,
@@ -20553,9 +20553,10 @@ __export(scrape_exports2, {
   scrape: () => scrape2
 });
 var import_dayjs2 = __toESM(require_dayjs_min(), 1);
-var PLATFORM2 = "BitMax";
-var URL2 = "https://api.bitmax.ir/";
+var PLATFORM2 = "Arzpaya";
+var URL2 = "https://na1.arzpaya.com/orderbook/";
 var COIN_USE2 = "all";
+var POPULAR_COINS = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"];
 async function scrape2($coins = []) {
   const data = await getLatest2($coins);
   data.forEach((d) => {
@@ -20564,16 +20565,195 @@ async function scrape2($coins = []) {
   return data;
 }
 async function getLatest2($filterCoins = []) {
-  const data = await request("watcher/price/alternative", {});
-  if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
-    throw new Error("Response data is empty");
-  }
-  return processList2(data, $filterCoins);
+  const targetCoins = $filterCoins.length > 0 ? $filterCoins : POPULAR_COINS;
+  const date = (0, import_dayjs2.default)();
+  const promises = targetCoins.filter((coin) => coin !== "IRT" && coin !== "IRR").map(async (coin) => {
+    try {
+      const data = await request(`buy/irt/${coin.toLowerCase()}`);
+      if (data?.Data && Array.isArray(data.Data) && data.Data.length > 0) {
+        const topBid = data.Data[0];
+        return {
+          currency: "IRR",
+          symbol: coin.toUpperCase(),
+          price: num(topBid.p, { multiply: 10, decimalPlaces: 8 }) || 0,
+          volume_1d: 0,
+          coin_volume_1d: 0,
+          change_1d: 0,
+          last_update: {
+            date: date.toISOString(),
+            timestamp: date.unix(),
+            moment: date
+          }
+        };
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  });
+  const results = await Promise.all(promises);
+  return results.filter(Boolean);
 }
 async function request($uri, $params = {}) {
   const result = await axiosRequest({
     method: "get",
     url: URL2 + $uri,
+    params: $params
+  });
+  return result;
+}
+
+// scrapers/bidarz/scrape.js
+var scrape_exports3 = {};
+__export(scrape_exports3, {
+  COIN_USE: () => COIN_USE3,
+  getLatest: () => getLatest3,
+  scrape: () => scrape3
+});
+var import_dayjs3 = __toESM(require_dayjs_min(), 1);
+init_axios2();
+var PLATFORM3 = "Bidarz";
+var URL3 = "https://bidarz.ir/price/";
+var COIN_USE3 = "all";
+var POPULAR_COINS2 = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"];
+async function scrape3($coins = []) {
+  const data = await getLatest3($coins);
+  data.forEach((d) => {
+    d.source = PLATFORM3.toLowerCase();
+  });
+  return data;
+}
+async function getLatest3($filterCoins = []) {
+  const targetCoins = $filterCoins.length > 0 ? $filterCoins : POPULAR_COINS2;
+  const date = (0, import_dayjs3.default)();
+  const promises = targetCoins.filter((coin) => coin !== "IRT" && coin !== "IRR").map(async (coin) => {
+    try {
+      const response = await axios_default.get(URL3 + coin.toLowerCase(), {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        },
+        timeout: 1e4
+      });
+      const html = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
+      if (html) {
+        const match = html.match(/quoteId:"IRR"[^}]*?last:"([0-9.]+)"/);
+        if (match && match[1]) {
+          const rawPrice = parseFloat(match[1]) || 0;
+          return {
+            currency: "IRR",
+            symbol: coin.toUpperCase(),
+            price: num(rawPrice, { decimalPlaces: 8 }) || 0,
+            volume_1d: 0,
+            coin_volume_1d: 0,
+            change_1d: 0,
+            last_update: {
+              date: date.toISOString(),
+              timestamp: date.unix(),
+              moment: date
+            }
+          };
+        }
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  });
+  const results = await Promise.all(promises);
+  return results.filter(Boolean);
+}
+
+// scrapers/bitimen/scrape.js
+var scrape_exports4 = {};
+__export(scrape_exports4, {
+  COIN_USE: () => COIN_USE4,
+  getLatest: () => getLatest4,
+  scrape: () => scrape4
+});
+var import_dayjs4 = __toESM(require_dayjs_min(), 1);
+var PLATFORM4 = "Bitimen";
+var URL4 = "https://api2.bitimen.com/api/market/stats?quote_asset=IRT";
+var COIN_USE4 = "all";
+async function scrape4($coins = []) {
+  const data = await getLatest4($coins);
+  data.forEach((d) => {
+    d.source = PLATFORM4.toLowerCase();
+  });
+  return data;
+}
+async function getLatest4($filterCoins = []) {
+  const data = await request2("", {});
+  if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
+    throw new Error("Response data is empty");
+  }
+  return processList2(data, $filterCoins);
+}
+async function request2($uri, $params = {}) {
+  const result = await axiosRequest({
+    method: "get",
+    url: URL4 + $uri,
+    params: $params
+  });
+  return result;
+}
+function processList2($list, $coinsFilter = []) {
+  return Object.keys($list).filter((key) => {
+    const data = $list[key];
+    const symbol = data?.base_asset_ticker?.toUpperCase();
+    if (!symbol) return false;
+    return $coinsFilter.length === 0 || $coinsFilter.includes(symbol);
+  }).map((key) => {
+    const data = $list[key];
+    const date = (0, import_dayjs4.default)();
+    const symbol = data.base_asset_ticker.toUpperCase();
+    const rawPrice = data.last_price || data.best_bid_raw || 0;
+    const rawVol = (data.volume || "").replace(/,/g, "");
+    return {
+      currency: "IRR",
+      symbol,
+      price: num(rawPrice, { multiply: 10, decimalPlaces: 8 }) || 0,
+      volume_1d: num(rawVol, { multiply: 10, roundUp: true }) || 0,
+      coin_volume_1d: 0,
+      change_1d: num(data.change_display || data.change, { decimalPlaces: 2 }) || 0,
+      last_update: {
+        date: date.toISOString(),
+        timestamp: date.unix(),
+        moment: date
+      }
+    };
+  });
+}
+
+// scrapers/bitmax/scrape.js
+var scrape_exports5 = {};
+__export(scrape_exports5, {
+  COIN_USE: () => COIN_USE5,
+  getLatest: () => getLatest5,
+  scrape: () => scrape5
+});
+var import_dayjs5 = __toESM(require_dayjs_min(), 1);
+var PLATFORM5 = "BitMax";
+var URL5 = "https://api.bitmax.ir/";
+var COIN_USE5 = "all";
+async function scrape5($coins = []) {
+  const data = await getLatest5($coins);
+  data.forEach((d) => {
+    d.source = PLATFORM5.toLowerCase();
+  });
+  return data;
+}
+async function getLatest5($filterCoins = []) {
+  const data = await request3("watcher/price/alternative", {});
+  if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
+    throw new Error("Response data is empty");
+  }
+  return processList3(data, $filterCoins);
+}
+async function request3($uri, $params = {}) {
+  const result = await axiosRequest({
+    method: "get",
+    url: URL5 + $uri,
     params: $params
   });
   if (result?.error) {
@@ -20584,13 +20764,13 @@ async function request($uri, $params = {}) {
   }
   return result.message;
 }
-function processList2($data2, $coinsFilter = []) {
+function processList3($data2, $coinsFilter = []) {
   const usdt = priceUSDT($data2);
   return Object.entries($data2).filter(([symbol, data]) => {
     if (!data?.price_in_irt) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(symbol.toUpperCase());
   }).map(([symbol, data]) => {
-    const date = (0, import_dayjs2.default)();
+    const date = (0, import_dayjs5.default)();
     return {
       currency: "IRR",
       symbol: symbol.toUpperCase(),
@@ -20620,30 +20800,30 @@ function priceUSDT($data2) {
 }
 
 // scrapers/bitpin/scrape.js
-var scrape_exports3 = {};
-__export(scrape_exports3, {
-  COIN_USE: () => COIN_USE3,
-  getLatest: () => getLatest3,
-  scrape: () => scrape3
+var scrape_exports6 = {};
+__export(scrape_exports6, {
+  COIN_USE: () => COIN_USE6,
+  getLatest: () => getLatest6,
+  scrape: () => scrape6
 });
-var import_dayjs3 = __toESM(require_dayjs_min(), 1);
-var PLATFORM3 = "Bitpin";
-var URL3 = "https://api.bitpin.ir/v1/";
+var import_dayjs6 = __toESM(require_dayjs_min(), 1);
+var PLATFORM6 = "Bitpin";
+var URL6 = "https://api.bitpin.ir/v1/";
 var MAX_PAGES2 = 50;
-var COIN_USE3 = "all";
-async function scrape3($coins = []) {
-  const data = await getLatest3($coins);
+var COIN_USE6 = "all";
+async function scrape6($coins = []) {
+  const data = await getLatest6($coins);
   data.forEach((d) => {
-    d.source = PLATFORM3.toLowerCase();
+    d.source = PLATFORM6.toLowerCase();
   });
   return data;
 }
-async function getLatest3($filterCoins = []) {
+async function getLatest6($filterCoins = []) {
   const data = await fetchAllMarkets();
   if (!data?.length) {
     throw new Error("Response data is empty");
   }
-  return processList3(data, $filterCoins);
+  return processList4(data, $filterCoins);
 }
 async function fetchAllMarkets() {
   const all3 = [];
@@ -20652,7 +20832,7 @@ async function fetchAllMarkets() {
   for (let i = 0; i < MAX_PAGES2; i++) {
     const result = nextUrl ? await axiosRequest({ method: "get", url: nextUrl }) : await axiosRequest({
       method: "get",
-      url: URL3 + "mkt/markets/",
+      url: URL6 + "mkt/markets/",
       params: page > 1 ? { page } : {}
     });
     if (!result?.results || !Array.isArray(result.results)) {
@@ -20673,16 +20853,16 @@ async function fetchAllMarkets() {
   }
   return all3;
 }
-function processList3($list, $coinsFilter = []) {
+function processList4($list, $coinsFilter = []) {
   return $list.filter((data) => {
     if (data?.currency2?.code !== "IRT") return false;
     if (data?.currency1?.forTest || !data?.order_book_info?.price) return false;
     const code = String(data.currency1.code || "").toUpperCase();
     return $coinsFilter.length === 0 || $coinsFilter.includes(code);
   }).map((data) => {
-    const date = data?.internal_price_info?.created_at ? import_dayjs3.default.unix(
+    const date = data?.internal_price_info?.created_at ? import_dayjs6.default.unix(
       num(data.internal_price_info.created_at, { roundUp: true })
-    ) : (0, import_dayjs3.default)();
+    ) : (0, import_dayjs6.default)();
     return {
       currency: "IRR",
       symbol: data.currency1.code.toUpperCase(),
@@ -20700,35 +20880,35 @@ function processList3($list, $coinsFilter = []) {
 }
 
 // scrapers/coinapi/scrape.js
-var scrape_exports4 = {};
-__export(scrape_exports4, {
-  COIN_USE: () => COIN_USE4,
-  getLatest: () => getLatest4,
-  scrape: () => scrape4
+var scrape_exports7 = {};
+__export(scrape_exports7, {
+  COIN_USE: () => COIN_USE7,
+  getLatest: () => getLatest7,
+  scrape: () => scrape7
 });
-var import_dayjs4 = __toESM(require_dayjs_min(), 1);
-var URL4 = "https://rest.coinapi.io/v1/";
+var import_dayjs7 = __toESM(require_dayjs_min(), 1);
+var URL7 = "https://rest.coinapi.io/v1/";
 var KEY = process.env.COINAPI_KEY || null;
-var PLATFORM4 = "CoinAPI";
-var COIN_USE4 = "all";
-async function scrape4($coins = []) {
-  const data = await getLatest4($coins);
+var PLATFORM7 = "CoinAPI";
+var COIN_USE7 = "all";
+async function scrape7($coins = []) {
+  const data = await getLatest7($coins);
   data.forEach((d) => {
-    d.source = PLATFORM4.toLowerCase();
+    d.source = PLATFORM7.toLowerCase();
   });
   return data;
 }
-async function getLatest4($filterCoins = []) {
-  const data = await request2("assets", {});
-  return processList4(data, $filterCoins);
+async function getLatest7($filterCoins = []) {
+  const data = await request4("assets", {});
+  return processList5(data, $filterCoins);
 }
-async function request2($uri, $params = {}) {
+async function request4($uri, $params = {}) {
   if (!KEY) {
     throw new Error("COINAPI_KEY is not set");
   }
   const result = await axiosRequest({
     method: "get",
-    url: URL4 + $uri,
+    url: URL7 + $uri,
     headers: {
       "X-CoinAPI-Key": KEY
     },
@@ -20739,7 +20919,7 @@ async function request2($uri, $params = {}) {
   }
   return result;
 }
-function processList4($list, $coinsFilter = []) {
+function processList5($list, $coinsFilter = []) {
   return $list.filter((item) => {
     if (typeof item.type_is_crypto !== "number") {
       return false;
@@ -20755,7 +20935,7 @@ function processList4($list, $coinsFilter = []) {
     }
     return $coinsFilter.includes(item.asset_id.toUpperCase());
   }).map((item) => {
-    const date = (0, import_dayjs4.default)(item.data_quote_end || item.data_end || void 0);
+    const date = (0, import_dayjs7.default)(item.data_quote_end || item.data_end || void 0);
     return {
       name: item.name,
       symbol: item.asset_id.toUpperCase(),
@@ -20773,29 +20953,29 @@ function processList4($list, $coinsFilter = []) {
 }
 
 // scrapers/coinmarketcap/scrape.js
-var scrape_exports5 = {};
-__export(scrape_exports5, {
-  COIN_USE: () => COIN_USE5,
+var scrape_exports8 = {};
+__export(scrape_exports8, {
+  COIN_USE: () => COIN_USE8,
   getGainers: () => getGainers,
   getGlobalMetrics: () => getGlobalMetrics,
-  getLatest: () => getLatest5,
+  getLatest: () => getLatest8,
   getLosers: () => getLosers,
-  scrape: () => scrape5
+  scrape: () => scrape8
 });
-var import_dayjs5 = __toESM(require_dayjs_min(), 1);
-var PLATFORM5 = "CoinMarketCap";
-var URL5 = "https://pro-api.coinmarketcap.com/v1/";
+var import_dayjs8 = __toESM(require_dayjs_min(), 1);
+var PLATFORM8 = "CoinMarketCap";
+var URL8 = "https://pro-api.coinmarketcap.com/v1/";
 var KEYS = process.env.COINMARKETCAP_API_KEY ? process.env.COINMARKETCAP_API_KEY.split(",").map((key) => key.trim()) : [];
-var COIN_USE5 = "all";
-async function scrape5($coins = []) {
-  const data = await getLatest5(200, $coins);
+var COIN_USE8 = "all";
+async function scrape8($coins = []) {
+  const data = await getLatest8(200, $coins);
   data.forEach((d) => {
-    d.source = PLATFORM5.toLowerCase();
+    d.source = PLATFORM8.toLowerCase();
   });
   return data;
 }
-async function getLatest5($limit = 200, $filterCoins = []) {
-  const data = await request3("cryptocurrency/listings/latest", {
+async function getLatest8($limit = 200, $filterCoins = []) {
+  const data = await request5("cryptocurrency/listings/latest", {
     start: 1,
     limit: $limit,
     aux: [
@@ -20812,10 +20992,10 @@ async function getLatest5($limit = 200, $filterCoins = []) {
       "is_market_cap_included_in_calc"
     ].join(",")
   });
-  return processList5(data, $filterCoins);
+  return processList6(data, $filterCoins);
 }
 async function getGainers($limit = 20, $filterCoins = []) {
-  const data = await request3("cryptocurrency/listings/latest", {
+  const data = await request5("cryptocurrency/listings/latest", {
     start: 1,
     limit: $limit,
     sort: "percent_change_24h",
@@ -20823,10 +21003,10 @@ async function getGainers($limit = 20, $filterCoins = []) {
     volume_24h_min: 5e4
     // Min volume of 50k
   });
-  return processList5(data, $filterCoins);
+  return processList6(data, $filterCoins);
 }
 async function getLosers($limit = 20, $filterCoins = []) {
-  const data = await request3("cryptocurrency/listings/latest", {
+  const data = await request5("cryptocurrency/listings/latest", {
     start: 1,
     limit: $limit,
     sort: "percent_change_24h",
@@ -20834,14 +21014,14 @@ async function getLosers($limit = 20, $filterCoins = []) {
     volume_24h_min: 5e4
     // Min volume of 50k
   });
-  return processList5(data, $filterCoins);
+  return processList6(data, $filterCoins);
 }
 async function getGlobalMetrics() {
-  $data = await request3("global-metrics/quotes/latest");
+  $data = await request5("global-metrics/quotes/latest");
   return {
     last_update: {
       date: $data.last_updated,
-      timestamp: (0, import_dayjs5.default)($data.last_updated).unix()
+      timestamp: (0, import_dayjs8.default)($data.last_updated).unix()
     },
     dominance: {
       btc: $data.btc_dominance,
@@ -20850,13 +21030,13 @@ async function getGlobalMetrics() {
     quote: $data.quote.USD
   };
 }
-async function request3($uri, $params = {}) {
+async function request5($uri, $params = {}) {
   if (!KEYS || KEYS.length === 0) {
     throw new Error("COINMARKETCAP_API_KEY is not set or empty");
   }
   const result = await axiosRequest({
     method: "get",
-    url: URL5 + $uri,
+    url: URL8 + $uri,
     params: $params,
     headers: {
       "X-CMC_PRO_API_KEY": KEYS[Math.floor(Math.random() * KEYS.length)]
@@ -20872,7 +21052,7 @@ async function request3($uri, $params = {}) {
   }
   return result.data;
 }
-function processList5($list, $coinsFilter = []) {
+function processList6($list, $coinsFilter = []) {
   return $list.filter((data) => {
     if (!data?.quote?.USD) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
@@ -20880,7 +21060,7 @@ function processList5($list, $coinsFilter = []) {
     const symbol = data.symbol.toUpperCase();
     const quoteUSD = data.quote.USD;
     const price = num(quoteUSD.price, { decimalPlaces: 8 }) || 0;
-    const date = (0, import_dayjs5.default)(data.last_updated);
+    const date = (0, import_dayjs8.default)(data.last_updated);
     const transformed = {
       id: data.id,
       currency: "USD",
@@ -20912,95 +21092,35 @@ function processList5($list, $coinsFilter = []) {
   });
 }
 
-// scrapers/excoino/scrape.js
-var scrape_exports6 = {};
-__export(scrape_exports6, {
-  COIN_USE: () => COIN_USE6,
-  getLatest: () => getLatest6,
-  scrape: () => scrape6
-});
-var import_dayjs6 = __toESM(require_dayjs_min(), 1);
-var PLATFORM6 = "Excoino";
-var URL6 = "https://market-api.excoino.com/";
-var COIN_USE6 = "all";
-async function scrape6($coins = []) {
-  const data = await getLatest6($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM6.toLowerCase();
-  });
-  return data;
-}
-async function getLatest6($filterCoins = []) {
-  const data = await request4("market/symbol-thumb-trend", {});
-  if (!data?.length) {
-    throw new Error("Response data is empty");
-  }
-  return processList6(data, $filterCoins);
-}
-async function request4($uri, $params = {}) {
-  const result = await axiosRequest({
-    method: "get",
-    url: URL6 + $uri,
-    params: $params
-  });
-  if (!result) {
-    throw new Error("Invalid response data");
-  }
-  return result;
-}
-function processList6($list, $coinsFilter = []) {
-  return $list.filter((data) => {
-    const split = data.symbol.toUpperCase().split("/");
-    if (split.length === 2 && split[1] !== "IRR") return false;
-    if (!data?.trend?.length) return false;
-    return $coinsFilter.length === 0 || $coinsFilter.includes(split[0]);
-  }).map((data) => {
-    const date = (0, import_dayjs6.default)();
-    return {
-      currency: "IRR",
-      symbol: data.symbol.split("/")[0],
-      price: num(data.trend[0], { decimalPlaces: 8 }) || 0,
-      volume_1d: num(data.twentyFourHourTurnover, { roundUp: true }) || 0,
-      coin_volume_1d: num(data.twentyFourHourVolume) || 0,
-      change_1d: num(data.chg, { decimalPlaces: 2 }),
-      last_update: {
-        date: date.toISOString(),
-        timestamp: date.unix(),
-        moment: date
-      }
-    };
-  });
-}
-
 // scrapers/exir/scrape.js
-var scrape_exports7 = {};
-__export(scrape_exports7, {
-  COIN_USE: () => COIN_USE7,
-  getLatest: () => getLatest7,
-  scrape: () => scrape7
+var scrape_exports9 = {};
+__export(scrape_exports9, {
+  COIN_USE: () => COIN_USE9,
+  getLatest: () => getLatest9,
+  scrape: () => scrape9
 });
-var import_dayjs7 = __toESM(require_dayjs_min(), 1);
-var PLATFORM7 = "Exir";
-var URL7 = "https://api.exir.io/v2/";
-var COIN_USE7 = "all";
-async function scrape7($coins = []) {
-  const data = await getLatest7($coins);
+var import_dayjs9 = __toESM(require_dayjs_min(), 1);
+var PLATFORM9 = "Exir";
+var URL9 = "https://api.exir.io/v2/";
+var COIN_USE9 = "all";
+async function scrape9($coins = []) {
+  const data = await getLatest9($coins);
   data.forEach((d) => {
-    d.source = PLATFORM7.toLowerCase();
+    d.source = PLATFORM9.toLowerCase();
   });
   return data;
 }
-async function getLatest7($filterCoins = []) {
-  const data = await request5("ticker/all", {});
+async function getLatest9($filterCoins = []) {
+  const data = await request6("ticker/all", {});
   if (!Object.keys(data).length) {
     throw new Error("Response data is empty");
   }
   return processList7(data, $filterCoins);
 }
-async function request5($uri, $params = {}) {
+async function request6($uri, $params = {}) {
   const result = await axiosRequest({
     method: "get",
-    url: URL7 + $uri,
+    url: URL9 + $uri,
     params: $params
   });
   if (!result) {
@@ -21022,7 +21142,7 @@ function processList7($list, $coinsFilter = []) {
     if (!data?.last) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol);
   }).map((data) => {
-    const date = (0, import_dayjs7.default)();
+    const date = (0, import_dayjs9.default)();
     const price = num(data.last || data.close, { multiply: 10, decimalPlaces: 8 }) || 0;
     return {
       currency: "IRR",
@@ -21041,34 +21161,34 @@ function processList7($list, $coinsFilter = []) {
 }
 
 // scrapers/hitobit/scrape.js
-var scrape_exports8 = {};
-__export(scrape_exports8, {
-  COIN_USE: () => COIN_USE8,
-  getLatest: () => getLatest8,
-  scrape: () => scrape8
+var scrape_exports10 = {};
+__export(scrape_exports10, {
+  COIN_USE: () => COIN_USE10,
+  getLatest: () => getLatest10,
+  scrape: () => scrape10
 });
-var import_dayjs8 = __toESM(require_dayjs_min(), 1);
-var PLATFORM8 = "Hitobit";
-var URL8 = "https://hitobit.com/hapi/exchange/v1/public/";
-var COIN_USE8 = "all";
-async function scrape8($coins = []) {
-  const data = await getLatest8($coins);
+var import_dayjs10 = __toESM(require_dayjs_min(), 1);
+var PLATFORM10 = "Hitobit";
+var URL10 = "https://hitobit.com/hapi/exchange/v1/public/";
+var COIN_USE10 = "all";
+async function scrape10($coins = []) {
+  const data = await getLatest10($coins);
   data.forEach((d) => {
-    d.source = PLATFORM8.toLowerCase();
+    d.source = PLATFORM10.toLowerCase();
   });
   return data;
 }
-async function getLatest8($filterCoins = []) {
-  const data = await request6("alltickers/24hr", {});
+async function getLatest10($filterCoins = []) {
+  const data = await request7("alltickers/24hr", {});
   if (!data?.length) {
     throw new Error("Response data is empty");
   }
   return processList8(data, $filterCoins);
 }
-async function request6($uri, $params = {}) {
+async function request7($uri, $params = {}) {
   const result = await axiosRequest({
     method: "get",
-    url: URL8 + $uri,
+    url: URL10 + $uri,
     params: $params
   });
   if (result?.error) {
@@ -21085,7 +21205,7 @@ function processList8($list, $coinsFilter = []) {
     if (!data?.lastPrice) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.baseCurrencySymbol.toUpperCase());
   }).map((data) => {
-    const date = (0, import_dayjs8.default)(data?.lastMarketInfoChangeDate || void 0);
+    const date = (0, import_dayjs10.default)(data?.lastMarketInfoChangeDate || void 0);
     return {
       currency: "IRR",
       symbol: data.baseCurrencySymbol.toUpperCase(),
@@ -21105,25 +21225,25 @@ function processList8($list, $coinsFilter = []) {
 }
 
 // scrapers/huluex/scrape.js
-var scrape_exports9 = {};
-__export(scrape_exports9, {
-  COIN_USE: () => COIN_USE9,
-  getLatest: () => getLatest9,
-  scrape: () => scrape9
+var scrape_exports11 = {};
+__export(scrape_exports11, {
+  COIN_USE: () => COIN_USE11,
+  getLatest: () => getLatest11,
+  scrape: () => scrape11
 });
-var import_dayjs9 = __toESM(require_dayjs_min(), 1);
-var PLATFORM9 = "Huluex";
-var URL9 = "https://api.huluex.com/api/";
-var COIN_USE9 = "all";
-async function scrape9($coins = []) {
-  const data = await getLatest9($coins);
+var import_dayjs11 = __toESM(require_dayjs_min(), 1);
+var PLATFORM11 = "Huluex";
+var URL11 = "https://api.huluex.com/api/";
+var COIN_USE11 = "all";
+async function scrape11($coins = []) {
+  const data = await getLatest11($coins);
   data.forEach((d) => {
-    d.source = PLATFORM9.toLowerCase();
+    d.source = PLATFORM11.toLowerCase();
   });
   return data;
 }
-async function getLatest9($filterCoins = []) {
-  const data = await request7("market/getCoinsPriceV3", {
+async function getLatest11($filterCoins = []) {
+  const data = await request8("market/getCoinsPriceV3", {
     withGate: true,
     version: 4
   });
@@ -21132,10 +21252,10 @@ async function getLatest9($filterCoins = []) {
   }
   return processList9(data, $filterCoins);
 }
-async function request7($uri, $params = {}) {
+async function request8($uri, $params = {}) {
   const result = await axiosRequest({
     method: "get",
-    url: URL9 + $uri,
+    url: URL11 + $uri,
     params: $params
   });
   if (!result?.data) {
@@ -21149,7 +21269,7 @@ function processList9($list, $coinsFilter = []) {
     if (!data?.sellPrice && !data?.buyPrice) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
   }).map((data) => {
-    const date = (0, import_dayjs9.default)();
+    const date = (0, import_dayjs11.default)();
     let price = num(data.sellPrice || data.buyPrice, {
       decimalPlaces: 8,
       multiply: 10
@@ -21180,30 +21300,30 @@ function priceUSDT2($list) {
 }
 
 // scrapers/kifpool/scrape.js
-var scrape_exports10 = {};
-__export(scrape_exports10, {
-  COIN_USE: () => COIN_USE10,
-  getLatest: () => getLatest10,
-  scrape: () => scrape10
+var scrape_exports12 = {};
+__export(scrape_exports12, {
+  COIN_USE: () => COIN_USE12,
+  getLatest: () => getLatest12,
+  scrape: () => scrape12
 });
-var import_dayjs10 = __toESM(require_dayjs_min(), 1);
-var PLATFORM10 = "KifPool";
-var URL10 = "https://api.kifpool.app/api/";
-var COIN_USE10 = "all";
-async function scrape10($coins = []) {
-  const data = await getLatest10($coins);
+var import_dayjs12 = __toESM(require_dayjs_min(), 1);
+var PLATFORM12 = "KifPool";
+var URL12 = "https://api.kifpool.app/api/";
+var COIN_USE12 = "all";
+async function scrape12($coins = []) {
+  const data = await getLatest12($coins);
   data.forEach((d) => {
-    d.source = PLATFORM10.toLowerCase();
+    d.source = PLATFORM12.toLowerCase();
   });
   return data;
 }
-async function getLatest10($filterCoins = []) {
+async function getLatest12($filterCoins = []) {
   let offset = 0;
   const limit = 200;
   let allData = [];
   let hasMore = true;
   while (hasMore) {
-    const response = await request8("spot/price/paginated", {
+    const response = await request9("spot/price/paginated", {
       offset,
       limit
     });
@@ -21222,10 +21342,10 @@ async function getLatest10($filterCoins = []) {
   }
   return processList10(allData, $filterCoins);
 }
-async function request8($uri, $params = {}) {
+async function request9($uri, $params = {}) {
   const result = await axiosRequest({
     method: "get",
-    url: URL10 + $uri,
+    url: URL12 + $uri,
     params: $params
   });
   if (!result) {
@@ -21238,7 +21358,7 @@ function processList10($list, $coinsFilter = []) {
     if (!data?.priceSellIRT && !data?.priceBuyIRT) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
   }).map((data) => {
-    const date = data.updatedAt ? (0, import_dayjs10.default)(data.updatedAt) : (0, import_dayjs10.default)();
+    const date = data.updatedAt ? (0, import_dayjs12.default)(data.updatedAt) : (0, import_dayjs12.default)();
     const priceIRT = data.priceSellIRT || data.priceBuyIRT || 0;
     const price = num(priceIRT, { decimalPlaces: 8, multiply: 10 }) || 0;
     const volume_1d = num(data.volume, { roundUp: true, multiply: 10 }) || 0;
@@ -21261,25 +21381,25 @@ function processList10($list, $coinsFilter = []) {
 }
 
 // scrapers/nobitex/scrape.js
-var scrape_exports11 = {};
-__export(scrape_exports11, {
-  COIN_USE: () => COIN_USE11,
-  getLatest: () => getLatest11,
-  scrape: () => scrape11
+var scrape_exports13 = {};
+__export(scrape_exports13, {
+  COIN_USE: () => COIN_USE13,
+  getLatest: () => getLatest13,
+  scrape: () => scrape13
 });
-var import_dayjs11 = __toESM(require_dayjs_min(), 1);
-var PLATFORM11 = "Nobitex";
-var URL11 = "https://apiv2.nobitex.ir/";
-var COIN_USE11 = "own";
-async function scrape11($coins) {
-  const data = await getLatest11($coins);
+var import_dayjs13 = __toESM(require_dayjs_min(), 1);
+var PLATFORM13 = "Nobitex";
+var URL13 = "https://apiv2.nobitex.ir/";
+var COIN_USE13 = "own";
+async function scrape13($coins) {
+  const data = await getLatest13($coins);
   data.forEach((d) => {
-    d.source = PLATFORM11.toLowerCase();
+    d.source = PLATFORM13.toLowerCase();
   });
   return data;
 }
-async function getLatest11($filterCoins = []) {
-  const data = await request9("market/stats", {
+async function getLatest13($filterCoins = []) {
+  const data = await request10("market/stats", {
     dstCurrency: "rls"
   });
   if (!data?.stats || !Object.keys(data.stats).length) {
@@ -21287,12 +21407,12 @@ async function getLatest11($filterCoins = []) {
   }
   return processList11(data.stats, $filterCoins);
 }
-async function request9($uri, $params = {}) {
+async function request10($uri, $params = {}) {
   let result;
   try {
     result = await axiosRequest({
       method: "get",
-      url: URL11 + $uri,
+      url: URL13 + $uri,
       params: $params,
       headers: {
         "Origin": "https://nobitex.ir",
@@ -21304,7 +21424,7 @@ async function request9($uri, $params = {}) {
     const errorMsg = error?.response?.data?.message || error.message;
     logError(`Nobitex API error: ${errorMsg}`);
     throw new Error(
-      `Failed to send request to ${URL11 + $uri} server due to ${error.message}`
+      `Failed to send request to ${URL13 + $uri} server due to ${error.message}`
     );
   }
   if (result?.status && result.status !== "ok") {
@@ -21325,7 +21445,7 @@ function processList11($list, $coinsFilter = []) {
     if (data.isClosed) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol);
   }).map((data) => {
-    const date = (0, import_dayjs11.default)();
+    const date = (0, import_dayjs13.default)();
     return {
       currency: "IRR",
       symbol: data.symbol,
@@ -21342,32 +21462,93 @@ function processList11($list, $coinsFilter = []) {
   });
 }
 
-// scrapers/ramzinex/scrape.js
-var scrape_exports12 = {};
-__export(scrape_exports12, {
-  COIN_USE: () => COIN_USE12,
-  getLatest: () => getLatest12,
-  scrape: () => scrape12
+// scrapers/ompfinex/scrape.js
+var scrape_exports14 = {};
+__export(scrape_exports14, {
+  COIN_USE: () => COIN_USE14,
+  getLatest: () => getLatest14,
+  scrape: () => scrape14
 });
-var import_dayjs12 = __toESM(require_dayjs_min(), 1);
-var PLATFORM12 = "Ramzinex";
-var URL12 = "https://publicapi.ramzinex.com/exchange/api/v1.0/";
-var COIN_USE12 = "all";
-async function scrape12($coins = []) {
-  const data = await getLatest12($coins);
+var import_dayjs14 = __toESM(require_dayjs_min(), 1);
+var PLATFORM14 = "OMPFinex";
+var URL14 = "https://api.ompfinex.com/v1/market";
+var COIN_USE14 = "all";
+async function scrape14($coins = []) {
+  const data = await getLatest14($coins);
   data.forEach((d) => {
-    d.source = PLATFORM12.toLowerCase();
+    d.source = PLATFORM14.toLowerCase();
   });
   return data;
 }
-async function getLatest12($filterCoins = []) {
-  const data = await request10("exchange/pairs", {});
-  return processList12(data, $filterCoins);
+async function getLatest14($filterCoins = []) {
+  const response = await request11("", {});
+  const list = Array.isArray(response) ? response : response?.data || [];
+  if (!Array.isArray(list) || list.length === 0) {
+    throw new Error("Response data is empty");
+  }
+  return processList12(list, $filterCoins);
 }
-async function request10($uri, $params = {}) {
+async function request11($uri, $params = {}) {
   const result = await axiosRequest({
     method: "get",
-    url: URL12 + $uri,
+    url: URL14 + $uri,
+    params: $params
+  });
+  return result;
+}
+function processList12($list, $coinsFilter = []) {
+  return $list.filter((data) => {
+    const quote = data?.quote_currency?.id?.toUpperCase();
+    if (quote !== "IRR" && quote !== "IRT") return false;
+    if (!data?.last_price) return false;
+    const symbol = data?.base_currency?.id?.toUpperCase();
+    if (!symbol) return false;
+    return $coinsFilter.length === 0 || $coinsFilter.includes(symbol);
+  }).map((data) => {
+    const date = (0, import_dayjs14.default)();
+    const symbol = data.base_currency.id.toUpperCase();
+    return {
+      currency: "IRR",
+      symbol,
+      price: num(data.last_price, { multiply: 10, decimalPlaces: 8 }) || 0,
+      volume_1d: num(data.last_volume, { multiply: 10, roundUp: true }) || 0,
+      coin_volume_1d: 0,
+      change_1d: num(data.day_change_percent, { decimalPlaces: 2 }) || 0,
+      last_update: {
+        date: date.toISOString(),
+        timestamp: date.unix(),
+        moment: date
+      }
+    };
+  });
+}
+
+// scrapers/ramzinex/scrape.js
+var scrape_exports15 = {};
+__export(scrape_exports15, {
+  COIN_USE: () => COIN_USE15,
+  getLatest: () => getLatest15,
+  scrape: () => scrape15
+});
+var import_dayjs15 = __toESM(require_dayjs_min(), 1);
+var PLATFORM15 = "Ramzinex";
+var URL15 = "https://publicapi.ramzinex.com/exchange/api/v1.0/";
+var COIN_USE15 = "all";
+async function scrape15($coins = []) {
+  const data = await getLatest15($coins);
+  data.forEach((d) => {
+    d.source = PLATFORM15.toLowerCase();
+  });
+  return data;
+}
+async function getLatest15($filterCoins = []) {
+  const data = await request12("exchange/pairs", {});
+  return processList13(data, $filterCoins);
+}
+async function request12($uri, $params = {}) {
+  const result = await axiosRequest({
+    method: "get",
+    url: URL15 + $uri,
     params: $params
   });
   if (!result?.data || !result.data.length) {
@@ -21375,14 +21556,14 @@ async function request10($uri, $params = {}) {
   }
   return result.data;
 }
-function processList12($list, $coinsFilter = []) {
+function processList13($list, $coinsFilter = []) {
   return $list.filter((data) => {
     if (!data?.quote_currency_symbol?.en || data?.quote_currency_symbol?.en.toUpperCase() !== "IRR")
       return false;
     if (!data?.sell) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.base_currency_symbol.en.toUpperCase());
   }).map((data) => {
-    const date = (0, import_dayjs12.default)();
+    const date = (0, import_dayjs15.default)();
     return {
       currency: "IRR",
       symbol: data.base_currency_symbol.en.toUpperCase(),
@@ -21400,47 +21581,47 @@ function processList12($list, $coinsFilter = []) {
 }
 
 // scrapers/saraf/scrape.js
-var scrape_exports13 = {};
-__export(scrape_exports13, {
-  COIN_USE: () => COIN_USE13,
-  getLatest: () => getLatest13,
-  scrape: () => scrape13
+var scrape_exports16 = {};
+__export(scrape_exports16, {
+  COIN_USE: () => COIN_USE16,
+  getLatest: () => getLatest16,
+  scrape: () => scrape16
 });
-var import_dayjs13 = __toESM(require_dayjs_min(), 1);
-var PLATFORM13 = "Saraf";
-var URL13 = "https://api.saraf.app/v3/prices/crypto";
-var COIN_USE13 = "all";
-async function scrape13($coins = []) {
-  const data = await getLatest13($coins);
+var import_dayjs16 = __toESM(require_dayjs_min(), 1);
+var PLATFORM16 = "Saraf";
+var URL16 = "https://api.saraf.app/v3/prices/crypto";
+var COIN_USE16 = "all";
+async function scrape16($coins = []) {
+  const data = await getLatest16($coins);
   data.forEach((d) => {
-    d.source = PLATFORM13.toLowerCase();
+    d.source = PLATFORM16.toLowerCase();
   });
   return data;
 }
-async function getLatest13($filterCoins = []) {
-  const items = await request11();
+async function getLatest16($filterCoins = []) {
+  const items = await request13();
   if (!items || !items.length) {
     throw new Error("Response data is empty");
   }
-  return processList13(items, $filterCoins);
+  return processList14(items, $filterCoins);
 }
-async function request11() {
+async function request13() {
   const result = await axiosRequest({
     method: "get",
-    url: URL13
+    url: URL16
   });
   if (!result || !result.price?.Items) {
     throw new Error("Invalid response data");
   }
   return Object.values(result.price.Items);
 }
-function processList13($list, $coinsFilter = []) {
+function processList14($list, $coinsFilter = []) {
   return $list.filter((item) => {
     if (item?.assetType?.toUpperCase() !== "CRYPTO") return false;
     if (!item?.p) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(item.s.toUpperCase());
   }).map((item) => {
-    const date = item.ut ? (0, import_dayjs13.default)(Number(item.ut)) : (0, import_dayjs13.default)();
+    const date = item.ut ? (0, import_dayjs16.default)(Number(item.ut)) : (0, import_dayjs16.default)();
     const priceIRT = Number(num(item.p)) || 0;
     const price = num(item.p, { decimalPlaces: 8, multiply: 10 }) || 0;
     const volume_1d = num(item.mc, { roundUp: true, multiply: 10 }) || 0;
@@ -21462,37 +21643,99 @@ function processList13($list, $coinsFilter = []) {
   });
 }
 
-// scrapers/tabdeal/scrape.js
-var scrape_exports14 = {};
-__export(scrape_exports14, {
-  COIN_USE: () => COIN_USE14,
-  getLatest: () => getLatest14,
-  scrape: () => scrape14
+// scrapers/sarmayex/scrape.js
+var scrape_exports17 = {};
+__export(scrape_exports17, {
+  COIN_USE: () => COIN_USE17,
+  getLatest: () => getLatest17,
+  scrape: () => scrape17
 });
-var import_dayjs14 = __toESM(require_dayjs_min(), 1);
-var PLATFORM14 = "Tabdeal";
-var URL14 = "https://api-web.tabdeal.org/r/plots/";
-var COIN_USE14 = "all";
-async function scrape14($coins = []) {
-  const data = await getLatest14($coins);
+var import_dayjs17 = __toESM(require_dayjs_min(), 1);
+init_axios2();
+var PLATFORM17 = "Sarmayex";
+var URL17 = "https://sarmayex.com/crypto-price";
+var COIN_USE17 = "all";
+async function scrape17($coins = []) {
+  const data = await getLatest17($coins);
   data.forEach((d) => {
-    d.source = PLATFORM14.toLowerCase();
+    d.source = PLATFORM17.toLowerCase();
   });
   return data;
 }
-async function getLatest14($filterCoins = []) {
-  const data = await request12("currency_prices", {
+async function getLatest17($filterCoins = []) {
+  const response = await axios_default.get(URL17, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    timeout: 15e3
+  });
+  const html = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
+  if (!html) {
+    throw new Error("Response data is empty");
+  }
+  return processHtml(html, $filterCoins);
+}
+function processHtml($html, $coinsFilter = []) {
+  const results = [];
+  const date = (0, import_dayjs17.default)();
+  const seen = /* @__PURE__ */ new Set();
+  const matches = [...$html.matchAll(/"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"/g)];
+  for (const match of matches) {
+    const symbol = match[2].toUpperCase();
+    if (symbol === "IRT" || symbol === "IRR") continue;
+    if (seen.has(symbol)) continue;
+    if ($coinsFilter.length > 0 && !$coinsFilter.includes(symbol)) continue;
+    seen.add(symbol);
+    const rawPrice = parseFloat(match[1]) || 0;
+    results.push({
+      currency: "IRR",
+      symbol,
+      price: num(rawPrice, { decimalPlaces: 8 }) || 0,
+      volume_1d: 0,
+      coin_volume_1d: 0,
+      change_1d: 0,
+      last_update: {
+        date: date.toISOString(),
+        timestamp: date.unix(),
+        moment: date
+      }
+    });
+  }
+  return results;
+}
+
+// scrapers/tabdeal/scrape.js
+var scrape_exports18 = {};
+__export(scrape_exports18, {
+  COIN_USE: () => COIN_USE18,
+  getLatest: () => getLatest18,
+  scrape: () => scrape18
+});
+var import_dayjs18 = __toESM(require_dayjs_min(), 1);
+var PLATFORM18 = "Tabdeal";
+var URL18 = "https://api-web.tabdeal.org/r/plots/";
+var COIN_USE18 = "all";
+async function scrape18($coins = []) {
+  const data = await getLatest18($coins);
+  data.forEach((d) => {
+    d.source = PLATFORM18.toLowerCase();
+  });
+  return data;
+}
+async function getLatest18($filterCoins = []) {
+  const data = await request14("currency_prices", {
     limit: 1e3
   });
   if (!data?.length) {
     throw new Error("Response data is empty");
   }
-  return processList14(data, $filterCoins);
+  return processList15(data, $filterCoins);
 }
-async function request12($uri, $params = {}) {
+async function request14($uri, $params = {}) {
   const result = await axiosRequest({
     method: "get",
-    url: URL14 + $uri,
+    url: URL18 + $uri,
     params: $params,
     useProxy: true
   });
@@ -21501,7 +21744,7 @@ async function request12($uri, $params = {}) {
   }
   return result;
 }
-function processList14($list, $coinsFilter = []) {
+function processList15($list, $coinsFilter = []) {
   const usdt = priceUSDT3($list);
   return $list.filter((data) => {
     if (!data?.markets || !data?.markets.filter(
@@ -21513,7 +21756,7 @@ function processList14($list, $coinsFilter = []) {
     const market = data.markets.filter(
       (market2) => market2.second_currency.symbol === "IRT"
     )[0];
-    const date = (0, import_dayjs14.default)();
+    const date = (0, import_dayjs18.default)();
     return {
       currency: "IRR",
       symbol: data.symbol.toUpperCase(),
@@ -21543,35 +21786,91 @@ function priceUSDT3($list) {
   return typeof price?.toNumber === "function" ? price.toNumber() : price;
 }
 
-// scrapers/wallex/scrape.js
-var scrape_exports15 = {};
-__export(scrape_exports15, {
-  COIN_USE: () => COIN_USE15,
-  getLatest: () => getLatest15,
-  scrape: () => scrape15
+// scrapers/tetherland/scrape.js
+var scrape_exports19 = {};
+__export(scrape_exports19, {
+  COIN_USE: () => COIN_USE19,
+  getLatest: () => getLatest19,
+  scrape: () => scrape19
 });
-var import_dayjs15 = __toESM(require_dayjs_min(), 1);
-var PLATFORM15 = "Wallex";
-var URL15 = "https://api.wallex.ir/v1/";
-var COIN_USE15 = "all";
-async function scrape15($coins = []) {
-  const data = await getLatest15($coins);
+var import_dayjs19 = __toESM(require_dayjs_min(), 1);
+var PLATFORM19 = "Tetherland";
+var URL19 = "https://api.tetherland.com/currencies";
+var COIN_USE19 = "all";
+async function scrape19($coins = []) {
+  const data = await getLatest19($coins);
   data.forEach((d) => {
-    d.source = PLATFORM15.toLowerCase();
+    d.source = PLATFORM19.toLowerCase();
   });
   return data;
 }
-async function getLatest15($filterCoins = []) {
-  const data = await request13("markets", {});
+async function getLatest19($filterCoins = []) {
+  const data = await request15("", {});
+  if (!data?.data?.currencies || Object.keys(data.data.currencies).length === 0) {
+    throw new Error("Response data is empty");
+  }
+  return processList16(data.data.currencies, $filterCoins);
+}
+async function request15($uri, $params = {}) {
+  const result = await axiosRequest({
+    method: "get",
+    url: URL19 + $uri,
+    params: $params
+  });
+  return result;
+}
+function processList16($list, $coinsFilter = []) {
+  return Object.keys($list).filter((symbol) => {
+    const upper = symbol.toUpperCase();
+    return $coinsFilter.length === 0 || $coinsFilter.includes(upper);
+  }).map((symbol) => {
+    const data = $list[symbol];
+    const date = (0, import_dayjs19.default)();
+    return {
+      currency: "IRR",
+      symbol: symbol.toUpperCase(),
+      price: num(data.price || data.buy_price, { multiply: 10, decimalPlaces: 8 }) || 0,
+      volume_1d: 0,
+      coin_volume_1d: 0,
+      change_1d: num(data.diff24d, { decimalPlaces: 2 }) || 0,
+      last_update: {
+        date: date.toISOString(),
+        timestamp: date.unix(),
+        moment: date
+      }
+    };
+  });
+}
+
+// scrapers/wallex/scrape.js
+var scrape_exports20 = {};
+__export(scrape_exports20, {
+  COIN_USE: () => COIN_USE20,
+  getLatest: () => getLatest20,
+  scrape: () => scrape20
+});
+var import_dayjs20 = __toESM(require_dayjs_min(), 1);
+var PLATFORM20 = "Wallex";
+var URL20 = "https://api.wallex.ir/v1/";
+var COIN_USE20 = "all";
+async function scrape20($coins = []) {
+  const data = await getLatest20($coins);
+  data.forEach((d) => {
+    d.source = PLATFORM20.toLowerCase();
+  });
+  return data;
+}
+async function getLatest20($filterCoins = []) {
+  const data = await request16("markets", {});
   if (!data?.symbols || Object.keys(data.symbols).length === 0) {
     throw new Error("Response data is empty");
   }
-  return processList15(data.symbols, $filterCoins);
+  return processList17(data.symbols, $filterCoins);
 }
-async function request13($uri, $params = {}) {
+async function request16($uri, $params = {}) {
   const result = await axiosRequest({
     method: "get",
-    url: URL15 + $uri,
+    url: URL20 + $uri,
     params: $params
   });
   if (!result?.result) {
@@ -21579,14 +21878,14 @@ async function request13($uri, $params = {}) {
   }
   return result.result;
 }
-function processList15($list, $coinsFilter = []) {
+function processList17($list, $coinsFilter = []) {
   $list = Object.keys($list).map((key) => $list[key]);
   return $list.filter((data) => {
     if (data?.quoteAsset?.toUpperCase() !== "TMN") return false;
     if (!data?.stats?.lastPrice) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.baseAsset.toUpperCase());
   }).map((data) => {
-    const date = (0, import_dayjs15.default)();
+    const date = (0, import_dayjs20.default)();
     return {
       currency: "IRR",
       symbol: data.baseAsset.toUpperCase(),
@@ -21609,20 +21908,25 @@ function processList15($list, $coinsFilter = []) {
 // generated/js-scraper-imports.js
 var SCRAPERS = {
   "ariomex": scrape_exports,
-  "bitmax": scrape_exports2,
-  "bitpin": scrape_exports3,
-  "coinapi": scrape_exports4,
-  "coinmarketcap": scrape_exports5,
-  "excoino": scrape_exports6,
-  "exir": scrape_exports7,
-  "hitobit": scrape_exports8,
-  "huluex": scrape_exports9,
-  "kifpool": scrape_exports10,
-  "nobitex": scrape_exports11,
-  "ramzinex": scrape_exports12,
-  "saraf": scrape_exports13,
-  "tabdeal": scrape_exports14,
-  "wallex": scrape_exports15
+  "arzpaya": scrape_exports2,
+  "bidarz": scrape_exports3,
+  "bitimen": scrape_exports4,
+  "bitmax": scrape_exports5,
+  "bitpin": scrape_exports6,
+  "coinapi": scrape_exports7,
+  "coinmarketcap": scrape_exports8,
+  "exir": scrape_exports9,
+  "hitobit": scrape_exports10,
+  "huluex": scrape_exports11,
+  "kifpool": scrape_exports12,
+  "nobitex": scrape_exports13,
+  "ompfinex": scrape_exports14,
+  "ramzinex": scrape_exports15,
+  "saraf": scrape_exports16,
+  "sarmayex": scrape_exports17,
+  "tabdeal": scrape_exports18,
+  "tetherland": scrape_exports19,
+  "wallex": scrape_exports20
 };
 
 // runtime/js/entry.js

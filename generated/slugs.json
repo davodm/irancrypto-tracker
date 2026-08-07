@@ -1,19 +1,24 @@
 {
   "slugs": [
     "ariomex",
+    "arzpaya",
+    "bidarz",
+    "bitimen",
     "bitmax",
     "bitpin",
     "coinapi",
     "coinmarketcap",
-    "excoino",
     "exir",
     "hitobit",
     "huluex",
     "kifpool",
     "nobitex",
+    "ompfinex",
     "ramzinex",
     "saraf",
+    "sarmayex",
     "tabdeal",
+    "tetherland",
     "wallex"
   ]
 }
