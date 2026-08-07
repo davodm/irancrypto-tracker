@@ -54,9 +54,7 @@ function parse_tabdeal(mixed $data, array $coins): array
 
 function skip_tabdeal(): ?string
 {
-    return (PROXY_URL === '' || PROXY_API_KEY === '')
-        ? 'proxy not configured'
-        : null;
+    return null;
 }
 
 function job_tabdeal(): array

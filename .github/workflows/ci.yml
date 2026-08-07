@@ -54,12 +54,12 @@ jobs:
 
       - name: Smoke --help
         run: |
-          node dist/track.js --help
+          node dist/track.cjs --help
           php dist/track.php --help
           python3 dist/track.py --help
 
       - name: Dist freshness (run npm run build locally if this fails)
         run: |
-          git add dist/track.js dist/track.php dist/track.py dist/package.json generated/
-          git diff --cached --exit-code -- dist/track.js dist/track.php dist/track.py dist/package.json generated/ \
+          git add dist/track.cjs dist/track.php dist/track.py generated/
+          git diff --cached --exit-code -- dist/track.cjs dist/track.php dist/track.py generated/ \
             || (echo "::error::dist workers or generated/ are stale — run npm run build and commit" && git diff --cached --stat && exit 1)

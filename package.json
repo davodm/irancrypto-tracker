@@ -1,6 +1,6 @@
 {
   "name": "irancrypto-runner",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "IranCrypto.market API-only exchange collectors (JS/PHP/Python single-file workers)",
   "main": "runtime/js/entry.js",
   "type": "module",
@@ -16,8 +16,8 @@
     "build:js": "node scripts/generate-registry.mjs && node scripts/build-js.mjs",
     "build:php": "node scripts/generate-registry.mjs && node scripts/build-php.mjs",
     "build:python": "node scripts/generate-registry.mjs && node scripts/build-python.mjs",
-    "track": "node dist/track.js",
-    "start": "node dist/track.js --all --finalize",
+    "track": "node dist/track.cjs",
+    "start": "node dist/track.cjs --all --finalize",
     "dev": "node scripts/generate-registry.mjs && node --import dotenv/config runtime/js/entry.js --all --dry-run",
     "lambda:package": "bash scripts/lambda-package.sh"
   },

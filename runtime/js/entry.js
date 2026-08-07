@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * IranCrypto Tracker — JS entry (bundled to dist/track.js).
+ * IranCrypto Tracker — JS entry (bundled to dist/track.cjs).
  * Scrapers are loaded via generated/js-scraper-imports.js
  */
 import fs from "node:fs";
@@ -14,6 +14,9 @@ import { SCRAPERS } from "../../generated/js-scraper-imports.js";
 function resolveBaseDir() {
   // Prefer directory of the running script (dist/track.js on workers)
   const exec = process.argv[1] ? path.resolve(process.argv[1]) : process.cwd();
+  if (exec.startsWith("/$bunfs")) {
+    return process.cwd();
+  }
   return path.dirname(exec);
 }
 
@@ -45,10 +48,10 @@ function applyLambdaDefaults() {
 function argvFromLambdaEvent(event) {
   const raw = process.env.TRACK_ARGS?.trim();
   if (raw) {
-    return ["node", "track.js", ...raw.split(/\s+/).filter(Boolean)];
+    return ["node", "track.cjs", ...raw.split(/\s+/).filter(Boolean)];
   }
   const e = event && typeof event === "object" ? event : {};
-  const args = ["node", "track.js"];
+  const args = ["node", "track.cjs"];
   if (e.finalize_only || e.finalizeOnly) {
     args.push("--finalize-only");
   } else if (e.exchange) {
@@ -141,11 +144,11 @@ function printHelp() {
   console.log(`IranCrypto tracker (JS) — API-only single-file worker
 
 Usage:
-  node track.js --all [--finalize]
-  node track.js --exchange=nobitex
-  node track.js --finalize-only [--run-id=YYYY-MM-DDTHH]
-  node track.js --from-json=rows.json
-  node track.js --prune-logs
+  node track.cjs --all [--finalize]
+  node track.cjs --exchange=nobitex
+  node track.cjs --finalize-only [--run-id=YYYY-MM-DDTHH]
+  node track.cjs --from-json=rows.json
+  node track.cjs --prune-logs
 
 Env: INGEST_SECRET (required) INGEST_URL INGEST_NODE LOG_DIR EXCHANGES IGNORE_EXCHANGES
      FINALIZE_WAIT_SEC (default 300) FINALIZE_POLL_SEC (default 15)

@@ -40,7 +40,7 @@ def parse_tabdeal(data: Any, coins: list[str]) -> list[dict[str, Any]]:
 
 
 def skip_tabdeal() -> str | None:
-    return "proxy not configured" if not PROXY_URL or not PROXY_API_KEY else None
+    return None
 
 
 def job_tabdeal() -> dict[str, Any]:

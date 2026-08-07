@@ -18,4 +18,4 @@ run("generate-registry.mjs");
 run("build-js.mjs");
 run("build-php.mjs");
 run("build-python.mjs");
-console.log("Build complete: dist/track.js, dist/track.php, dist/track.py");
+console.log("Build complete: dist/track.cjs, dist/track.php, dist/track.py");

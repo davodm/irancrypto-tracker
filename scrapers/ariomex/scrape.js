@@ -3,7 +3,7 @@ import { axiosRequest } from "../../runtime/js/request.js";
 import num from "../../runtime/js/num.js";
 
 const PLATFORM = "Ariomex";
-const BASE_URL = "https://data.ariomex.com/exchange_data/markets_details";
+const BASE_URL = "https://data.ariomex.ir/exchange_data/markets_details";
 const MAX_ROWS = 200;
 const MAX_PAGES = 20;
 

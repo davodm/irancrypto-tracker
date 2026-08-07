@@ -664,7 +664,7 @@ function http_request(
     ?string $userAgent = null,
     bool $retry403 = true
 ): array {
-    if ($useProxy) {
+    if ($useProxy && PROXY_URL !== '' && PROXY_API_KEY !== '') {
         return http_via_proxy($method, $url, $query, $headers, $body);
     }
 
@@ -1003,7 +1003,7 @@ function scrape_ariomex(array $coins): array
         if (!assert_time_budget(HTTP_TIMEOUT_SEC + 5)) {
             break;
         }
-        $response = http_get_json('https://data.ariomex.com/exchange_data/markets_details', [
+        $response = http_get_json('https://data.ariomex.ir/exchange_data/markets_details', [
             'maxRowsPerPage' => $maxRows,
             'page' => $page,
             'resolution' => '1d',
@@ -1082,7 +1082,7 @@ function parse_bitmax(mixed $data, array $coins): array
 function job_bitmax(): array
 {
     return [
-        'url' => 'https://api.bitmax.ir/watcher/price/v2/alternative',
+        'url' => 'https://api.bitmax.ir/watcher/price/alternative',
     ];
 }
 
@@ -1844,9 +1844,7 @@ function parse_tabdeal(mixed $data, array $coins): array
 
 function skip_tabdeal(): ?string
 {
-    return (PROXY_URL === '' || PROXY_API_KEY === '')
-        ? 'proxy not configured'
-        : null;
+    return null;
 }
 
 function job_tabdeal(): array

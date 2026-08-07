@@ -18049,10 +18049,13 @@ async function axiosRequest({
   const retries = Number.parseInt(process.env.REQUEST_RETRY_COUNT ?? "0", 10) || 0;
   const baseDelayMs = Number.parseInt(process.env.REQUEST_RETRY_BASE_MS ?? "300", 10) || 300;
   const maxAttempts = 1 + retries;
+  const proxyUrl = getProxyUrl();
+  const hasProxy = Boolean(proxyUrl && process.env.PROXY_API_KEY);
+  const shouldProxy2 = useProxy && hasProxy;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       let response;
-      if (useProxy) {
+      if (shouldProxy2) {
         response = await axiosRequestWithProxy({
           method: conf.method,
           url: conf.url,
@@ -18063,7 +18066,7 @@ async function axiosRequest({
       } else {
         response = await axios_default(conf);
       }
-      return JSONizeResponse(response, { unwrapProxy: useProxy });
+      return JSONizeResponse(response, { unwrapProxy: shouldProxy2 });
     } catch (error) {
       const isNetworkError = !!error?.code || /ENOTFOUND|ECONNRESET|ETIMEDOUT/.test(error?.message || "");
       if (error?.response) {
@@ -20472,7 +20475,7 @@ function num(input, options = {}) {
 
 // scrapers/ariomex/scrape.js
 var PLATFORM = "Ariomex";
-var BASE_URL = "https://data.ariomex.com/exchange_data/markets_details";
+var BASE_URL = "https://data.ariomex.ir/exchange_data/markets_details";
 var MAX_ROWS = 200;
 var MAX_PAGES = 20;
 var COIN_USE = "all";
@@ -20561,7 +20564,7 @@ async function scrape2($coins = []) {
   return data;
 }
 async function getLatest2($filterCoins = []) {
-  const data = await request("watcher/price/v2/alternative", {});
+  const data = await request("watcher/price/alternative", {});
   if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
     throw new Error("Response data is empty");
   }
@@ -21626,6 +21629,9 @@ var SCRAPERS = {
 var import_meta = {};
 function resolveBaseDir() {
   const exec = process.argv[1] ? import_node_path.default.resolve(process.argv[1]) : process.cwd();
+  if (exec.startsWith("/$bunfs")) {
+    return process.cwd();
+  }
   return import_node_path.default.dirname(exec);
 }
 function isLambdaRuntime() {
@@ -21651,10 +21657,10 @@ function applyLambdaDefaults() {
 function argvFromLambdaEvent(event) {
   const raw = process.env.TRACK_ARGS?.trim();
   if (raw) {
-    return ["node", "track.js", ...raw.split(/\s+/).filter(Boolean)];
+    return ["node", "track.cjs", ...raw.split(/\s+/).filter(Boolean)];
   }
   const e = event && typeof event === "object" ? event : {};
-  const args = ["node", "track.js"];
+  const args = ["node", "track.cjs"];
   if (e.finalize_only || e.finalizeOnly) {
     args.push("--finalize-only");
   } else if (e.exchange) {
@@ -21733,11 +21739,11 @@ function printHelp() {
   console.log(`IranCrypto tracker (JS) \u2014 API-only single-file worker
 
 Usage:
-  node track.js --all [--finalize]
-  node track.js --exchange=nobitex
-  node track.js --finalize-only [--run-id=YYYY-MM-DDTHH]
-  node track.js --from-json=rows.json
-  node track.js --prune-logs
+  node track.cjs --all [--finalize]
+  node track.cjs --exchange=nobitex
+  node track.cjs --finalize-only [--run-id=YYYY-MM-DDTHH]
+  node track.cjs --from-json=rows.json
+  node track.cjs --prune-logs
 
 Env: INGEST_SECRET (required) INGEST_URL INGEST_NODE LOG_DIR EXCHANGES IGNORE_EXCHANGES
      FINALIZE_WAIT_SEC (default 300) FINALIZE_POLL_SEC (default 15)

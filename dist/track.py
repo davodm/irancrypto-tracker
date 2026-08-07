@@ -297,7 +297,7 @@ def http_request(
     timeout: float | None = None,
     retry_403: bool = True,
 ) -> dict[str, Any]:
-    if use_proxy:
+    if use_proxy and PROXY_URL and PROXY_API_KEY:
         return http_via_proxy(method, url, query or {}, headers or {}, body)
 
     request_url = url
@@ -566,7 +566,7 @@ def scrape_ariomex(coins: list[str]) -> list[dict[str, Any]]:
     max_pages = 20
     for page in range(1, max_pages + 1):
         response = http_get_json(
-            "https://data.ariomex.com/exchange_data/markets_details",
+            "https://data.ariomex.ir/exchange_data/markets_details",
             query={
                 "maxRowsPerPage": max_rows,
                 "page": page,
@@ -629,7 +629,7 @@ def parse_bitmax(data: Any, coins: list[str]) -> list[dict[str, Any]]:
 
 
 def job_bitmax() -> dict[str, Any]:
-    return {"url": "https://api.bitmax.ir/watcher/price/v2/alternative"}
+    return {"url": "https://api.bitmax.ir/watcher/price/alternative"}
 
 
 def register_bitmax() -> dict[str, Any]:
@@ -1241,7 +1241,7 @@ def parse_tabdeal(data: Any, coins: list[str]) -> list[dict[str, Any]]:
 
 
 def skip_tabdeal() -> str | None:
-    return "proxy not configured" if not PROXY_URL or not PROXY_API_KEY else None
+    return None
 
 
 def job_tabdeal() -> dict[str, Any]:

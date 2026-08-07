@@ -5,7 +5,7 @@ import path from "node:path";
 import { projectRoot } from "./lib-slugs.mjs";
 
 const root = projectRoot();
-const out = path.join(root, "dist/track.js");
+const out = path.join(root, "dist/track.cjs");
 
 await esbuild.build({
   entryPoints: [path.join(root, "runtime/js/entry.js")],
@@ -20,8 +20,4 @@ await esbuild.build({
 let code = fs.readFileSync(out, "utf8");
 code = code.replace(/^#!\/usr\/bin\/env node\n?/gm, "");
 fs.writeFileSync(out, `#!/usr/bin/env node\n${code}`);
-fs.writeFileSync(
-  path.join(root, "dist/package.json"),
-  JSON.stringify({ type: "commonjs" }, null, 2) + "\n"
-);
-console.log("Wrote dist/track.js");
+console.log("Wrote dist/track.cjs");
