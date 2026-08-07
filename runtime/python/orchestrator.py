@@ -189,6 +189,8 @@ def build_parser() -> argparse.ArgumentParser:
             "  INGEST_SECRET (required) INGEST_URL INGEST_NODE LOG_DIR LOG_RETENTION_DAYS\n"
             f"  INGEST_URL defaults to {DEFAULT_INGEST_URL}\n"
             "  TIMEOUT EXCHANGES IGNORE_EXCHANGES PROXY_URL PROXY_API_KEY\n"
+            "  FINALIZE_WAIT_SEC FINALIZE_POLL_SEC\n"
+            "  Only one node should --finalize (Lambda).\n"
             "  COINMARKETCAP_API_KEY COINAPI_KEY SSL_VERIFY_EXCHANGE SSL_VERIFY_INGEST\n\n"
             "Make executable: chmod +x track.py"
         ),
@@ -272,13 +274,8 @@ def main(argv: list[str] | None = None) -> int:
             log_info(f"Dry-run: would finalize {run_id}")
             logger.event("run_end", {"ok": True, "dry_run": True})
             return 0
-        t0 = time.monotonic()
         try:
-            ingest_request("POST", "/finalize", {"run_id": run_id, "stage": "all"})
-            logger.event(
-                "finalize_ok",
-                {"run_id": run_id, "ms": int((time.monotonic() - t0) * 1000)},
-            )
+            finalize_when_ready(run_id, logger)
         except Exception as e:
             log_error(str(e))
             logger.event("finalize_err", {"message": str(e)})
@@ -405,17 +402,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.finalize and not args.dry_run:
         try:
-            t0 = time.monotonic()
-            ingest_request(
-                "POST",
-                "/finalize",
-                {"run_id": run_id, "stage": "all"},
-            )
-            logger.event(
-                "finalize_ok",
-                {"run_id": run_id, "ms": int((time.monotonic() - t0) * 1000)},
-            )
-            log_info("Finalize complete")
+            finalize_when_ready(run_id, logger)
         except Exception as e:
             ok = False
             log_error(str(e))

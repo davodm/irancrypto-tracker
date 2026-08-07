@@ -11,7 +11,7 @@ await esbuild.build({
   entryPoints: [path.join(root, "runtime/js/entry.js")],
   bundle: true,
   platform: "node",
-  target: "node18",
+  target: "node24",
   format: "cjs",
   outfile: out,
   logLevel: "info",

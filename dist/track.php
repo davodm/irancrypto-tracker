@@ -74,6 +74,8 @@ define('REQUEST_RETRY_COUNT', max(0, (int) env('REQUEST_RETRY_COUNT', '0')));
 define('REQUEST_RETRY_BASE_MS', max(50, (int) env('REQUEST_RETRY_BASE_MS', '300')));
 define('IGNORE_EXCHANGES', env('IGNORE_EXCHANGES', ''));
 define('EXCHANGES_ALLOW', env('EXCHANGES', ''));
+define('FINALIZE_WAIT_SEC', max(0, (int) env('FINALIZE_WAIT_SEC', '300')));
+define('FINALIZE_POLL_SEC', max(1, (int) env('FINALIZE_POLL_SEC', '15')));
 define('USER_AGENT', env('USER_AGENT', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'));
 define('USER_AGENT_POSTMAN', 'PostmanRuntime/7.26.10');
 define('PROXY_URL', env('PROXY_URL', ''));
@@ -196,6 +198,8 @@ Env:
   INGEST_SECRET (required) INGEST_URL INGEST_NODE LOG_DIR
   INGEST_URL defaults to https://irancrypto.market/api/ingest
   EXCHANGES IGNORE_EXCHANGES PROXY_* COINMARKETCAP_API_KEY COINAPI_KEY
+  FINALIZE_WAIT_SEC FINALIZE_POLL_SEC
+  Only one node should --finalize (Lambda). Others scrape without --finalize.
 
 TXT;
     fwrite(STDOUT, $msg);
@@ -344,11 +348,65 @@ function ingest_post(array $payload): array
     return is_array($resp['json']) ? $resp['json'] : [];
 }
 
+/**
+ * @return array<string,mixed>
+ */
+function wait_for_ingest_ready(string $runId): array
+{
+    global $RUN_LOGGER;
+    $deadline = microtime(true) + FINALIZE_WAIT_SEC;
+    while (true) {
+        $resp = ingest_request('GET', '/status?run_id=' . rawurlencode($runId));
+        $status = is_array($resp['json']) ? $resp['json'] : [];
+        $missing = isset($status['missing']) && is_array($status['missing']) ? $status['missing'] : [];
+        if ($missing === []) {
+            log_info("Ingest ready for {$runId}");
+            if ($RUN_LOGGER instanceof RunLogger) {
+                $RUN_LOGGER->event('status_ready', ['run_id' => $runId]);
+            }
+            return $status;
+        }
+        $remaining = $deadline - microtime(true);
+        if ($remaining <= 0) {
+            throw new RuntimeException(
+                'Finalize wait timed out for ' . $runId . '; missing: ' . implode(',', $missing)
+            );
+        }
+        $sleepSec = min(FINALIZE_POLL_SEC, (int) ceil($remaining));
+        log_info('Waiting for sources (' . implode(',', $missing) . "); poll in {$sleepSec}s");
+        if ($RUN_LOGGER instanceof RunLogger) {
+            $RUN_LOGGER->event('status_wait', [
+                'run_id' => $runId,
+                'missing' => $missing,
+                'sleep_ms' => $sleepSec * 1000,
+            ]);
+        }
+        sleep(max(1, $sleepSec));
+    }
+}
+
 /** @param array<string,mixed> $payload */
 function ingest_finalize(array $payload): array
 {
     $resp = ingest_request('POST', '/finalize', $payload);
     return is_array($resp['json']) ? $resp['json'] : [];
+}
+
+/** Wait until status.missing is empty, then finalize. */
+function finalize_when_ready(string $runId): array
+{
+    global $RUN_LOGGER;
+    $t0 = microtime(true);
+    wait_for_ingest_ready($runId);
+    $res = ingest_finalize(['run_id' => $runId, 'stage' => 'all']);
+    if ($RUN_LOGGER instanceof RunLogger) {
+        $RUN_LOGGER->event('finalize_ok', [
+            'run_id' => $runId,
+            'ms' => (int) round((microtime(true) - $t0) * 1000),
+        ]);
+    }
+    log_info('Finalize complete');
+    return $res;
 }
 
 /**
@@ -2063,17 +2121,18 @@ function main(array $cli): int
             $RUN_LOGGER->event('run_end', ['ok' => true, 'dry_run' => true]);
             return 0;
         }
-        $t0 = microtime(true);
-        $res = ingest_finalize(['run_id' => $runId, 'stage' => 'all']);
-        $RUN_LOGGER->event('finalize_ok', [
-            'run_id' => $runId,
-            'ms' => (int) round((microtime(true) - $t0) * 1000),
-            'result_keys' => array_keys($res),
-        ]);
-        prune_logs(LOG_DIR, LOG_RETENTION_DAYS);
-        $RUN_LOGGER->event('run_end', ['ok' => true]);
-        log_info(sprintf('Finalize done in %.1fs', elapsed_sec()));
-        return 0;
+        try {
+            finalize_when_ready($runId);
+            prune_logs(LOG_DIR, LOG_RETENTION_DAYS);
+            $RUN_LOGGER->event('run_end', ['ok' => true]);
+            log_info(sprintf('Finalize done in %.1fs', elapsed_sec()));
+            return 0;
+        } catch (Throwable $e) {
+            $RUN_LOGGER->event('finalize_err', ['message' => $e->getMessage()]);
+            log_error('Finalize: ' . $e->getMessage());
+            $RUN_LOGGER->event('run_end', ['ok' => false]);
+            return 1;
+        }
     }
 
     if (!$cli['all'] && $cli['exchange'] === null && $cli['from_json'] === null) {
@@ -2200,13 +2259,7 @@ function main(array $cli): int
 
     if ($cli['finalize'] && !$cli['dry_run']) {
         try {
-            $t0 = microtime(true);
-            ingest_finalize(['run_id' => $runId, 'stage' => 'all']);
-            $RUN_LOGGER->event('finalize_ok', [
-                'run_id' => $runId,
-                'ms' => (int) round((microtime(true) - $t0) * 1000),
-            ]);
-            log_info('Finalize complete');
+            finalize_when_ready($runId);
         } catch (Throwable $e) {
             $ok = false;
             $RUN_LOGGER->event('finalize_err', ['message' => $e->getMessage()]);

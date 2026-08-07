@@ -41,17 +41,18 @@ function main(array $cli): int
             $RUN_LOGGER->event('run_end', ['ok' => true, 'dry_run' => true]);
             return 0;
         }
-        $t0 = microtime(true);
-        $res = ingest_finalize(['run_id' => $runId, 'stage' => 'all']);
-        $RUN_LOGGER->event('finalize_ok', [
-            'run_id' => $runId,
-            'ms' => (int) round((microtime(true) - $t0) * 1000),
-            'result_keys' => array_keys($res),
-        ]);
-        prune_logs(LOG_DIR, LOG_RETENTION_DAYS);
-        $RUN_LOGGER->event('run_end', ['ok' => true]);
-        log_info(sprintf('Finalize done in %.1fs', elapsed_sec()));
-        return 0;
+        try {
+            finalize_when_ready($runId);
+            prune_logs(LOG_DIR, LOG_RETENTION_DAYS);
+            $RUN_LOGGER->event('run_end', ['ok' => true]);
+            log_info(sprintf('Finalize done in %.1fs', elapsed_sec()));
+            return 0;
+        } catch (Throwable $e) {
+            $RUN_LOGGER->event('finalize_err', ['message' => $e->getMessage()]);
+            log_error('Finalize: ' . $e->getMessage());
+            $RUN_LOGGER->event('run_end', ['ok' => false]);
+            return 1;
+        }
     }
 
     if (!$cli['all'] && $cli['exchange'] === null && $cli['from_json'] === null) {
@@ -178,13 +179,7 @@ function main(array $cli): int
 
     if ($cli['finalize'] && !$cli['dry_run']) {
         try {
-            $t0 = microtime(true);
-            ingest_finalize(['run_id' => $runId, 'stage' => 'all']);
-            $RUN_LOGGER->event('finalize_ok', [
-                'run_id' => $runId,
-                'ms' => (int) round((microtime(true) - $t0) * 1000),
-            ]);
-            log_info('Finalize complete');
+            finalize_when_ready($runId);
         } catch (Throwable $e) {
             $ok = false;
             $RUN_LOGGER->event('finalize_err', ['message' => $e->getMessage()]);

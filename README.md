@@ -2,13 +2,13 @@
 
 [![CI](https://github.com/davodm/irancrypto-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/davodm/irancrypto-tracker/actions/workflows/ci.yml)
 [![Release](https://github.com/davodm/irancrypto-tracker/actions/workflows/release.yml/badge.svg)](https://github.com/davodm/irancrypto-tracker/actions/workflows/release.yml)
-![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)
+![Node](https://img.shields.io/badge/node-%3E%3D24-339933?logo=node.js&logoColor=white)
 ![Workers](https://img.shields.io/badge/workers-JS%20%7C%20PHP%20%7C%20Python-f7df1e)
 ![Exchanges](https://img.shields.io/badge/scrapers-15-blue)
 
-Lightweight **exchange collectors** for [IranCrypto.market](https://irancrypto.market). Each worker scrapes prices from Iranian and global sources, then POSTs normalized rows to the Next.js **ingest API**. Workers never touch MongoDB — only `INGEST_SECRET` is required (`INGEST_URL` defaults to `https://irancrypto.market/api/ingest`).
+Lightweight **exchange collectors** for [IranCrypto.market](https://irancrypto.market). Each worker scrapes prices from Iranian and global sources, then POSTs normalized rows to the site **ingest API**. Workers never touch MongoDB — only `INGEST_SECRET` is required (`INGEST_URL` defaults to `https://irancrypto.market/api/ingest`).
 
-That split is intentional: you can run many small nodes (VPS, shared PHP hosting, a home cron box) without handing out database credentials. The platform owns persistence, dedup, and market rebuilds; nodes only scrape and ship JSON.
+That split is intentional: you can run many small nodes (VPS, shared PHP hosting, a home cron box) without handing out database credentials. The platform owns persistence and market rebuilds; nodes only scrape and ship JSON.
 
 ---
 
@@ -16,10 +16,10 @@ That split is intentional: you can run many small nodes (VPS, shared PHP hosting
 
 | Layer | Responsibility |
 |-------|----------------|
-| **This repo** | Scrape exchanges → filter rows → POST to ingest → local JSONL logs |
-| **irancrypto-nextjs** | Config, auth, archive upserts, run ledger, finalize → `exchangemarket` / recaps |
+| **This repo (workers)** | Scrape exchanges → filter rows → POST to ingest → local JSONL logs |
+| **Ingest API (site)** | Auth, archive upserts, run ledger, finalize → market / recap views |
 
-Each deployable unit is **one file** (`track.js`, `track.php`, or `track.py`) plus an optional `logs/` directory. Pick the runtime that fits the host — same behavior, same CLI, same API contract.
+Each deployable unit is **one file** (`track.js`, `track.php`, or `track.py`) plus an optional `logs/` directory. Pick the runtime that fits the host — same behavior, same CLI, same API contract. JS workers target **Node.js 24** (including AWS Lambda `nodejs24.x`).
 
 ---
 
@@ -28,7 +28,7 @@ Each deployable unit is **one file** (`track.js`, `track.php`, or `track.py`) pl
 ```mermaid
 sequenceDiagram
   participant W as Worker node
-  participant API as Ingest API (Next.js)
+  participant API as Ingest API
   participant X as Exchange APIs
 
   W->>API: GET /api/ingest/config
@@ -42,16 +42,16 @@ sequenceDiagram
   end
 
   opt --finalize
+    W->>API: GET /api/ingest/status until missing empty
     W->>API: POST /api/ingest/finalize
   end
 
   W->>W: Append JSONL log (counts only, 7-day prune)
 ```
 
-Multi-node runs share the same hourly `run_id`. The API tracks which sources arrived; `GET /api/ingest/status` helps coordinate before finalize. Ingest route details live on the Next.js site.
+All nodes for a given UTC hour share the same `run_id` (e.g. `2026-08-07T15`). See [How nodes work](#how-nodes-work).
 
 ---
-
 ## Architecture
 
 ```mermaid
@@ -110,7 +110,7 @@ flowchart LR
 |------|---------|--------|
 | Parity | `npm run check:parity` | Fails if any slug is missing JS, PHP, or Python |
 | Generate | `npm run generate` | `generated/*` registries from `scrapers/` |
-| Bundle JS | `npm run build:js` | `dist/track.js` via esbuild (Node 18+, no `node_modules` on worker) |
+| Bundle JS | `npm run build:js` | `dist/track.js` via esbuild (Node 24+, no `node_modules` on worker) |
 | Assemble PHP | `npm run build:php` | `dist/track.php` (PHP 8.2+ + curl) |
 | Assemble Python | `npm run build:python` | `dist/track.py` (stdlib + urllib) |
 | Full build | `npm run build` | All of the above |
@@ -147,7 +147,7 @@ INGEST_SECRET='your-secret' INGEST_NODE=liara-php php track.php --all --finalize
 INGEST_SECRET='your-secret' INGEST_NODE=home-py python3 track.py --all --finalize
 ```
 
-Override the ingest base for staging or self-hosted Next.js:
+Override the ingest base for staging or a self-hosted API:
 
 ```bash
 INGEST_URL=https://staging.example.com/api/ingest INGEST_SECRET='…' node track.js --all --finalize
@@ -155,31 +155,89 @@ INGEST_URL=https://staging.example.com/api/ingest INGEST_SECRET='…' node track
 
 Workers disable PHP/Python execution time limits where the runtime allows it, so long scrape runs are not cut off by default.
 
-### Cron (hourly collection)
+### How nodes work
 
-Run at minute 5 each hour UTC (adjust path and runtime to match your host):
+Think in **UTC hours**, not “clock sync between machines.”
+
+Every run uses `run_id = YYYY-MM-DDTHH` (current UTC hour). The ingest API treats that hour as one collection bucket:
+
+1. Each `POST /api/ingest` for a source **replaces** that source’s rows for the hour (not append forever). Same exchange posted twice → last successful POST wins.
+2. The API ledger tracks which exchange slugs arrived (`expected` vs `received` / `missing`).
+3. `POST /api/ingest/finalize` rebuilds market views from the archive for that hour. It **refuses** if any expected source is still missing (unless ops force). After finalize, further POSTs for that hour are rejected.
+
+#### Roles
+
+| Role | What it runs | Purpose |
+|------|----------------|---------|
+| **Finalizer (one)** | `--all --finalize` | Scrapes every exchange, then waits for a complete hour, then finalizes. Usually AWS Lambda once per hour. |
+| **Scraper (zero or more)** | `--all` **without** `--finalize` | Extra scrapes for the same hour. Backup if Lambda fails an exchange, or a second network path. Never finalizes. |
+
+Finalize is **not** what prevents duplicate ticks — hour replace on each POST does. Finalize only rebuilds the public market tables once the hour’s sources are in.
+
+#### What Lambda actually does each hour
+
+Example: EventBridge at minute `:05` UTC, `FINALIZE_WAIT_SEC=300` (5 minutes).
+
+1. Scrape all exchanges → POST each source for this hour’s `run_id`.
+2. Poll `GET /api/ingest/status`:
+   - If every expected source is already received → finalize immediately.
+   - If some are still `missing` → keep polling for up to **5 minutes**, hoping a scraper node posts those sources.
+3. When `missing: []` → `POST /finalize`.
+4. If still missing after the wait → exit with error (hour not finalized; fix scrapers / raise wait / rerun).
+
+So `FINALIZE_WAIT_SEC` is **not** “satellites run every 5 minutes.” It is only **how long the finalizer is willing to wait for missing sources after its own scrape**. Default 300s is a short grace window so a VPS that started a bit earlier (or finished a slow exchange) can still fill gaps before markets rebuild.
+
+#### How scraper schedules fit
+
+Scrapers help the **same** `run_id` only if they POST **before** the finalizer completes step 3.
+
+Recommended pattern:
+
+| Node | Schedule (UTC) | Flags |
+|------|----------------|--------|
+| Scraper(s) | `:00` (or `:02`) each hour | `--all` |
+| Lambda finalizer | `:05` each hour | `--all --finalize`, wait ≤ 5 min |
+
+Then scrapers usually finish posting before Lambda finalizes (~`:05`–`:10`).
+
+If a scraper runs every 30 minutes at `:00` and `:30`:
+
+- `:00` → helps the current hour (good).
+- `:30` → same hour is often **already finalized** → API returns 409; that run does nothing useful for that hour. Prefer hourly scrapers aligned before the finalizer, or only use `:00`.
+
+You do **not** need scrapers at all if Lambda alone is reliable — then `missing` is empty after Lambda’s own POSTs and the wait is effectively zero.
+
+| Env | Default | Meaning |
+|-----|---------|---------|
+| `INGEST_NODE` | hostname / Lambda name | Label in ledger + logs (use a unique name per host) |
+| `FINALIZE_WAIT_SEC` | `300` | Finalizer only: max seconds to wait for `missing: []` |
+| `FINALIZE_POLL_SEC` | `15` | Finalizer only: status poll interval while waiting |
+
+### Cron (scraper nodes)
+
+Scrape only — **no** `--finalize`:
 
 ```cron
-5 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=vps-1 /usr/bin/node track.js --all --finalize >> /var/log/irancrypto-tracker.log 2>&1
+0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=vps-1 /usr/bin/node track.js --all >> /var/log/irancrypto-tracker.log 2>&1
 ```
 
 ```cron
-5 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=liara-php /usr/bin/php track.php --all --finalize >> /var/log/irancrypto-tracker.log 2>&1
+0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=liara-php /usr/bin/php track.php --all >> /var/log/irancrypto-tracker.log 2>&1
 ```
 
 ```cron
-5 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=home-py /usr/bin/python3 track.py --all --finalize >> /var/log/irancrypto-tracker.log 2>&1
+0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=home-py /usr/bin/python3 track.py --all >> /var/log/irancrypto-tracker.log 2>&1
 ```
 
-Alternatively, put `INGEST_SECRET` and `INGEST_NODE` in `/opt/irancrypto-tracker/.env` and keep the cron line minimal:
+Or put secrets in `.env` and keep the cron line minimal:
 
 ```cron
-5 * * * * cd /opt/irancrypto-tracker && /usr/bin/node track.js --all --finalize >> /var/log/irancrypto-tracker.log 2>&1
+0 * * * * cd /opt/irancrypto-tracker && /usr/bin/node track.js --all >> /var/log/irancrypto-tracker.log 2>&1
 ```
 
-### AWS Lambda (EventBridge schedule)
+### AWS Lambda (recommended finalizer)
 
-`track.js` ships a Lambda handler — no VPS cron needed. Same pipeline as `--all --finalize`.
+`track.js` ships an **async** `track.handler` (required on Node.js 24 — no callback handlers). Default: `--all --finalize` (scrape → status wait → finalize).
 
 **Package & upload:**
 
@@ -192,22 +250,25 @@ Zip contents: `track.js` + `package.json` (~620 KB). No `node_modules`.
 
 | Setting | Value |
 |---------|--------|
-| Runtime | Node.js 20.x or 22.x |
+| Runtime | **Node.js 24.x** (`nodejs24.x`) |
 | Handler | `track.handler` |
-| Timeout | **900 s** (15 min — scraping all sources needs headroom) |
+| Timeout | **900 s** (scrape + up to `FINALIZE_WAIT_SEC`) |
 | Memory | 512 MB+ |
+| Reserved concurrency | **1** |
 | IAM | `AWSLambdaBasicExecutionRole` (CloudWatch Logs only) |
 
 **Environment:**
 
 ```text
-INGEST_SECRET=your-secret          # required (same as Next.js)
-INGEST_NODE=irancrypto-lambda      # optional (defaults to function name)
-LOG_DIR=/tmp/irancrypto-logs       # optional (auto-set on Lambda)
-TRACK_ARGS=--all --finalize        # optional CLI override
+INGEST_SECRET=your-secret
+INGEST_NODE=irancrypto-lambda
+LOG_DIR=/tmp/irancrypto-logs
+TRACK_ARGS=--all --finalize
+FINALIZE_WAIT_SEC=300
+FINALIZE_POLL_SEC=15
 ```
 
-**Schedule (EventBridge):** `cron(5 * * * ? *)` → this function, input `{}`.
+**Schedule (EventBridge):** `cron(5 * * * ? *)` → this function, input `{}` (minute 5 so scrapers at `:00` can finish first).
 
 Default event `{}` runs `--all --finalize`. Optional payloads:
 
@@ -224,7 +285,7 @@ Default event `{}` runs `--all --finalize`. Optional payloads:
 aws lambda invoke --function-name irancrypto-tracker --payload '{}' /tmp/out.json && cat /tmp/out.json
 ```
 
-Expect `{ "ok": true, "exitCode": 0 }`. Logs go to CloudWatch; JSONL under `/tmp/irancrypto-logs` is ephemeral. If `--all` exceeds 15 minutes, split with `EXCHANGES` allow-lists across multiple functions.
+Expect `{ "ok": true, "exitCode": 0 }`. Logs go to CloudWatch; JSONL under `/tmp/irancrypto-logs` is ephemeral. If `--all` exceeds 15 minutes, split scrapes with `EXCHANGES` across hosts and keep **one** finalizer.
 
 Full env reference: [.env.example](.env.example).
 

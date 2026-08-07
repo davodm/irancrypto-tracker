@@ -148,9 +148,21 @@ Usage:
   node track.js --prune-logs
 
 Env: INGEST_SECRET (required) INGEST_URL INGEST_NODE LOG_DIR EXCHANGES IGNORE_EXCHANGES
+     FINALIZE_WAIT_SEC (default 300) FINALIZE_POLL_SEC (default 15)
      INGEST_URL defaults to ${DEFAULT_INGEST_URL}
-     AWS Lambda: set handler to track.handler (EventBridge schedule); LOG_DIR defaults to /tmp/irancrypto-logs
+     Only one node should --finalize (Lambda). Other nodes scrape without --finalize.
+     AWS Lambda: handler track.handler; LOG_DIR defaults to /tmp/irancrypto-logs
 `);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function envInt(name, fallback, min = 0) {
+  const n = Number.parseInt(process.env[name] || String(fallback), 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, n);
 }
 
 function defaultRunId(d = new Date()) {
@@ -266,6 +278,49 @@ async function ingestRequest(method, urlPath, body) {
   return json || {};
 }
 
+/** Poll GET /status until missing=[] or FINALIZE_WAIT_SEC. */
+async function waitForIngestReady(runId, logger) {
+  const waitSec = envInt("FINALIZE_WAIT_SEC", 300, 0);
+  const pollSec = envInt("FINALIZE_POLL_SEC", 15, 1);
+  const deadline = Date.now() + waitSec * 1000;
+
+  for (;;) {
+    const status = await ingestRequest(
+      "GET",
+      `/status?run_id=${encodeURIComponent(runId)}`
+    );
+    const missing = Array.isArray(status.missing) ? status.missing : [];
+    if (missing.length === 0) {
+      logInfo(`Ingest ready for ${runId}`);
+      logger.event("status_ready", { run_id: runId });
+      return status;
+    }
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) {
+      throw new Error(
+        `Finalize wait timed out for ${runId}; missing: ${missing.join(",")}`
+      );
+    }
+    const sleepMs = Math.min(pollSec * 1000, remainingMs);
+    logInfo(
+      `Waiting for sources (${missing.join(",")}); poll in ${Math.round(sleepMs / 1000)}s`
+    );
+    logger.event("status_wait", { run_id: runId, missing, sleep_ms: sleepMs });
+    await sleep(sleepMs);
+  }
+}
+
+async function finalizeWhenReady(runId, logger) {
+  const t0 = Date.now();
+  await waitForIngestReady(runId, logger);
+  await ingestRequest("POST", "/finalize", {
+    run_id: runId,
+    stage: "all",
+  });
+  logger.event("finalize_ok", { run_id: runId, ms: Date.now() - t0 });
+  logInfo("Finalize complete");
+}
+
 function filterRows(raw, coins) {
   const coinSet = new Set(coins.map((c) => String(c).toUpperCase()));
   const out = [];
@@ -372,15 +427,19 @@ async function runTrack(customArgv) {
       logger.event("run_end", { ok: true, dry_run: true });
       return 0;
     }
-    const t0 = Date.now();
-    await ingestRequest("POST", "/finalize", {
-      run_id: runId,
-      stage: "all",
-    });
-    logger.event("finalize_ok", { run_id: runId, ms: Date.now() - t0 });
-    pruneLogs(logDir, retention);
-    logger.event("run_end", { ok: true });
-    return 0;
+    try {
+      await finalizeWhenReady(runId, logger);
+      pruneLogs(logDir, retention);
+      logger.event("run_end", { ok: true });
+      return 0;
+    } catch (err) {
+      logError(err);
+      logger.event("finalize_err", {
+        message: err instanceof Error ? err.message : String(err),
+      });
+      logger.event("run_end", { ok: false });
+      return 1;
+    }
   }
 
   if (!cli.all && !cli.exchange && !cli.fromJson) {
@@ -492,13 +551,7 @@ async function runTrack(customArgv) {
 
   if (cli.finalize && !cli.dryRun) {
     try {
-      const t0 = Date.now();
-      await ingestRequest("POST", "/finalize", {
-        run_id: runId,
-        stage: "all",
-      });
-      logger.event("finalize_ok", { run_id: runId, ms: Date.now() - t0 });
-      logInfo("Finalize complete");
+      await finalizeWhenReady(runId, logger);
     } catch (err) {
       ok = false;
       logError(err);

@@ -142,6 +142,8 @@ SSL_VERIFY_EXCHANGE = env_bool("SSL_VERIFY_EXCHANGE", False)
 SSL_VERIFY_INGEST = env_bool("SSL_VERIFY_INGEST", True)
 REQUEST_RETRY_COUNT = env_int("REQUEST_RETRY_COUNT", 0, minimum=0)
 REQUEST_RETRY_BASE_MS = env_int("REQUEST_RETRY_BASE_MS", 300, minimum=50)
+FINALIZE_WAIT_SEC = env_int("FINALIZE_WAIT_SEC", 300, minimum=0)
+FINALIZE_POLL_SEC = env_int("FINALIZE_POLL_SEC", 15, minimum=1)
 
 
 # =============================================================================
@@ -483,4 +485,54 @@ def ingest_request(method: str, url_path: str, body: dict[str, Any] | None = Non
         retry_403=False,
     )
     return result["json"] if result["json"] is not None else {}
+
+
+def wait_for_ingest_ready(run_id: str, logger: RunLogger | None = None) -> dict[str, Any]:
+    deadline = time.monotonic() + FINALIZE_WAIT_SEC
+    while True:
+        status = ingest_request(
+            "GET", f"/status?run_id={urllib.parse.quote(run_id)}"
+        )
+        if not isinstance(status, dict):
+            status = {}
+        missing = status.get("missing") if isinstance(status.get("missing"), list) else []
+        if len(missing) == 0:
+            log_info(f"Ingest ready for {run_id}")
+            if logger is not None:
+                logger.event("status_ready", {"run_id": run_id})
+            return status
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError(
+                f"Finalize wait timed out for {run_id}; "
+                f"missing: {','.join(str(m) for m in missing)}"
+            )
+        sleep_sec = min(FINALIZE_POLL_SEC, max(1, int(remaining)))
+        log_info(
+            f"Waiting for sources ({','.join(str(m) for m in missing)}); "
+            f"poll in {sleep_sec}s"
+        )
+        if logger is not None:
+            logger.event(
+                "status_wait",
+                {
+                    "run_id": run_id,
+                    "missing": missing,
+                    "sleep_ms": sleep_sec * 1000,
+                },
+            )
+        time.sleep(sleep_sec)
+
+
+def finalize_when_ready(run_id: str, logger: RunLogger | None = None) -> Any:
+    t0 = time.monotonic()
+    wait_for_ingest_ready(run_id, logger)
+    res = ingest_request("POST", "/finalize", {"run_id": run_id, "stage": "all"})
+    if logger is not None:
+        logger.event(
+            "finalize_ok",
+            {"run_id": run_id, "ms": int((time.monotonic() - t0) * 1000)},
+        )
+    log_info("Finalize complete")
+    return res
 
