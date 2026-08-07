@@ -235,6 +235,45 @@ Or put secrets in `.env` and keep the cron line minimal:
 0 * * * * cd /opt/irancrypto-tracker && /usr/bin/node track.js --all >> /var/log/irancrypto-tracker.log 2>&1
 ```
 
+### Docker & Docker Compose (Ultra-Tiny JS Satellite)
+
+You can run the JS worker as an ultra-compact standalone binary using **Docker Compose** with zero runtime overhead (**< 40 MB image size, ~15 MB RAM**).
+
+Because satellite scrapers only query exchange APIs and POST rows to `INGEST_URL`, **no open ports, web servers, or inbound networking are required** — only standard outbound internet access.
+
+The container builds a single zero-dependency executable via Bun multi-stage compilation (`bun build --compile`) from `dist/track.js`.
+
+#### 1. Quickstart with Repository Files
+
+1. **Configure `.env`**:
+   ```bash
+   cp .env.example .env
+   # Set INGEST_SECRET='your-secret' and INGEST_NODE='vps-docker-js'
+   ```
+
+2. **Launch Service**:
+   ```bash
+   docker compose up -d --build
+   ```
+
+   The container runs a scrape pass immediately upon boot, sleeps 1 hour (3600s), and repeats indefinitely. `restart: unless-stopped` ensures the satellite automatically resumes scraping after system reboots or crashes.
+
+#### 2. Standalone Setup (Without cloning full repo)
+
+To deploy on a remote host using release assets:
+
+1. Create a directory (e.g. `/opt/irancrypto-satellite`).
+2. Download `dist/track.js` and `package.json` from the latest [Release](https://github.com/davodm/irancrypto-tracker/releases).
+3. Download the [Dockerfile](Dockerfile) and [docker-compose.yml](docker-compose.yml):
+   ```bash
+   curl -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/Dockerfile
+   curl -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/docker-compose.yml
+   ```
+4. Create `.env` with your `INGEST_SECRET` (and optional `INGEST_NODE`), then start the container:
+   ```bash
+   docker compose up -d --build
+   ```
+
 ### AWS Lambda (recommended finalizer)
 
 `track.js` ships an **async** `track.handler` (required on Node.js 24 — no callback handlers). Default: `--all --finalize` (scrape → status wait → finalize).
