@@ -18049,10 +18049,13 @@ async function axiosRequest({
   const retries = Number.parseInt(process.env.REQUEST_RETRY_COUNT ?? "0", 10) || 0;
   const baseDelayMs = Number.parseInt(process.env.REQUEST_RETRY_BASE_MS ?? "300", 10) || 300;
   const maxAttempts = 1 + retries;
+  const proxyUrl = getProxyUrl();
+  const hasProxy = Boolean(proxyUrl && process.env.PROXY_API_KEY);
+  const shouldProxy2 = useProxy && hasProxy;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       let response;
-      if (useProxy) {
+      if (shouldProxy2) {
         response = await axiosRequestWithProxy({
           method: conf.method,
           url: conf.url,
@@ -18063,7 +18066,7 @@ async function axiosRequest({
       } else {
         response = await axios_default(conf);
       }
-      return JSONizeResponse(response, { unwrapProxy: useProxy });
+      return JSONizeResponse(response, { unwrapProxy: shouldProxy2 });
     } catch (error) {
       const isNetworkError = !!error?.code || /ENOTFOUND|ECONNRESET|ETIMEDOUT/.test(error?.message || "");
       if (error?.response) {

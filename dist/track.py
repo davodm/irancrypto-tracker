@@ -297,7 +297,7 @@ def http_request(
     timeout: float | None = None,
     retry_403: bool = True,
 ) -> dict[str, Any]:
-    if use_proxy:
+    if use_proxy and PROXY_URL and PROXY_API_KEY:
         return http_via_proxy(method, url, query or {}, headers or {}, body)
 
     request_url = url
@@ -1241,7 +1241,7 @@ def parse_tabdeal(data: Any, coins: list[str]) -> list[dict[str, Any]]:
 
 
 def skip_tabdeal() -> str | None:
-    return "proxy not configured" if not PROXY_URL or not PROXY_API_KEY else None
+    return None
 
 
 def job_tabdeal() -> dict[str, Any]:

@@ -304,7 +304,7 @@ def http_request(
     timeout: float | None = None,
     retry_403: bool = True,
 ) -> dict[str, Any]:
-    if use_proxy:
+    if use_proxy and PROXY_URL and PROXY_API_KEY:
         return http_via_proxy(method, url, query or {}, headers or {}, body)
 
     request_url = url

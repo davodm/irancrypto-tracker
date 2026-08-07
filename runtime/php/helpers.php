@@ -164,7 +164,7 @@ function http_request(
     ?string $userAgent = null,
     bool $retry403 = true
 ): array {
-    if ($useProxy) {
+    if ($useProxy && PROXY_URL !== '' && PROXY_API_KEY !== '') {
         return http_via_proxy($method, $url, $query, $headers, $body);
     }
 
