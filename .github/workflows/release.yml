@@ -70,6 +70,7 @@ jobs:
       - name: Write release notes
         run: |
           TAG="${GITHUB_REF_NAME}"
+          IMAGE="ghcr.io/${{ github.repository }}"
           PREV=$(git tag --sort=-version:refname | awk -v cur="$TAG" '$0==cur {getline; print; exit}')
           {
             echo "## Changes since ${PREV:-first release}"
@@ -81,12 +82,33 @@ jobs:
             fi
             echo
             echo
-            echo "## Deploy"
+            echo "## Deploy Options"
             echo
+            echo "### Option 1: Standalone Single-File Worker"
             echo "Download **one** worker (\`track.cjs\`, \`track.php\`, or \`track.py\`)."
-            echo "Set \`INGEST_SECRET\` (and optional \`INGEST_NODE\`). \`INGEST_URL\` defaults to https://irancrypto.market/api/ingest"
-            echo "Run e.g. \`INGEST_SECRET=… node track.cjs --all --finalize\`."
-            echo "See [README](https://github.com/${{ github.repository }}/blob/${TAG}/README.md)."
+            echo "Set \`INGEST_SECRET\` (and optional \`INGEST_NODE\`). \`INGEST_URL\` defaults to \`https://irancrypto.market/api/ingest\`"
+            echo "Run e.g.:"
+            echo "\`\`\`bash"
+            echo "INGEST_SECRET='your-secret' INGEST_NODE='vps-1' node track.cjs --all --finalize"
+            echo "\`\`\`"
+            echo
+            echo "### Option 2: Multi-Arch Docker Container (GHCR)"
+            echo "Pull pre-built image (x86_64 / ARM64 / Raspberry Pi):"
+            echo "\`\`\`bash"
+            echo "docker pull ${IMAGE}:${TAG}"
+            echo "docker pull ${IMAGE}:latest"
+            echo "\`\`\`"
+            echo
+            echo "Run satellite container:"
+            echo "\`\`\`bash"
+            echo "docker run -d --name irancrypto-satellite \\"
+            echo "  --restart unless-stopped \\"
+            echo "  -e INGEST_SECRET='your-secret' \\"
+            echo "  -e INGEST_NODE='vps-docker' \\"
+            echo "  ${IMAGE}:${TAG}"
+            echo "\`\`\`"
+            echo
+            echo "See [README](https://github.com/${{ github.repository }}/blob/${TAG}/README.md) for full deployment guide."
           } > release-notes.md
 
       - name: Create GitHub Release
@@ -100,3 +122,4 @@ jobs:
             dist/track.py
           draft: false
           prerelease: false
+

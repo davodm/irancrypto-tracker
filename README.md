@@ -235,47 +235,50 @@ Or put secrets in `.env` and keep the cron line minimal:
 0 * * * * cd /opt/irancrypto-tracker && /usr/bin/node track.cjs --all >> /var/log/irancrypto-tracker.log 2>&1
 ```
 
-### Docker & Docker Compose (Ultra-Tiny JS Satellite)
+### Docker & Docker Compose (Ultra-Tiny Multi-Arch Satellite)
 
-You can run the JS worker as an ultra-compact standalone binary using **Docker Compose** with zero runtime overhead (**< 40 MB image size, ~15 MB RAM**).
+You can run the JS worker as an ultra-compact standalone binary using **Docker & Docker Compose** with zero runtime overhead (**< 40 MB image size, ~15 MB RAM**). Multi-architecture images (`linux/amd64` and `linux/arm64`) are automatically built and published to **GitHub Container Registry (GHCR)** for Raspberry Pi (3B+/4/5 running 64-bit OS), Linux servers, Windows, and Apple Silicon.
 
 Because satellite scrapers only query exchange APIs and POST rows to `INGEST_URL`, **no open ports, web servers, or inbound networking are required** — only standard outbound internet access.
 
-The container builds a single zero-dependency executable via Bun multi-stage compilation (`bun build --compile`) from `dist/track.cjs`.
+The container builds a single zero-dependency executable via Bun multi-stage compilation directly from source code (`bun scripts/generate-registry.mjs && bun scripts/build-js.mjs && bun build`). No host-side build steps or pre-built files are required.
 
-#### 1. Quickstart with Repository Files
+#### Option A: Quickstart with Pre-built GHCR Image (Recommended)
 
-1. **Configure `.env`**:
+1. **Create `.env` file**:
+   ```bash
+   echo "INGEST_SECRET=your-secret" > .env
+   echo "INGEST_NODE=vps-docker-js" >> .env
+   ```
+
+2. **Run container via Docker Compose**:
+   ```bash
+   curl -fsSL -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/docker-compose.yml
+   docker compose up -d
+   ```
+
+   Or run directly with `docker run`:
+   ```bash
+   docker run -d --name irancrypto-satellite \
+     --restart unless-stopped \
+     --env-file .env \
+     ghcr.io/davodm/irancrypto-satellite:latest
+   ```
+
+#### Option B: Build locally from source code
+
+1. **Clone repo & configure `.env`**:
    ```bash
    cp .env.example .env
    # Set INGEST_SECRET='your-secret' and INGEST_NODE='vps-docker-js'
    ```
 
-2. **Launch Service**:
+2. **Build and launch container**:
    ```bash
    docker compose up -d --build
    ```
 
    The container runs a scrape pass immediately upon boot, sleeps 1 hour (3600s), and repeats indefinitely. `restart: unless-stopped` ensures the satellite automatically resumes scraping after system reboots or crashes.
-
-#### 2. Standalone Setup (Without cloning full repo)
-
-To deploy on a remote host using release assets:
-
-1. Create a workspace directory (e.g. `/opt/irancrypto-satellite`):
-   ```bash
-   mkdir -p /opt/irancrypto-satellite && cd /opt/irancrypto-satellite
-   ```
-2. Download the latest `track.cjs` release worker into `dist/` and fetch the deployment manifests (`Dockerfile`, `docker-compose.yml`):
-   ```bash
-   curl -fsSL --create-dirs https://github.com/davodm/irancrypto-tracker/releases/latest/download/track.cjs -o dist/track.cjs
-   curl -fsSL -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/Dockerfile
-   curl -fsSL -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/docker-compose.yml
-   ```
-3. Create `.env` with your `INGEST_SECRET` (and optional `INGEST_NODE`), then start the container:
-   ```bash
-   docker compose up -d --build
-   ```
 
 ### AWS Lambda (recommended finalizer)
 
