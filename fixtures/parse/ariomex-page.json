@@ -1,0 +1,23 @@
+{
+  "status": "true",
+  "result": [
+    {
+      "base": "btc",
+      "last_price": "100",
+      "volume": "2",
+      "change_percentage": "1"
+    },
+    {
+      "base": "eth",
+      "last_price": "0",
+      "volume": "1",
+      "change_percentage": "0"
+    },
+    {
+      "base": "SOL",
+      "last_price": "50",
+      "volume": "3",
+      "change_percentage": "-1"
+    }
+  ]
+}

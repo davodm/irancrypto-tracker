@@ -1,111 +1,308 @@
-## 🚀 IranCrypto.Market Tracker
+# IranCrypto Tracker
 
-Lightweight **Node.js scraper** that collects cryptocurrency prices and volumes from multiple Iranian exchanges and stores standardized records in **MongoDB**.
+[![CI](https://github.com/davodm/irancrypto-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/davodm/irancrypto-tracker/actions/workflows/ci.yml)
+[![Release](https://github.com/davodm/irancrypto-tracker/actions/workflows/release.yml/badge.svg)](https://github.com/davodm/irancrypto-tracker/actions/workflows/release.yml)
+![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)
+![Workers](https://img.shields.io/badge/workers-JS%20%7C%20PHP%20%7C%20Python-f7df1e)
+![Exchanges](https://img.shields.io/badge/scrapers-15-blue)
 
-### ✨ Key Features
+Lightweight **exchange collectors** for [IranCrypto.market](https://irancrypto.market). Each worker scrapes prices from Iranian and global sources, then POSTs normalized rows to the Next.js **ingest API**. Workers never touch MongoDB — only `INGEST_SECRET` is required (`INGEST_URL` defaults to `https://irancrypto.market/api/ingest`).
 
-  * **Modular Architecture**: Each exchange is handled by an isolated module in `src/scrappers`, simplifying maintenance and the addition of new sources.
-  * **Dual Run Modes**: Supports a single-run mode for development (`npm run dev`) and a long-running **cron worker** for production (`npm start`).
-  * **Resilient Networking**: Configurable HTTP request retries with **exponential backoff** for handling transient failures.
-  * **Standardized Output**: All collected data is normalized into a consistent JSON format before storage.
-  * **Error Tracking**: Optional integration with Sentry for error monitoring and reporting.
+That split is intentional: you can run many small nodes (VPS, shared PHP hosting, a home cron box) without handing out database credentials. The platform owns persistence, dedup, and market rebuilds; nodes only scrape and ship JSON.
 
------
+---
 
-## 🛠️ Setup
+## What we are building
 
-### Prerequisites
+| Layer | Responsibility |
+|-------|----------------|
+| **This repo** | Scrape exchanges → filter rows → POST to ingest → local JSONL logs |
+| **irancrypto-nextjs** | Config, auth, archive upserts, run ledger, finalize → `exchangemarket` / recaps |
 
-  * **Node.js** (v18 or later)
-  * **npm** (v9 or later)
-  * **MongoDB** database (local or remote)
+Each deployable unit is **one file** (`track.js`, `track.php`, or `track.py`) plus an optional `logs/` directory. Pick the runtime that fits the host — same behavior, same CLI, same API contract.
 
-### Installation
+---
 
-1.  **Clone the Repository**
+## Runtime flow
 
-    ```bash
-    git clone https://github.com/davodm/irancrypto-tracker.git
-    cd irancrypto-tracker
-    ```
+```mermaid
+sequenceDiagram
+  participant W as Worker node
+  participant API as Ingest API (Next.js)
+  participant X as Exchange APIs
 
-2.  **Install Dependencies**
+  W->>API: GET /api/ingest/config
+  API-->>W: run_id, exchanges, coins, limits
 
-    ```bash
-    npm install
-    ```
+  loop Each enabled exchange
+    W->>X: HTTP scrape
+    X-->>W: Raw ticker / order book data
+    W->>W: Parse, validate, filter rows
+    W->>API: POST /api/ingest (mode: partial)
+  end
 
-3.  **Configuration**
+  opt --finalize
+    W->>API: POST /api/ingest/finalize
+  end
 
-    For **local development**, create a `.env` file in the project root with your environment variables. The `npm run dev` command automatically loads variables from `.env` using `dotenv`.
-
-    For **production**, export the required environment variables directly or use your deployment platform's environment variable configuration.
-
-    > **Note**: See the [Configuration Variables](#-configuration-variables) section below for all available options. A `.env.example` file may be available in the repository as a template.
-
------
-
-## 🏃 Usage
-
-The project offers two primary modes of operation, managed via `npm` scripts.
-
-### Production (Long-Running Cron Worker)
-
-Starts the long-running worker (`src/cron.js`) that executes scheduled jobs according to the `CRONJOB_SCHEDULE` environment variable. The process stays alive and runs jobs on schedule.
-
-```bash
-npm start
+  W->>W: Append JSONL log (counts only, 7-day prune)
 ```
 
-### Development / One-Shot Execution
+Multi-node runs share the same hourly `run_id`. The API tracks which sources arrived; `GET /api/ingest/status` helps coordinate before finalize. Ingest route details live on the Next.js site.
 
-Runs the main scraper once (`src/dev.js`) and exits. This mode is ideal for local testing and debugging. Automatically loads environment variables from `.env` file.
+---
 
-```bash
-npm run dev
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph nodes["Small worker nodes (no Mongo)"]
+    direction LR
+    N1["VPS<br/>track.js"]
+    N2["Shared PHP<br/>track.php"]
+    N3["Cron box<br/>track.py"]
+    N4["AWS Lambda<br/>track.handler"]
+  end
+
+  subgraph exchanges["15 scrapers (exchanges + external feeds)"]
+    E["nobitex · wallex · bitpin · …"]
+  end
+
+  subgraph platform["IranCrypto platform"]
+    API["/api/ingest/*"]
+    DB[(MongoDB)]
+    SITE["irancrypto.market"]
+  end
+
+  N1 & N2 & N3 & N4 --> E
+  N1 & N2 & N3 & N4 -->|"Bearer INGEST_SECRET"| API
+  API --> DB
+  DB --> SITE
 ```
 
------
+**Security model:** workers hold ingest credentials (and optional per-exchange API keys). No `MONGO_URI`, no direct writes. TLS verification on by default (`SSL_VERIFY_INGEST=true`).
 
-## ⚙️ Configuration Variables
+---
 
-The tracker's behavior is entirely controlled via environment variables.
+## Build pipeline
 
-| Variable | Required | Description | Default | Notes |
-| :--- | :---: | :--- | :--- | :--- |
-| `MONGO_URI` | ✅ | MongoDB connection string. | N/A | Example: `mongodb://localhost:27017` or `mongodb+srv://user:pass@cluster.mongodb.net` |
-| `MONGO_DBNAME` | ✅ | Name of the MongoDB database to use. | N/A | Example: `irancrypto` |
-| `CRONJOB_SCHEDULE` | ❌ | Cron expression for the worker schedule. | `1 * * * *` (Hourly at minute 1) | Used by `npm start` worker. See [cron expression format](https://crontab.guru/). |
-| `NODE_ENV` | ❌ | Node.js environment. | `development` | Used by Sentry and logging. Common values: `development`, `production`. |
-| `REQUEST_RETRY_COUNT` | ❌ | Number of retries on failed HTTP requests. | `0` (No retries) | Does not include the initial attempt. |
-| `REQUEST_RETRY_BASE_MS` | ❌ | Base delay (in ms) for exponential backoff. | `300` | Delay doubles with each retry attempt. |
-| `TIMEOUT` | ❌ | HTTP request timeout in seconds. | `10` | Maximum time to wait for a response. |
-| `IGNORE_EXCHANGES` | ❌ | Comma-separated list of exchange slugs to skip. | N/A | Example: `nobitex,bitmax`. Case-insensitive. |
-| `RUN_ONCE` | ❌ | If set to `true`, the cron worker exits on error. | `false` | Useful for host schedulers that require process exit on failure. |
-| `SENTRY_DSN` | ❌ | Optional DSN for Sentry error reporting. | N/A | If not provided, Sentry is disabled. |
-| `PROXY_URL` | ❌ | Proxy server URL for HTTP requests. | N/A | Required if `useProxy=true` is used in requests. |
-| `PROXY_API_KEY` | ❌ | API key for proxy authentication. | N/A | Required when `PROXY_URL` is set. |
-| `COINMARKETCAP_API_KEY` | ❌ | API key(s) for CoinMarketCap scraper. | N/A | Can be comma-separated for multiple keys (rotation). |
-| `COINAPI_KEY` | ❌ | API key for CoinAPI scraper. | N/A | Required for CoinAPI integration. |
-| `USER_AGENT` | ❌ | Custom User-Agent string for HTTP requests. | Default browser UA | Override the default User-Agent if needed. |
+Source of truth lives in `scrapers/` (per-exchange logic) and `runtime/` (shared CLI, HTTP, orchestration). Build scripts assemble **single-file workers** into `dist/`.
 
------
+```mermaid
+flowchart LR
+  subgraph sources
+    SC["scrapers/&lt;slug&gt;/scrape.{js,php,py}"]
+    RT["runtime/{js,php,python}"]
+  end
 
-## 🤝 Contribution
+  P["check:parity<br/>15 slugs × 3 langs"]
+  G["generate-registry"]
+  GEN["generated/<br/>imports & registries"]
+  B["build-all"]
+  D["dist/track.{js,php,py}<br/>+ package.json"]
 
-Contributions are welcome! Please refer to the **[CONTRIBUTING.md](CONTRIBUTING.md)** file for detailed guidelines on setting up your environment, code style, and submitting pull requests.
+  SC --> P
+  RT --> P
+  P --> G --> GEN --> B --> D
+```
 
-### 🧩 Writing Scrapers
+| Step | Command | Output |
+|------|---------|--------|
+| Parity | `npm run check:parity` | Fails if any slug is missing JS, PHP, or Python |
+| Generate | `npm run generate` | `generated/*` registries from `scrapers/` |
+| Bundle JS | `npm run build:js` | `dist/track.js` via esbuild (Node 18+, no `node_modules` on worker) |
+| Assemble PHP | `npm run build:php` | `dist/track.php` (PHP 8.2+ + curl) |
+| Assemble Python | `npm run build:python` | `dist/track.py` (stdlib + urllib) |
+| Full build | `npm run build` | All of the above |
 
-To integrate a new exchange, add a new JavaScript module to the **`src/scrappers`** directory.
+CI runs parity → build → smoke `--help` → **freshness check** (committed `dist/` and `generated/` must match a fresh build). See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Each module must:
+---
 
-1.  Export an `async function scrape($coins)` that returns an array of standardized data records.
-2.  Export a `PLATFORM` constant (matching the file slug).
-3.  Export a `COIN_USE` constant (`'own'`, `'all'`, or `'none'`).
+## Deploy a worker
 
-Use the internal helper functions:
+Copy **one** built file to the host. Download from [GitHub Releases](https://github.com/davodm/irancrypto-tracker/releases) or use the committed files in `dist/`.
 
-  * `axiosRequest()` (from `src/lib/request.js`) for resilient HTTP calls with built-in retries.
-  * `num()` (from `src/lib/num.js`) for reliable numeric parsing.
+```text
+/opt/irancrypto-tracker/
+  track.js | track.php | track.py
+  package.json       # only needed for track.js (CommonJS)
+  logs/              # auto-created at runtime — do not commit
+  .env               # optional (INGEST_SECRET, INGEST_NODE, …)
+```
+
+### One-liner
+
+Only `INGEST_SECRET` is required. `INGEST_URL` defaults to `https://irancrypto.market/api/ingest`.
+
+```bash
+INGEST_SECRET='your-secret' INGEST_NODE=vps-1 node track.js --all --finalize
+```
+
+```bash
+INGEST_SECRET='your-secret' INGEST_NODE=liara-php php track.php --all --finalize
+```
+
+```bash
+INGEST_SECRET='your-secret' INGEST_NODE=home-py python3 track.py --all --finalize
+```
+
+Override the ingest base for staging or self-hosted Next.js:
+
+```bash
+INGEST_URL=https://staging.example.com/api/ingest INGEST_SECRET='…' node track.js --all --finalize
+```
+
+Workers disable PHP/Python execution time limits where the runtime allows it, so long scrape runs are not cut off by default.
+
+### Cron (hourly collection)
+
+Run at minute 5 each hour UTC (adjust path and runtime to match your host):
+
+```cron
+5 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=vps-1 /usr/bin/node track.js --all --finalize >> /var/log/irancrypto-tracker.log 2>&1
+```
+
+```cron
+5 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=liara-php /usr/bin/php track.php --all --finalize >> /var/log/irancrypto-tracker.log 2>&1
+```
+
+```cron
+5 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=home-py /usr/bin/python3 track.py --all --finalize >> /var/log/irancrypto-tracker.log 2>&1
+```
+
+Alternatively, put `INGEST_SECRET` and `INGEST_NODE` in `/opt/irancrypto-tracker/.env` and keep the cron line minimal:
+
+```cron
+5 * * * * cd /opt/irancrypto-tracker && /usr/bin/node track.js --all --finalize >> /var/log/irancrypto-tracker.log 2>&1
+```
+
+### AWS Lambda (EventBridge schedule)
+
+`track.js` ships a Lambda handler — no VPS cron needed. Same pipeline as `--all --finalize`.
+
+**Package & upload:**
+
+```bash
+npm run build
+npm run lambda:package    # writes irancrypto-tracker-lambda.zip
+```
+
+Zip contents: `track.js` + `package.json` (~620 KB). No `node_modules`.
+
+| Setting | Value |
+|---------|--------|
+| Runtime | Node.js 20.x or 22.x |
+| Handler | `track.handler` |
+| Timeout | **900 s** (15 min — scraping all sources needs headroom) |
+| Memory | 512 MB+ |
+| IAM | `AWSLambdaBasicExecutionRole` (CloudWatch Logs only) |
+
+**Environment:**
+
+```text
+INGEST_SECRET=your-secret          # required (same as Next.js)
+INGEST_NODE=irancrypto-lambda      # optional (defaults to function name)
+LOG_DIR=/tmp/irancrypto-logs       # optional (auto-set on Lambda)
+TRACK_ARGS=--all --finalize        # optional CLI override
+```
+
+**Schedule (EventBridge):** `cron(5 * * * ? *)` → this function, input `{}`.
+
+Default event `{}` runs `--all --finalize`. Optional payloads:
+
+```json
+{ "exchange": "nobitex" }
+{ "exchange": "nobitex", "finalize": true }
+{ "finalize_only": true, "run_id": "2026-08-07T10" }
+{ "dry_run": true }
+```
+
+**Test after deploy:**
+
+```bash
+aws lambda invoke --function-name irancrypto-tracker --payload '{}' /tmp/out.json && cat /tmp/out.json
+```
+
+Expect `{ "ok": true, "exitCode": 0 }`. Logs go to CloudWatch; JSONL under `/tmp/irancrypto-logs` is ephemeral. If `--all` exceeds 15 minutes, split with `EXCHANGES` allow-lists across multiple functions.
+
+Full env reference: [.env.example](.env.example).
+
+---
+
+## Repository layout
+
+```text
+scrapers/<slug>/
+  scrape.js          # PLATFORM, COIN_USE, scrape()
+  scrape.php         # parse job + register_<slug>()
+  scrape.py          # parse job + register_<slug>()
+  sample.json        # raw API response dump for debugging parsers
+runtime/
+  js/                # entry, HTTP, ingest client (bundled into track.js)
+  php/               # boot, helpers, orchestrator
+  python/            # helpers, orchestrator
+scripts/             # parity, generate-registry, build-*
+generated/           # auto registries (committed, CI-checked)
+dist/                # shippable workers (committed + release assets)
+fixtures/parse/      # small golden fixtures for CI parse checks
+```
+
+**Add an exchange:** create `scrapers/<newslug>/` with all three scrape files (+ `sample.json`) → `npm run build` → commit `generated/` + `dist/`.
+
+---
+
+## Develop locally
+
+```bash
+npm ci
+npm run check:parity
+npm run build
+npm run dev                    # dry-run JS entry with dotenv
+node dist/track.js --exchange=nobitex --dry-run
+```
+
+| Script | Purpose |
+|--------|---------|
+| `npm run build` | Parity → generate → js / php / python |
+| `npm run build:js` | Bundle `dist/track.js` only |
+| `npm run build:php` | Assemble `dist/track.php` |
+| `npm run build:python` | Assemble `dist/track.py` |
+| `npm run dev` | Dry-run modular JS entry |
+| `npm run track` | Run built `dist/track.js` |
+| `npm start` | `dist/track.js --all --finalize` |
+
+---
+
+## CLI
+
+```text
+track --all [--finalize]
+track --exchange=nobitex
+track --finalize-only [--run-id=YYYY-MM-DDTHH]
+track --from-json=rows.json
+track --prune-logs
+track --dry-run …
+```
+
+---
+
+## Releases
+
+Tags on **main** only. Version must match `package.json`.
+
+```bash
+npm version patch          # or minor / major
+git push origin main --follow-tags
+```
+
+The release workflow builds fresh workers, writes a changelog since the previous tag, and attaches `track.js`, `track.php`, and `track.py` to the GitHub Release. See [CONTRIBUTING.md](CONTRIBUTING.md) for adding scrapers.
+
+---
+
+## Security notes
+
+- Workers need `INGEST_SECRET` only — no database URI on scrape hosts.
+- Ingest requests use `Authorization: Bearer …`; enable TLS verify in production.
+- Local logs record counts and timing, not secrets; pruned after 7 days by default.
+- Exchange API keys (where required) stay in env on the node that needs them.
