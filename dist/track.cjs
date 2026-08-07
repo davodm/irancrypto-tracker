@@ -20564,7 +20564,7 @@ async function scrape2($coins = []) {
   return data;
 }
 async function getLatest2($filterCoins = []) {
-  const data = await request("watcher/price/v2/alternative", {});
+  const data = await request("watcher/price/alternative", {});
   if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
     throw new Error("Response data is empty");
   }

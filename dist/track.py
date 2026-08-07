@@ -629,7 +629,7 @@ def parse_bitmax(data: Any, coins: list[str]) -> list[dict[str, Any]]:
 
 
 def job_bitmax() -> dict[str, Any]:
-    return {"url": "https://api.bitmax.ir/watcher/price/v2/alternative"}
+    return {"url": "https://api.bitmax.ir/watcher/price/alternative"}
 
 
 def register_bitmax() -> dict[str, Any]:

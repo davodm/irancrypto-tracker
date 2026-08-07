@@ -1082,7 +1082,7 @@ function parse_bitmax(mixed $data, array $coins): array
 function job_bitmax(): array
 {
     return [
-        'url' => 'https://api.bitmax.ir/watcher/price/v2/alternative',
+        'url' => 'https://api.bitmax.ir/watcher/price/alternative',
     ];
 }
 

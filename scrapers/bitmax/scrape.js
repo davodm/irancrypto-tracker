@@ -30,8 +30,7 @@ export async function scrape($coins = []) {
  * @returns {Promise<object>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
-  // Using v2 API endpoint
-  const data = await request("watcher/price/v2/alternative", {});
+  const data = await request("watcher/price/alternative", {});
   if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
     throw new Error("Response data is empty");
   }
