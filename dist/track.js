@@ -21802,7 +21802,7 @@ async function ingestRequest(method, urlPath, body) {
   const headers = {
     Accept: "application/json",
     Authorization: `Bearer ${secret}`,
-    "User-Agent": "irancrypto-tracker-js/1.0"
+    "User-Agent": process.env.USER_AGENT || "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
   };
   const verifyIngest = envBool("SSL_VERIFY_INGEST", true);
   const timeoutMs = Math.max(getTimeoutSec() * 1e3, 6e4);
