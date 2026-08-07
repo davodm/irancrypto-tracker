@@ -1,0 +1,33 @@
+name: irancrypto-satellite
+
+services:
+  satellite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: irancrypto-satellite
+    restart: unless-stopped
+
+    # Load environment variables from local .env file
+    env_file:
+      - .env
+
+    environment:
+      - INGEST_NODE=${INGEST_NODE:-docker-js-satellite}
+      - INGEST_SECRET=${INGEST_SECRET}
+      - INGEST_URL=${INGEST_URL:-https://irancrypto.market/api/ingest}
+      - TRACK_ARGS=${TRACK_ARGS:---all}
+
+    # Strict resource caps (tiny memory & CPU limits)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 128M
+
+    # Log rotation to prevent disk space bloat
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
