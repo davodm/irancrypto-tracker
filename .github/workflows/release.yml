@@ -63,7 +63,7 @@ jobs:
 
       - name: Smoke --help
         run: |
-          node dist/track.js --help
+          node dist/track.cjs --help
           php dist/track.php --help
           python3 dist/track.py --help
 
@@ -83,9 +83,9 @@ jobs:
             echo
             echo "## Deploy"
             echo
-            echo "Download **one** worker (\`track.js\`, \`track.php\`, or \`track.py\`)."
+            echo "Download **one** worker (\`track.cjs\`, \`track.php\`, or \`track.py\`)."
             echo "Set \`INGEST_SECRET\` (and optional \`INGEST_NODE\`). \`INGEST_URL\` defaults to https://irancrypto.market/api/ingest"
-            echo "Run e.g. \`INGEST_SECRET=… node track.js --all --finalize\`."
+            echo "Run e.g. \`INGEST_SECRET=… node track.cjs --all --finalize\`."
             echo "See [README](https://github.com/${{ github.repository }}/blob/${TAG}/README.md)."
           } > release-notes.md
 
@@ -95,7 +95,7 @@ jobs:
           name: "${{ github.ref_name }}"
           body_path: release-notes.md
           files: |
-            dist/track.js
+            dist/track.cjs
             dist/track.php
             dist/track.py
           draft: false

@@ -19,7 +19,7 @@ That split is intentional: you can run many small nodes (VPS, shared PHP hosting
 | **This repo (workers)** | Scrape exchanges → filter rows → POST to ingest → local JSONL logs |
 | **Ingest API (site)** | Auth, archive upserts, run ledger, finalize → market / recap views |
 
-Each deployable unit is **one file** (`track.js`, `track.php`, or `track.py`) plus an optional `logs/` directory. Pick the runtime that fits the host — same behavior, same CLI, same API contract. JS workers target **Node.js 24** (including AWS Lambda `nodejs24.x`).
+Each deployable unit is **one file** (`track.cjs`, `track.php`, or `track.py`) plus an optional `logs/` directory. Pick the runtime that fits the host — same behavior, same CLI, same API contract. JS workers target **Node.js 24** (including AWS Lambda `nodejs24.x`).
 
 ---
 
@@ -218,7 +218,7 @@ You do **not** need scrapers at all if Lambda alone is reliable — then `missin
 Scrape only — **no** `--finalize`:
 
 ```cron
-0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=vps-1 /usr/bin/node track.js --all >> /var/log/irancrypto-tracker.log 2>&1
+0 * * * * cd /opt/irancrypto-tracker && INGEST_SECRET='your-secret' INGEST_NODE=vps-1 /usr/bin/node track.cjs --all >> /var/log/irancrypto-tracker.log 2>&1
 ```
 
 ```cron
@@ -232,7 +232,7 @@ Scrape only — **no** `--finalize`:
 Or put secrets in `.env` and keep the cron line minimal:
 
 ```cron
-0 * * * * cd /opt/irancrypto-tracker && /usr/bin/node track.js --all >> /var/log/irancrypto-tracker.log 2>&1
+0 * * * * cd /opt/irancrypto-tracker && /usr/bin/node track.cjs --all >> /var/log/irancrypto-tracker.log 2>&1
 ```
 
 ### Docker & Docker Compose (Ultra-Tiny JS Satellite)
@@ -241,7 +241,7 @@ You can run the JS worker as an ultra-compact standalone binary using **Docker C
 
 Because satellite scrapers only query exchange APIs and POST rows to `INGEST_URL`, **no open ports, web servers, or inbound networking are required** — only standard outbound internet access.
 
-The container builds a single zero-dependency executable via Bun multi-stage compilation (`bun build --compile`) from `dist/track.js`.
+The container builds a single zero-dependency executable via Bun multi-stage compilation (`bun build --compile`) from `dist/track.cjs`.
 
 #### 1. Quickstart with Repository Files
 
@@ -262,21 +262,24 @@ The container builds a single zero-dependency executable via Bun multi-stage com
 
 To deploy on a remote host using release assets:
 
-1. Create a directory (e.g. `/opt/irancrypto-satellite`).
-2. Download `dist/track.js` and `package.json` from the latest [Release](https://github.com/davodm/irancrypto-tracker/releases).
-3. Download the [Dockerfile](Dockerfile) and [docker-compose.yml](docker-compose.yml):
+1. Create a workspace directory (e.g. `/opt/irancrypto-satellite`):
    ```bash
-   curl -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/Dockerfile
-   curl -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/docker-compose.yml
+   mkdir -p /opt/irancrypto-satellite && cd /opt/irancrypto-satellite
    ```
-4. Create `.env` with your `INGEST_SECRET` (and optional `INGEST_NODE`), then start the container:
+2. Download the latest `track.cjs` release worker into `dist/` and fetch the deployment manifests (`Dockerfile`, `docker-compose.yml`):
+   ```bash
+   curl -fsSL --create-dirs https://github.com/davodm/irancrypto-tracker/releases/latest/download/track.cjs -o dist/track.cjs
+   curl -fsSL -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/Dockerfile
+   curl -fsSL -O https://raw.githubusercontent.com/davodm/irancrypto-tracker/main/docker-compose.yml
+   ```
+3. Create `.env` with your `INGEST_SECRET` (and optional `INGEST_NODE`), then start the container:
    ```bash
    docker compose up -d --build
    ```
 
 ### AWS Lambda (recommended finalizer)
 
-`track.js` ships an **async** `track.handler` (required on Node.js 24 — no callback handlers). Default: `--all --finalize` (scrape → status wait → finalize).
+`track.cjs` ships an **async** `track.handler` (required on Node.js 24 — no callback handlers). Default: `--all --finalize` (scrape → status wait → finalize).
 
 **Package & upload:**
 
@@ -285,7 +288,7 @@ npm run build
 npm run lambda:package    # writes irancrypto-tracker-lambda.zip
 ```
 
-Zip contents: `track.js` + `package.json` (~620 KB). No `node_modules`.
+Zip contents: `track.cjs` (~620 KB). No `node_modules`.
 
 | Setting | Value |
 |---------|--------|
