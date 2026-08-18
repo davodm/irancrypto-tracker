@@ -7,9 +7,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { SCRAPERS } from "../../generated/js-scraper-imports.js";
 import { logError, logInfo } from "./logger.js";
 import { envBool, getTimeoutSec } from "./vars.js";
-import { SCRAPERS } from "../../generated/js-scraper-imports.js";
 
 function resolveBaseDir() {
   // Prefer directory of the running script (dist/track.js on workers)
@@ -84,10 +84,7 @@ function loadDotenv(filePath) {
     const eq = trimmed.indexOf("=");
     const key = trimmed.slice(0, eq).trim();
     let val = trimmed.slice(eq + 1).trim();
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
     if (process.env[key] === undefined) process.env[key] = val;
@@ -116,8 +113,7 @@ function parseCli(argv) {
     else if (arg.startsWith("--exchange="))
       out.exchange = arg.slice("--exchange=".length).toLowerCase();
     else if (arg.startsWith("--run-id=")) out.runId = arg.slice("--run-id=".length);
-    else if (arg.startsWith("--from-json="))
-      out.fromJson = arg.slice("--from-json=".length);
+    else if (arg.startsWith("--from-json=")) out.fromJson = arg.slice("--from-json=".length);
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return out;
@@ -234,7 +230,9 @@ async function ingestRequest(method, urlPath, body) {
   const headers = {
     Accept: "application/json",
     Authorization: `Bearer ${secret}`,
-    "User-Agent": process.env.USER_AGENT || "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "User-Agent":
+      process.env.USER_AGENT ||
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
   };
   const verifyIngest = envBool("SSL_VERIFY_INGEST", true);
   const timeoutMs = Math.max(getTimeoutSec() * 1000, 60_000);
@@ -274,8 +272,7 @@ async function ingestRequest(method, urlPath, body) {
     json = null;
   }
   if (!res.ok) {
-    const msg =
-      (json && (json.error || json.message)) || text || res.statusText;
+    const msg = (json && (json.error || json.message)) || text || res.statusText;
     throw new Error(`Ingest HTTP ${res.status}: ${msg}`);
   }
   return json || {};
@@ -288,10 +285,7 @@ async function waitForIngestReady(runId, logger) {
   const deadline = Date.now() + waitSec * 1000;
 
   for (;;) {
-    const status = await ingestRequest(
-      "GET",
-      `/status?run_id=${encodeURIComponent(runId)}`
-    );
+    const status = await ingestRequest("GET", `/status?run_id=${encodeURIComponent(runId)}`);
     const missing = Array.isArray(status.missing) ? status.missing : [];
     if (missing.length === 0) {
       logInfo(`Ingest ready for ${runId}`);
@@ -301,7 +295,7 @@ async function waitForIngestReady(runId, logger) {
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) {
       logInfo(
-        `Finalize wait deadline reached for ${runId}; proceeding with available sources (missing: ${missing.join(",")})`
+        `Finalize wait deadline reached for ${runId}; proceeding with available sources (missing: ${missing.join(",")})`,
       );
       logger.event("status_timeout", {
         run_id: runId,
@@ -311,9 +305,7 @@ async function waitForIngestReady(runId, logger) {
       return status;
     }
     const sleepMs = Math.min(pollSec * 1000, remainingMs);
-    logInfo(
-      `Waiting for sources (${missing.join(",")}); poll in ${Math.round(sleepMs / 1000)}s`
-    );
+    logInfo(`Waiting for sources (${missing.join(",")}); poll in ${Math.round(sleepMs / 1000)}s`);
     logger.event("status_wait", { run_id: runId, missing, sleep_ms: sleepMs });
     await sleep(sleepMs);
   }
@@ -355,37 +347,48 @@ function filterRows(raw, coins) {
     const price = Number(d.price);
     if (!Number.isFinite(price) || price <= 0) continue;
     const vol = d.volume_1d != null ? Number(d.volume_1d) : 0;
-    if (Number.isNaN(vol) || vol < 0) continue;
+    if (!Number.isFinite(vol) || vol < 0) continue;
     if (!d.source || typeof d.source !== "string") continue;
-    const sym = String(d.symbol || "").toUpperCase().trim();
+    const sym = String(d.symbol || "")
+      .toUpperCase()
+      .trim();
     if (!sym || !coinSet.has(sym)) continue;
 
     const row = {
       symbol: sym,
-      currency: String(d.currency || "IRR").toUpperCase().trim(),
+      currency: String(d.currency || "IRR")
+        .toUpperCase()
+        .trim(),
       price: price,
       volume_1d: Math.max(0, vol),
       source: String(d.source).toLowerCase().trim(),
     };
-    if (d.coin_volume_1d != null && Number.isFinite(Number(d.coin_volume_1d))) {
-      row.coin_volume_1d = Number(d.coin_volume_1d);
+    if (d.coin_volume_1d != null) {
+      const cv = Number(d.coin_volume_1d);
+      if (Number.isFinite(cv) && cv >= 0) row.coin_volume_1d = cv;
     }
-    if (d.change_1d != null && Number.isFinite(Number(d.change_1d))) {
-      row.change_1d = Number(d.change_1d);
+    if (d.change_1d != null) {
+      const c1d = Number(d.change_1d);
+      if (Number.isFinite(c1d)) row.change_1d = c1d;
     }
-    if (d.change_7d != null && Number.isFinite(Number(d.change_7d))) {
-      row.change_7d = Number(d.change_7d);
+    if (d.change_7d != null) {
+      const c7d = Number(d.change_7d);
+      if (Number.isFinite(c7d)) row.change_7d = c7d;
     }
-    if (d.cap != null && Number.isFinite(Number(d.cap))) {
-      row.cap = Number(d.cap);
-    } else if (d.market_cap != null && Number.isFinite(Number(d.market_cap))) {
-      row.cap = Number(d.market_cap);
+    if (d.cap != null) {
+      const cap = Number(d.cap);
+      if (Number.isFinite(cap) && cap >= 0) row.cap = cap;
+    } else if (d.market_cap != null) {
+      const mcap = Number(d.market_cap);
+      if (Number.isFinite(mcap) && mcap >= 0) row.cap = mcap;
     }
-    if (d.supply != null && Number.isFinite(Number(d.supply))) {
-      row.supply = Number(d.supply);
+    if (d.supply != null) {
+      const supply = Number(d.supply);
+      if (Number.isFinite(supply) && supply >= 0) row.supply = supply;
     }
-    if (d.max_supply != null && Number.isFinite(Number(d.max_supply))) {
-      row.max_supply = Number(d.max_supply);
+    if (d.max_supply != null) {
+      const maxSupply = Number(d.max_supply);
+      if (Number.isFinite(maxSupply) && maxSupply >= 0) row.max_supply = maxSupply;
     }
     out.push(row);
   }
@@ -398,9 +401,7 @@ function selectExchanges(exchanges, cli) {
   if (cli.exchange) allow = [cli.exchange];
 
   const raw = [...exchanges];
-  const existingSlugs = new Set(
-    raw.map((e) => String(e.slug || "").toLowerCase())
-  );
+  const existingSlugs = new Set(raw.map((e) => String(e.slug || "").toLowerCase()));
   for (const slug of Object.keys(SCRAPERS)) {
     if (!existingSlugs.has(slug.toLowerCase())) {
       raw.push({ slug });
@@ -424,9 +425,7 @@ async function scrapeOne(exchange, coins) {
     return [];
   }
   const filter =
-    mod.COIN_USE === "own"
-      ? (exchange.support || []).map((c) => String(c).toUpperCase())
-      : coins;
+    mod.COIN_USE === "own" ? (exchange.support || []).map((c) => String(c).toUpperCase()) : coins;
   const t0 = Date.now();
   logInfo(`Processing ${slug} exchange started`);
   const result = await mod.scrape(filter);
@@ -448,19 +447,10 @@ async function runTrack(customArgv) {
   }
 
   const logDir = resolveLogDir(baseDir);
-  const retention = Math.max(
-    1,
-    Number.parseInt(process.env.LOG_RETENTION_DAYS || "7", 10) || 7
-  );
+  const retention = Math.max(1, Number.parseInt(process.env.LOG_RETENTION_DAYS || "7", 10) || 7);
   const nodeId = resolveNodeId();
 
-  if (
-    cli.pruneLogs &&
-    !cli.all &&
-    !cli.exchange &&
-    !cli.finalizeOnly &&
-    !cli.fromJson
-  ) {
+  if (cli.pruneLogs && !cli.all && !cli.exchange && !cli.finalizeOnly && !cli.fromJson) {
     const n = pruneLogs(logDir, retention);
     logInfo(`Pruned ${n} log file(s) older than ${retention} days`);
     return 0;
@@ -527,7 +517,8 @@ async function runTrack(customArgv) {
     for (const row of rows) {
       if (!row?.source) continue;
       const src = String(row.source).toLowerCase();
-      (bySource[src] ||= []).push(row);
+      if (!bySource[src]) bySource[src] = [];
+      bySource[src].push(row);
     }
   } else {
     if (!exchanges.length || !coins.length) {
@@ -535,10 +526,7 @@ async function runTrack(customArgv) {
       return 1;
     }
     const scraped = [];
-    const concurrency = Math.max(
-      1,
-      parseInt(process.env.SCRAPER_CONCURRENCY || "6", 10)
-    );
+    const concurrency = Math.max(1, parseInt(process.env.SCRAPER_CONCURRENCY || "6", 10));
     await asyncPool(
       exchanges,
       async (ex) => {
@@ -557,14 +545,15 @@ async function runTrack(customArgv) {
           });
         }
       },
-      concurrency
+      concurrency,
     );
     const filtered = filterRows(scraped, coins);
     logInfo(
-      `Discovered ${filtered.length} filtered rows from ${new Set(filtered.map((r) => r.source)).size} sources`
+      `Discovered ${filtered.length} filtered rows from ${new Set(filtered.map((r) => r.source)).size} sources`,
     );
     for (const row of filtered) {
-      (bySource[row.source] ||= []).push(row);
+      if (!bySource[row.source]) bySource[row.source] = [];
+      bySource[row.source].push(row);
     }
   }
 
@@ -662,9 +651,7 @@ function shouldRunCli() {
   if (!isMain) {
     try {
       const entry = process.argv[1] ? path.resolve(process.argv[1]) : "";
-      isMain =
-        Boolean(entry) &&
-        pathToFileURL(entry).href === import.meta.url;
+      isMain = Boolean(entry) && pathToFileURL(entry).href === import.meta.url;
     } catch {
       isMain = false;
     }
@@ -675,6 +662,13 @@ function shouldRunCli() {
 }
 
 if (shouldRunCli()) {
+  const shutdown = (signal) => {
+    logInfo(`Received ${signal}, shutting down gracefully...`);
+    process.exit(128 + (signal === "SIGINT" ? 2 : 15));
+  };
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+
   runTrack()
     .then((code) => process.exit(code ?? 0))
     .catch((err) => {

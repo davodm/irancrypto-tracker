@@ -3,16 +3,11 @@
  * TLS for exchanges defaults off (SSL_VERIFY_EXCHANGE); proxy responses unwrap {data|body}
  * like PHP/Python for Tabdeal parity. Config is read lazily after dotenv.
  */
+
+import https from "node:https";
 import axios from "axios";
-import https from "https";
 import { logError, logInfo } from "./logger.js";
-import {
-  envBool,
-  getProxyUrl,
-  getTimeoutSec,
-  getUserAgent,
-  getUserAgentPostman,
-} from "./vars.js";
+import { envBool, getProxyUrl, getTimeoutSec, getUserAgent, getUserAgentPostman } from "./vars.js";
 
 function exchangeHttpsAgent() {
   return new https.Agent({
@@ -31,6 +26,7 @@ function exchangeHttpsAgent() {
  * @param {boolean} [options.retry403]
  * @param {boolean} [options.throwOriginalError]
  * @param {boolean} [options.useProxy]
+ * @returns {Promise<any>}
  */
 export async function axiosRequest({
   method,
@@ -44,6 +40,7 @@ export async function axiosRequest({
   useProxy = false,
 }) {
   const timeoutMs = getTimeoutSec() * 1000;
+  /** @type {import('axios').AxiosRequestConfig} */
   const conf = {
     method,
     url,
@@ -56,9 +53,7 @@ export async function axiosRequest({
     timeout: timeoutMs,
     httpsAgent: exchangeHttpsAgent(),
     maxRedirects: 3,
-    validateStatus: function (status) {
-      return status >= 200 && status < 300;
-    },
+    validateStatus: (status) => status >= 200 && status < 300,
   };
   if (params && Object.keys(params).length) {
     conf.params = params;
@@ -88,7 +83,7 @@ export async function axiosRequest({
           headers: conf.headers,
         });
       } else {
-        response = await axios(conf);
+        response = await axios.request(conf);
       }
 
       return JSONizeResponse(response, { unwrapProxy: shouldProxy });
@@ -97,7 +92,7 @@ export async function axiosRequest({
         !!error?.code || /ENOTFOUND|ECONNRESET|ETIMEDOUT/.test(error?.message || "");
       if (error?.response) {
         logInfo(
-          `Request to ${url} failed due to ${error.message} (status: ${error.response.status}) [attempt ${attempt}]`
+          `Request to ${url} failed due to ${error.message} (status: ${error.response.status}) [attempt ${attempt}]`,
         );
       } else {
         logInfo(`${error.message} [attempt ${attempt}]`);
@@ -118,7 +113,7 @@ export async function axiosRequest({
       }
 
       if (isNetworkError && attempt < maxAttempts) {
-        const delay = baseDelayMs * Math.pow(2, attempt - 1);
+        const delay = baseDelayMs * 2 ** (attempt - 1);
         await new Promise((res) => setTimeout(res, delay));
         continue;
       }
@@ -137,9 +132,9 @@ export async function axiosRequest({
 }
 
 /**
- * @param {object} response - Axios response object.
+ * @param {any} response - Axios response object.
  * @param {{ unwrapProxy?: boolean }} [opts]
- * @returns {object}
+ * @returns {any}
  */
 export function JSONizeResponse(response, opts = {}) {
   let out;
@@ -179,15 +174,9 @@ export function JSONizeResponse(response, opts = {}) {
  * @param {object} [options.params]
  * @param {object} [options.data]
  * @param {object} [options.headers]
- * @returns {Promise<object>} Axios response from the proxy
+ * @returns {Promise<any>} Axios response from the proxy
  */
-export async function axiosRequestWithProxy({
-  method,
-  url,
-  params = {},
-  data = {},
-  headers = {},
-}) {
+export async function axiosRequestWithProxy({ method, url, params = {}, data = {}, headers = {} }) {
   const proxyUrl = getProxyUrl();
   if (!proxyUrl) {
     throw new Error("PROXY_URL is not set");
@@ -220,9 +209,7 @@ export async function axiosRequestWithProxy({
       timeout: timeoutMs,
       httpsAgent: exchangeHttpsAgent(),
       maxRedirects: 3,
-      validateStatus: function (status) {
-        return status >= 200 && status < 300;
-      },
+      validateStatus: (status) => status >= 200 && status < 300,
     });
   } catch (error) {
     const err = error?.response?.data?.error ?? error?.response?.data ?? null;
