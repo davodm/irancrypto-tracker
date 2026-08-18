@@ -368,9 +368,17 @@ function wait_for_ingest_ready(string $runId): array
         }
         $remaining = $deadline - microtime(true);
         if ($remaining <= 0) {
-            throw new RuntimeException(
-                'Finalize wait timed out for ' . $runId . '; missing: ' . implode(',', $missing)
+            log_info(
+                'Finalize wait deadline reached for ' . $runId . '; proceeding with available sources (missing: ' . implode(',', $missing) . ')'
             );
+            if ($RUN_LOGGER instanceof RunLogger) {
+                $RUN_LOGGER->event('status_timeout', [
+                    'run_id' => $runId,
+                    'missing' => $missing,
+                    'waited_sec' => FINALIZE_WAIT_SEC,
+                ]);
+            }
+            return $status;
         }
         $sleepSec = min(FINALIZE_POLL_SEC, (int) ceil($remaining));
         log_info('Waiting for sources (' . implode(',', $missing) . "); poll in {$sleepSec}s");

@@ -22185,9 +22185,15 @@ async function waitForIngestReady(runId, logger) {
     }
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) {
-      throw new Error(
-        `Finalize wait timed out for ${runId}; missing: ${missing.join(",")}`
+      logInfo(
+        `Finalize wait deadline reached for ${runId}; proceeding with available sources (missing: ${missing.join(",")})`
       );
+      logger.event("status_timeout", {
+        run_id: runId,
+        missing,
+        waited_sec: waitSec
+      });
+      return status;
     }
     const sleepMs = Math.min(pollSec * 1e3, remainingMs);
     logInfo(

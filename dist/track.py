@@ -497,10 +497,20 @@ def wait_for_ingest_ready(run_id: str, logger: RunLogger | None = None) -> dict[
             return status
         remaining = deadline - time.monotonic()
         if remaining <= 0:
-            raise RuntimeError(
-                f"Finalize wait timed out for {run_id}; "
-                f"missing: {','.join(str(m) for m in missing)}"
+            log_info(
+                f"Finalize wait deadline reached for {run_id}; "
+                f"proceeding with available sources (missing: {','.join(str(m) for m in missing)})"
             )
+            if logger is not None:
+                logger.event(
+                    "status_timeout",
+                    {
+                        "run_id": run_id,
+                        "missing": missing,
+                        "waited_sec": FINALIZE_WAIT_SEC,
+                    },
+                )
+            return status
         sleep_sec = min(FINALIZE_POLL_SEC, max(1, int(remaining)))
         log_info(
             f"Waiting for sources ({','.join(str(m) for m in missing)}); "
