@@ -1,0 +1,77 @@
+name: Lambda Deploy
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: lambda-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to AWS Lambda
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main
+        run: |
+          git fetch origin main
+          if ! git branch -r --contains "${GITHUB_SHA}" | grep -qE 'origin/main$'; then
+            echo "::error::Release tags must point to a commit on main (commit ${GITHUB_SHA})"
+            exit 1
+          fi
+
+      - name: Verify tag matches package.json
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag v${TAG} does not match package.json version ${PKG}"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build JS worker
+        run: npm run build:js
+
+      - name: Package Lambda archive
+        run: npm run lambda:package
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'eu-west-1' }}
+
+      - name: Deploy to AWS Lambda
+        env:
+          FUNCTION_NAME: ${{ secrets.AWS_LAMBDA_FUNCTION_NAME || 'irancrypto-tracker' }}
+        run: |
+          echo "Updating Lambda function: ${FUNCTION_NAME}..."
+          aws lambda update-function-code \
+            --function-name "${FUNCTION_NAME}" \
+            --zip-file fileb://irancrypto-tracker-lambda.zip \
+            --publish
+
+          echo "Waiting for Lambda function update to complete..."
+          aws lambda wait function-updated --function-name "${FUNCTION_NAME}"
+
+          echo "Lambda deployment successful. Function info:"
+          aws lambda get-function --function-name "${FUNCTION_NAME}" \
+            --query "Configuration.{FunctionName:FunctionName,Runtime:Runtime,Handler:Handler,LastModified:LastModified,CodeSha256:CodeSha256,Version:Version}" \
+            --output table
