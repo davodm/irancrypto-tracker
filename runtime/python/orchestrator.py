@@ -119,7 +119,7 @@ def filter_rows(raw: list[dict[str, Any]], coins: list[str]) -> list[dict[str, A
     for d in raw:
         if not d.get("price") or float(d["price"]) <= 0:
             continue
-        if not d.get("volume_1d") or float(d["volume_1d"]) <= 0:
+        if d.get("volume_1d") is not None and float(d["volume_1d"]) < 0:
             continue
         if not d.get("source"):
             continue
@@ -130,7 +130,7 @@ def filter_rows(raw: list[dict[str, Any]], coins: list[str]) -> list[dict[str, A
             "symbol": sym,
             "currency": str(d.get("currency") or "IRR").upper(),
             "price": float(d["price"]),
-            "volume_1d": float(d["volume_1d"]),
+            "volume_1d": max(0.0, float(d.get("volume_1d") or 0)),
             "source": str(d["source"]).lower(),
         }
         for opt in (
@@ -155,8 +155,16 @@ def select_exchanges(
     allow = csv_list(EXCHANGES_ALLOW)
     if exchange_flag:
         allow = [exchange_flag.lower()]
+
+    registry = scraper_registry()
+    raw = list(exchanges)
+    existing_slugs = {str(e.get("slug") or "").lower() for e in raw if e.get("slug")}
+    for slug in registry.keys():
+        if slug.lower() not in existing_slugs:
+            raw.append({"slug": slug})
+
     out: list[dict[str, Any]] = []
-    for ex in exchanges:
+    for ex in raw:
         slug = str(ex.get("slug") or "").lower()
         if not slug:
             continue

@@ -54,10 +54,11 @@ function ignore_list(): array
 
 function cmc_keys(): array
 {
-    if (COINMARKETCAP_API_KEY === '') {
+    $raw = env('COINMARKETCAP_API_KEY', defined('COINMARKETCAP_API_KEY') ? COINMARKETCAP_API_KEY : '');
+    if ($raw === '') {
         return [];
     }
-    return array_values(array_filter(array_map('trim', explode(',', COINMARKETCAP_API_KEY))));
+    return array_values(array_filter(array_map('trim', explode(',', $raw))));
 }
 
 // =============================================================================

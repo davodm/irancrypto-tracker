@@ -265,9 +265,10 @@ def coin_allowed(filter_coins: list[str], symbol: str) -> bool:
 
 
 def cmc_keys() -> list[str]:
-    if not COINMARKETCAP_API_KEY:
+    raw = os.environ.get("COINMARKETCAP_API_KEY", "") or COINMARKETCAP_API_KEY
+    if not raw:
         return []
-    return [k.strip() for k in COINMARKETCAP_API_KEY.split(",") if k.strip()]
+    return [k.strip() for k in raw.split(",") if k.strip()]
 
 
 # =============================================================================
@@ -887,6 +888,10 @@ def register_coinapi() -> dict[str, Any]:
     }
 
 # --- coinmarketcap ---
+
+
+import random
+
 
 def parse_coinmarketcap(data: Any, coins: list[str]) -> list[dict[str, Any]]:
     if not isinstance(data, dict):
@@ -1678,7 +1683,7 @@ def filter_rows(raw: list[dict[str, Any]], coins: list[str]) -> list[dict[str, A
     for d in raw:
         if not d.get("price") or float(d["price"]) <= 0:
             continue
-        if not d.get("volume_1d") or float(d["volume_1d"]) <= 0:
+        if d.get("volume_1d") is not None and float(d["volume_1d"]) < 0:
             continue
         if not d.get("source"):
             continue
@@ -1689,7 +1694,7 @@ def filter_rows(raw: list[dict[str, Any]], coins: list[str]) -> list[dict[str, A
             "symbol": sym,
             "currency": str(d.get("currency") or "IRR").upper(),
             "price": float(d["price"]),
-            "volume_1d": float(d["volume_1d"]),
+            "volume_1d": max(0.0, float(d.get("volume_1d") or 0)),
             "source": str(d["source"]).lower(),
         }
         for opt in (
@@ -1714,8 +1719,16 @@ def select_exchanges(
     allow = csv_list(EXCHANGES_ALLOW)
     if exchange_flag:
         allow = [exchange_flag.lower()]
+
+    registry = scraper_registry()
+    raw = list(exchanges)
+    existing_slugs = {str(e.get("slug") or "").lower() for e in raw if e.get("slug")}
+    for slug in registry.keys():
+        if slug.lower() not in existing_slugs:
+            raw.append({"slug": slug})
+
     out: list[dict[str, Any]] = []
-    for ex in exchanges:
+    for ex in raw:
         slug = str(ex.get("slug") or "").lower()
         if not slug:
             continue

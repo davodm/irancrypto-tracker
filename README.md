@@ -55,7 +55,7 @@ Scrape Phase (Minute :00 - :05) ──► Ingest Partial Payload ──► Statu
 flowchart TB
   subgraph satellites["Satellite Worker Nodes (Pure Collectors - No DB Access)"]
     direction LR
-    S1["Docker Container<br/>(Raspberry Pi / x86)<br/>ghcr.io/davodm/irancrypto-satellite"]
+    S1["Docker Container<br/>(Raspberry Pi / x86)<br/>ghcr.io/davodm/irancrypto-tracker"]
     S2["Cron Box<br/>(Python 3)<br/>track.py"]
     S3["Shared PHP Host<br/>(PHP 8.2+)<br/>track.php"]
   end
@@ -159,10 +159,10 @@ Or run directly with `docker run`:
 
 ```bash
 docker run -d \
-  --name irancrypto-satellite \
+  --name irancrypto-tracker \
   --restart unless-stopped \
   --env-file .env \
-  ghcr.io/davodm/irancrypto-satellite:latest
+  ghcr.io/davodm/irancrypto-tracker:latest
 ```
 
 #### 2. Build Locally from Source Code

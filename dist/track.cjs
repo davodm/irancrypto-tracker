@@ -20764,9 +20764,9 @@ async function request3($uri, $params = {}) {
   }
   return result.message;
 }
-function processList3($data2, $coinsFilter = []) {
-  const usdt = priceUSDT($data2);
-  return Object.entries($data2).filter(([symbol, data]) => {
+function processList3($data, $coinsFilter = []) {
+  const usdt = priceUSDT($data);
+  return Object.entries($data).filter(([symbol, data]) => {
     if (!data?.price_in_irt) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(symbol.toUpperCase());
   }).map(([symbol, data]) => {
@@ -20792,8 +20792,8 @@ function processList3($data2, $coinsFilter = []) {
     };
   });
 }
-function priceUSDT($data2) {
-  const usdt = $data2?.USDT;
+function priceUSDT($data) {
+  const usdt = $data?.USDT;
   if (!usdt?.price_in_irt) return 0;
   const price = num(usdt.price_in_irt, { decimalPlaces: 8, multiply: 10 }) || 0;
   return typeof price?.toNumber === "function" ? price.toNumber() : price;
@@ -20965,7 +20965,9 @@ __export(scrape_exports8, {
 var import_dayjs8 = __toESM(require_dayjs_min(), 1);
 var PLATFORM8 = "CoinMarketCap";
 var URL8 = "https://pro-api.coinmarketcap.com/v1/";
-var KEYS = process.env.COINMARKETCAP_API_KEY ? process.env.COINMARKETCAP_API_KEY.split(",").map((key) => key.trim()) : [];
+function getKeys() {
+  return process.env.COINMARKETCAP_API_KEY ? process.env.COINMARKETCAP_API_KEY.split(",").map((key) => key.trim()).filter(Boolean) : [];
+}
 var COIN_USE8 = "all";
 async function scrape8($coins = []) {
   const data = await getLatest8(200, $coins);
@@ -21017,21 +21019,22 @@ async function getLosers($limit = 20, $filterCoins = []) {
   return processList6(data, $filterCoins);
 }
 async function getGlobalMetrics() {
-  $data = await request5("global-metrics/quotes/latest");
+  const data = await request5("global-metrics/quotes/latest");
   return {
     last_update: {
-      date: $data.last_updated,
-      timestamp: (0, import_dayjs8.default)($data.last_updated).unix()
+      date: data.last_updated,
+      timestamp: (0, import_dayjs8.default)(data.last_updated).unix()
     },
     dominance: {
-      btc: $data.btc_dominance,
-      eth: $data.eth_dominance
+      btc: data.btc_dominance,
+      eth: data.eth_dominance
     },
-    quote: $data.quote.USD
+    quote: data.quote.USD
   };
 }
 async function request5($uri, $params = {}) {
-  if (!KEYS || KEYS.length === 0) {
+  const keys = getKeys();
+  if (!keys || keys.length === 0) {
     throw new Error("COINMARKETCAP_API_KEY is not set or empty");
   }
   const result = await axiosRequest({
@@ -21039,7 +21042,7 @@ async function request5($uri, $params = {}) {
     url: URL8 + $uri,
     params: $params,
     headers: {
-      "X-CMC_PRO_API_KEY": KEYS[Math.floor(Math.random() * KEYS.length)]
+      "X-CMC_PRO_API_KEY": keys[Math.floor(Math.random() * keys.length)]
     }
   });
   if (!result?.status || result?.status?.error_code !== 0) {
@@ -22208,7 +22211,7 @@ function filterRows(raw, coins) {
   const out = [];
   for (const d of raw) {
     if (!d?.price || d.price <= 0) continue;
-    if (!d?.volume_1d || d.volume_1d <= 0) continue;
+    if (d?.volume_1d != null && d.volume_1d < 0) continue;
     if (!d?.source) continue;
     const sym = String(d.symbol || "").toUpperCase();
     if (!sym || !coinSet.has(sym)) continue;
@@ -22216,7 +22219,7 @@ function filterRows(raw, coins) {
       symbol: sym,
       currency: String(d.currency || "IRR").toUpperCase(),
       price: Number(d.price),
-      volume_1d: Number(d.volume_1d),
+      volume_1d: Math.max(0, Number(d.volume_1d || 0)),
       source: String(d.source).toLowerCase()
     };
     if (d.coin_volume_1d != null) row.coin_volume_1d = Number(d.coin_volume_1d);
@@ -22233,7 +22236,16 @@ function selectExchanges(exchanges, cli) {
   const ignored = csvList(process.env.IGNORE_EXCHANGES);
   let allow = csvList(process.env.EXCHANGES);
   if (cli.exchange) allow = [cli.exchange];
-  return exchanges.filter((ex) => {
+  const raw = [...exchanges];
+  const existingSlugs = new Set(
+    raw.map((e) => String(e.slug || "").toLowerCase())
+  );
+  for (const slug of Object.keys(SCRAPERS)) {
+    if (!existingSlugs.has(slug.toLowerCase())) {
+      raw.push({ slug });
+    }
+  }
+  return raw.filter((ex) => {
     const slug = String(ex.slug || "").toLowerCase();
     if (!slug) return false;
     if (ignored.includes(slug)) return false;

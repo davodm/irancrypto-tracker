@@ -329,7 +329,7 @@ function filterRows(raw, coins) {
   const out = [];
   for (const d of raw) {
     if (!d?.price || d.price <= 0) continue;
-    if (!d?.volume_1d || d.volume_1d <= 0) continue;
+    if (d?.volume_1d != null && d.volume_1d < 0) continue;
     if (!d?.source) continue;
     const sym = String(d.symbol || "").toUpperCase();
     if (!sym || !coinSet.has(sym)) continue;
@@ -337,7 +337,7 @@ function filterRows(raw, coins) {
       symbol: sym,
       currency: String(d.currency || "IRR").toUpperCase(),
       price: Number(d.price),
-      volume_1d: Number(d.volume_1d),
+      volume_1d: Math.max(0, Number(d.volume_1d || 0)),
       source: String(d.source).toLowerCase(),
     };
     if (d.coin_volume_1d != null) row.coin_volume_1d = Number(d.coin_volume_1d);
@@ -355,7 +355,18 @@ function selectExchanges(exchanges, cli) {
   const ignored = csvList(process.env.IGNORE_EXCHANGES);
   let allow = csvList(process.env.EXCHANGES);
   if (cli.exchange) allow = [cli.exchange];
-  return exchanges.filter((ex) => {
+
+  const raw = [...exchanges];
+  const existingSlugs = new Set(
+    raw.map((e) => String(e.slug || "").toLowerCase())
+  );
+  for (const slug of Object.keys(SCRAPERS)) {
+    if (!existingSlugs.has(slug.toLowerCase())) {
+      raw.push({ slug });
+    }
+  }
+
+  return raw.filter((ex) => {
     const slug = String(ex.slug || "").toLowerCase();
     if (!slug) return false;
     if (ignored.includes(slug)) return false;

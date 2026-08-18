@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+import random
+from typing import Any
+
+
 def parse_coinmarketcap(data: Any, coins: list[str]) -> list[dict[str, Any]]:
     if not isinstance(data, dict):
         raise RuntimeError("CMC: invalid")

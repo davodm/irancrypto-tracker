@@ -1,12 +1,12 @@
-name: irancrypto-satellite
+name: irancrypto-tracker
 
 services:
   satellite:
-    image: ghcr.io/davodm/irancrypto-satellite:latest
+    image: ghcr.io/davodm/irancrypto-tracker:latest
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: irancrypto-satellite
+    container_name: irancrypto-tracker
     restart: unless-stopped
 
     # Load environment variables from local .env file

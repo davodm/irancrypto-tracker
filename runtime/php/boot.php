@@ -422,7 +422,7 @@ function filter_rows_for_ingest(array $raw, array $coins): array
         if (empty($d['price']) || (float) $d['price'] <= 0) {
             continue;
         }
-        if (empty($d['volume_1d']) || (float) $d['volume_1d'] <= 0) {
+        if (isset($d['volume_1d']) && (float) $d['volume_1d'] < 0) {
             continue;
         }
         if (empty($d['source'])) {
@@ -436,7 +436,7 @@ function filter_rows_for_ingest(array $raw, array $coins): array
             'symbol' => $sym,
             'currency' => strtoupper((string) ($d['currency'] ?? 'IRR')),
             'price' => (float) $d['price'],
-            'volume_1d' => (float) $d['volume_1d'],
+            'volume_1d' => max(0.0, (float) ($d['volume_1d'] ?? 0)),
             'source' => strtolower((string) $d['source']),
         ];
         if (isset($d['coin_volume_1d'])) {
@@ -479,8 +479,24 @@ function select_exchanges(array $exchanges, array $cli): array
     if (!empty($cli['exchange'])) {
         $allow = [$cli['exchange']];
     }
+    $raw = $exchanges;
+    $existingSlugs = [];
+    foreach ($raw as $ex) {
+        $s = strtolower((string) ($ex['slug'] ?? ''));
+        if ($s !== '') {
+            $existingSlugs[$s] = true;
+        }
+    }
+    if (function_exists('scraper_registry')) {
+        foreach (array_keys(scraper_registry()) as $slug) {
+            $s = strtolower((string) $slug);
+            if (!isset($existingSlugs[$s])) {
+                $raw[] = ['slug' => $s];
+            }
+        }
+    }
     $out = [];
-    foreach ($exchanges as $ex) {
+    foreach ($raw as $ex) {
         $slug = strtolower((string) ($ex['slug'] ?? ''));
         if ($slug === '') {
             continue;

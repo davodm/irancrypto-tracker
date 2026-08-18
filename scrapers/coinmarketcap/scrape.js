@@ -4,9 +4,14 @@ import { axiosRequest } from "../../runtime/js/request.js";
 
 const PLATFORM = "CoinMarketCap";
 const URL = "https://pro-api.coinmarketcap.com/v1/";
-const KEYS = process.env.COINMARKETCAP_API_KEY
-  ? process.env.COINMARKETCAP_API_KEY.split(",").map((key) => key.trim())
-  : [];
+
+function getKeys() {
+  return process.env.COINMARKETCAP_API_KEY
+    ? process.env.COINMARKETCAP_API_KEY.split(",")
+        .map((key) => key.trim())
+        .filter(Boolean)
+    : [];
+}
 
 // Define for automation to which coins to filter are gonna be used
 export const COIN_USE = "all"; // own, all, none
@@ -96,17 +101,17 @@ export async function getLosers($limit = 20, $filterCoins = []) {
  * @returns {Promise<object>} Response data from api
  */
 export async function getGlobalMetrics() {
-  $data = await request("global-metrics/quotes/latest");
+  const data = await request("global-metrics/quotes/latest");
   return {
     last_update: {
-      date: $data.last_updated,
-      timestamp: dayjs($data.last_updated).unix(),
+      date: data.last_updated,
+      timestamp: dayjs(data.last_updated).unix(),
     },
     dominance: {
-      btc: $data.btc_dominance,
-      eth: $data.eth_dominance,
+      btc: data.btc_dominance,
+      eth: data.eth_dominance,
     },
-    quote: $data.quote.USD,
+    quote: data.quote.USD,
   };
 }
 
@@ -118,7 +123,8 @@ export async function getGlobalMetrics() {
  * @returns {Promise<object>} Response data from api
  */
 async function request($uri, $params = {}) {
-  if (!KEYS || KEYS.length === 0) {
+  const keys = getKeys();
+  if (!keys || keys.length === 0) {
     throw new Error("COINMARKETCAP_API_KEY is not set or empty");
   }
   
@@ -128,7 +134,7 @@ async function request($uri, $params = {}) {
     url: URL + $uri,
     params: $params,
     headers: {
-      "X-CMC_PRO_API_KEY": KEYS[Math.floor(Math.random() * KEYS.length)],
+      "X-CMC_PRO_API_KEY": keys[Math.floor(Math.random() * keys.length)],
     },
   });
 
