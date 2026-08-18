@@ -920,6 +920,7 @@ def parse_coinmarketcap(data: Any, coins: list[str]) -> list[dict[str, Any]]:
             "volume_1d": num(quote_usd.get("volume_24h", 0), {"roundUp": True}),
             "change_1d": num(quote_usd.get("percent_change_24h", 0), {"decimalPlaces": 2}),
             "change_7d": num(quote_usd.get("percent_change_7d", 0), {"decimalPlaces": 2}),
+            "cap": num(quote_usd.get("market_cap", 0), {"roundUp": True}),
             "market_cap": num(quote_usd.get("market_cap", 0), {"roundUp": True}),
             "supply": num(row.get("circulating_supply", 0)),
             "max_supply": num(row.get("max_supply", 0)),
@@ -1712,6 +1713,7 @@ def filter_rows(raw: list[dict[str, Any]], coins: list[str]) -> list[dict[str, A
             "coin_volume_1d",
             "change_1d",
             "change_7d",
+            "cap",
             "market_cap",
             "supply",
             "max_supply",
@@ -1722,6 +1724,8 @@ def filter_rows(raw: list[dict[str, Any]], coins: list[str]) -> list[dict[str, A
                     row[opt] = float(val)
                 except (ValueError, TypeError):
                     pass
+        if "cap" not in row and "market_cap" in row:
+            row["cap"] = row["market_cap"]
         out.append(row)
     return out
 
