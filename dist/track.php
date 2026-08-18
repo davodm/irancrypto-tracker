@@ -419,43 +419,32 @@ function filter_rows_for_ingest(array $raw, array $coins): array
     $coinSet = array_fill_keys(array_map('strtoupper', $coins), true);
     $out = [];
     foreach ($raw as $d) {
-        if (empty($d['price']) || (float) $d['price'] <= 0) {
+        if (!is_array($d) || !isset($d['price']) || !is_numeric($d['price']) || (float) $d['price'] <= 0) {
             continue;
         }
-        if (isset($d['volume_1d']) && (float) $d['volume_1d'] < 0) {
+        $vol = isset($d['volume_1d']) && is_numeric($d['volume_1d']) ? (float) $d['volume_1d'] : 0.0;
+        if ($vol < 0) {
             continue;
         }
-        if (empty($d['source'])) {
+        $src = strtolower(trim((string) ($d['source'] ?? '')));
+        if ($src === '') {
             continue;
         }
-        $sym = strtoupper((string) ($d['symbol'] ?? ''));
+        $sym = strtoupper(trim((string) ($d['symbol'] ?? '')));
         if ($sym === '' || !isset($coinSet[$sym])) {
             continue;
         }
         $row = [
             'symbol' => $sym,
-            'currency' => strtoupper((string) ($d['currency'] ?? 'IRR')),
+            'currency' => strtoupper(trim((string) ($d['currency'] ?? 'IRR'))),
             'price' => (float) $d['price'],
-            'volume_1d' => max(0.0, (float) ($d['volume_1d'] ?? 0)),
-            'source' => strtolower((string) $d['source']),
+            'volume_1d' => max(0.0, $vol),
+            'source' => $src,
         ];
-        if (isset($d['coin_volume_1d'])) {
-            $row['coin_volume_1d'] = (float) $d['coin_volume_1d'];
-        }
-        if (isset($d['change_1d'])) {
-            $row['change_1d'] = (float) $d['change_1d'];
-        }
-        if (isset($d['change_7d'])) {
-            $row['change_7d'] = (float) $d['change_7d'];
-        }
-        if (isset($d['market_cap'])) {
-            $row['market_cap'] = (float) $d['market_cap'];
-        }
-        if (isset($d['supply'])) {
-            $row['supply'] = (float) $d['supply'];
-        }
-        if (isset($d['max_supply'])) {
-            $row['max_supply'] = (float) $d['max_supply'];
+        foreach (['coin_volume_1d', 'change_1d', 'change_7d', 'market_cap', 'supply', 'max_supply'] as $opt) {
+            if (isset($d[$opt]) && is_numeric($d[$opt])) {
+                $row[$opt] = (float) $d[$opt];
+            }
         }
         $out[] = $row;
     }

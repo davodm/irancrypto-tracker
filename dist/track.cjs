@@ -22206,28 +22206,59 @@ async function finalizeWhenReady(runId, logger) {
   logger.event("finalize_ok", { run_id: runId, ms: Date.now() - t0 });
   logInfo("Finalize complete");
 }
+async function asyncPool(items, iteratorFn, concurrency = 6) {
+  const results = [];
+  const executing = /* @__PURE__ */ new Set();
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const p = Promise.resolve().then(() => iteratorFn(item, i));
+    results.push(p);
+    executing.add(p);
+    const clean = () => executing.delete(p);
+    p.then(clean, clean);
+    if (executing.size >= concurrency) {
+      await Promise.race(executing);
+    }
+  }
+  return Promise.all(results);
+}
 function filterRows(raw, coins) {
   const coinSet = new Set(coins.map((c) => String(c).toUpperCase()));
   const out = [];
   for (const d of raw) {
-    if (!d?.price || d.price <= 0) continue;
-    if (d?.volume_1d != null && d.volume_1d < 0) continue;
-    if (!d?.source) continue;
-    const sym = String(d.symbol || "").toUpperCase();
+    if (!d || typeof d !== "object") continue;
+    const price = Number(d.price);
+    if (!Number.isFinite(price) || price <= 0) continue;
+    const vol = d.volume_1d != null ? Number(d.volume_1d) : 0;
+    if (Number.isNaN(vol) || vol < 0) continue;
+    if (!d.source || typeof d.source !== "string") continue;
+    const sym = String(d.symbol || "").toUpperCase().trim();
     if (!sym || !coinSet.has(sym)) continue;
     const row = {
       symbol: sym,
-      currency: String(d.currency || "IRR").toUpperCase(),
-      price: Number(d.price),
-      volume_1d: Math.max(0, Number(d.volume_1d || 0)),
-      source: String(d.source).toLowerCase()
+      currency: String(d.currency || "IRR").toUpperCase().trim(),
+      price,
+      volume_1d: Math.max(0, vol),
+      source: String(d.source).toLowerCase().trim()
     };
-    if (d.coin_volume_1d != null) row.coin_volume_1d = Number(d.coin_volume_1d);
-    if (d.change_1d != null) row.change_1d = Number(d.change_1d);
-    if (d.change_7d != null) row.change_7d = Number(d.change_7d);
-    if (d.market_cap != null) row.market_cap = Number(d.market_cap);
-    if (d.supply != null) row.supply = Number(d.supply);
-    if (d.max_supply != null) row.max_supply = Number(d.max_supply);
+    if (d.coin_volume_1d != null && Number.isFinite(Number(d.coin_volume_1d))) {
+      row.coin_volume_1d = Number(d.coin_volume_1d);
+    }
+    if (d.change_1d != null && Number.isFinite(Number(d.change_1d))) {
+      row.change_1d = Number(d.change_1d);
+    }
+    if (d.change_7d != null && Number.isFinite(Number(d.change_7d))) {
+      row.change_7d = Number(d.change_7d);
+    }
+    if (d.market_cap != null && Number.isFinite(Number(d.market_cap))) {
+      row.market_cap = Number(d.market_cap);
+    }
+    if (d.supply != null && Number.isFinite(Number(d.supply))) {
+      row.supply = Number(d.supply);
+    }
+    if (d.max_supply != null && Number.isFinite(Number(d.max_supply))) {
+      row.max_supply = Number(d.max_supply);
+    }
     out.push(row);
   }
   return out;
@@ -22351,22 +22382,30 @@ async function runTrack(customArgv) {
       return 1;
     }
     const scraped = [];
-    for (const ex of exchanges) {
-      try {
-        const rows = await scrapeOne(ex, coins);
-        scraped.push(...rows);
-        logger.event("scrape_ok", {
-          source: String(ex.slug).toLowerCase(),
-          rows: rows.length
-        });
-      } catch (err) {
-        logError(err);
-        logger.event("scrape_err", {
-          source: String(ex.slug).toLowerCase(),
-          message: err instanceof Error ? err.message : String(err)
-        });
-      }
-    }
+    const concurrency = Math.max(
+      1,
+      parseInt(process.env.SCRAPER_CONCURRENCY || "6", 10)
+    );
+    await asyncPool(
+      exchanges,
+      async (ex) => {
+        try {
+          const rows = await scrapeOne(ex, coins);
+          scraped.push(...rows);
+          logger.event("scrape_ok", {
+            source: String(ex.slug).toLowerCase(),
+            rows: rows.length
+          });
+        } catch (err) {
+          logError(err);
+          logger.event("scrape_err", {
+            source: String(ex.slug).toLowerCase(),
+            message: err instanceof Error ? err.message : String(err)
+          });
+        }
+      },
+      concurrency
+    );
     const filtered = filterRows(scraped, coins);
     logInfo(
       `Discovered ${filtered.length} filtered rows from ${new Set(filtered.map((r) => r.source)).size} sources`
