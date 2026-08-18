@@ -1,1133 +1,1133 @@
 {
-    "message": {
-        "USDT": {
-            "price_in_usd": 1,
-            "price_in_irt": 186929,
-            "change": 0.02215364,
-            "market_cap": 183371791216.8923,
-            "volume_24h": 46717987734.22812
-        },
-        "BTC": {
-            "price_in_usd": 64903,
-            "price_in_irt": 12124594333,
-            "change": 0.77453412,
-            "market_cap": 1302591850791.9414,
-            "volume_24h": 21669151050.19679
-        },
-        "ETH": {
-            "price_in_usd": 1918.4850000000001,
-            "price_in_irt": 358394101.33500004,
-            "change": 0.52203466,
-            "market_cap": 231326450438.93906,
-            "volume_24h": 9022276560.682829
-        },
-        "BNB": {
-            "price_in_usd": 594.341,
-            "price_in_irt": 111029436.551,
-            "change": 0.49560788,
-            "market_cap": 78922491119.3951,
-            "volume_24h": 1374386232.5455892
-        },
-        "XRP": {
-            "price_in_usd": 1.025915,
-            "price_in_irt": 191652.207065,
-            "change": -1.09241222,
-            "market_cap": 64048180303.44946,
-            "volume_24h": 1688065412.2870476
-        },
-        "SOL": {
-            "price_in_usd": 74.045,
-            "price_in_irt": 13832383.4725,
-            "change": 1.53412705,
-            "market_cap": 42982656717.82995,
-            "volume_24h": 1673048134.1980526
-        },
-        "TRX": {
-            "price_in_usd": 0.3285,
-            "price_in_irt": 61367.4135,
-            "change": 0.07291679,
-            "market_cap": 31036481656.276157,
-            "volume_24h": 394935088.1515549
-        },
-        "DOGE": {
-            "price_in_usd": 0.0698403,
-            "price_in_irt": 13046.901363149998,
-            "change": 1.62510945,
-            "market_cap": 10852144998.502089,
-            "volume_24h": 467887224.7063791
-        },
-        "ZEC": {
-            "price_in_usd": 513.31,
-            "price_in_irt": 95891954.41,
-            "change": 4.1726775,
-            "market_cap": 8634416201.318508,
-            "volume_24h": 295363083.71299267
-        },
-        "XLM": {
-            "price_in_usd": 0.161715,
-            "price_in_irt": 30210.140865,
-            "change": 0.70468432,
-            "market_cap": 5554548439.0877905,
-            "volume_24h": 84742493.97194362
-        },
-        "ADA": {
-            "price_in_usd": 0.20135,
-            "price_in_irt": 37614.39485,
-            "change": -0.08987137,
-            "market_cap": 7352147825.275134,
-            "volume_24h": 501680348.9216942
-        },
-        "LINK": {
-            "price_in_usd": 8.21735,
-            "price_in_irt": 1535091.3708499998,
-            "change": 0.19557805,
-            "market_cap": 6144143592.428506,
-            "volume_24h": 182628415.8359222
-        },
-        "BCH": {
-            "price_in_usd": 216.47,
-            "price_in_irt": 40438977.17,
-            "change": 1.33941154,
-            "market_cap": 4339321931.168658,
-            "volume_24h": 66194713.56509206
-        },
-        "DAI": {
-            "price_in_usd": 0.9991,
-            "price_in_irt": 186642.8701,
-            "change": 0.00551025,
-            "market_cap": 4587344321.323133,
-            "volume_24h": 41156681.05847372
-        },
-        "GRAM": {
-            "price_in_usd": 1.3530000000000002,
-            "price_in_irt": 252755.28300000002,
-            "change": -1.94543052,
-            "market_cap": 3701838980.456091,
-            "volume_24h": 53790395.74849203
-        },
-        "POL": {
-            "price_in_usd": 0.0754,
-            "price_in_irt": 14085.5494,
-            "change": 0.32132577,
-            "market_cap": 802350959.8758922,
-            "volume_24h": 41064352.51443278
-        },
-        "LTC": {
-            "price_in_usd": 45.5,
-            "price_in_irt": 8499900.5,
-            "change": -0.06126985,
-            "market_cap": 3513024390.6409745,
-            "volume_24h": 169478669.29801953
-        },
-        "ETC": {
-            "price_in_usd": 6.470000000000001,
-            "price_in_irt": 1208667.1700000002,
-            "change": 0.1492696,
-            "market_cap": 1022339748.3137155,
-            "volume_24h": 28605485.86547925
-        },
-        "DYDX": {
-            "price_in_usd": 0.11265,
-            "price_in_irt": 21044.25915,
-            "change": -2.63667486,
-            "market_cap": 95406961.14108399,
-            "volume_24h": 2599908.26060817
-        },
-        "A": {
-            "price_in_usd": 0.0645,
-            "price_in_irt": 12049.567500000001,
-            "change": -1.40893695,
-            "market_cap": 107083659.90830186,
-            "volume_24h": 4421890.8402336
-        },
-        "YFI": {
-            "price_in_usd": 2072.25,
-            "price_in_irt": 387127383.75,
-            "change": -0.15326246,
-            "market_cap": 74380532.37412158,
-            "volume_24h": 2841389.9209032
-        },
-        "AAVE": {
-            "price_in_usd": 90.58500000000001,
-            "price_in_irt": 16922274.435000002,
-            "change": 1.04878277,
-            "market_cap": 1387159386.4885883,
-            "volume_24h": 156734482.99339724
-        },
-        "XTZ": {
-            "price_in_usd": 0.20105,
-            "price_in_irt": 37558.35155,
-            "change": 0.47903858,
-            "market_cap": 220280516.42572498,
-            "volume_24h": 5021640.15918493
-        },
-        "DOT": {
-            "price_in_usd": 0.8135,
-            "price_in_irt": 151970.7485,
-            "change": -1.19491558,
-            "market_cap": 1378443200.7857034,
-            "volume_24h": 61044921.65107527
-        },
-        "COMP": {
-            "price_in_usd": 16.75,
-            "price_in_irt": 3129151.25,
-            "change": 3.00622085,
-            "market_cap": 167493994.3848029,
-            "volume_24h": 8505997.90919757
-        },
-        "EGLD": {
-            "price_in_usd": 2.68,
-            "price_in_irt": 500664.2,
-            "change": -4.82886728,
-            "market_cap": 81189699.11554341,
-            "volume_24h": 4943427.33807446
-        },
-        "ATOM": {
-            "price_in_usd": 1.35,
-            "price_in_irt": 252200.25000000003,
-            "change": -0.96902265,
-            "market_cap": 704997502.4090245,
-            "volume_24h": 17228647.53352683
-        },
-        "AVAX": {
-            "price_in_usd": 6.4350000000000005,
-            "price_in_irt": 1202128.7850000001,
-            "change": -0.07250345,
-            "market_cap": 2781218389.459376,
-            "volume_24h": 207821763.04845917
-        },
-        "SUSHI": {
-            "price_in_usd": 0.16595,
-            "price_in_irt": 31001.285449999996,
-            "change": 2.14165576,
-            "market_cap": 48232911.422255695,
-            "volume_24h": 6541284.34059482
-        },
-        "UNI": {
-            "price_in_usd": 4.0373,
-            "price_in_irt": 754212.0503,
-            "change": 0.40709244,
-            "market_cap": 2518665085.91575,
-            "volume_24h": 163273179.14053944
-        },
-        "VET": {
-            "price_in_usd": 0.0046725,
-            "price_in_irt": 872.8720612499999,
-            "change": 0.93475586,
-            "market_cap": 401698909.76304924,
-            "volume_24h": 6399640.80833705
-        },
-        "MASK": {
-            "price_in_usd": 0.36285,
-            "price_in_irt": 67784.37135,
-            "change": 0.9582422,
-            "market_cap": 1093234.864344912,
-            "volume_24h": 55813.86756386
-        },
-        "MANA": {
-            "price_in_usd": 0.06595000000000001,
-            "price_in_irt": 12320.18545,
-            "change": 0.97679981,
-            "market_cap": 131445306.95845534,
-            "volume_24h": 6867233.08742882
-        },
-        "APE": {
-            "price_in_usd": 0.132,
-            "price_in_irt": 24659.58,
-            "change": -0.36180944,
-            "market_cap": 132303263.49225272,
-            "volume_24h": 9003942.77265967
-        },
-        "SHIB": {
-            "price_in_usd": 0.0000046599999999999994,
-            "price_in_irt": 0.8705392599999999,
-            "change": 1.64184175,
-            "market_cap": 655815.5416145744,
-            "volume_24h": 339.4106666
-        },
-        "PEPE": {
-            "price_in_usd": 0.00000283,
-            "price_in_irt": 0.52868645,
-            "change": 1.33750378,
-            "market_cap": 1171265976.2370682,
-            "volume_24h": 107624359.61723952
-        },
-        "SAND": {
-            "price_in_usd": 0.0414,
-            "price_in_irt": 7734.141,
-            "change": 0.54482756,
-            "market_cap": 120813632.11352186,
-            "volume_24h": 10389702.61030621
-        },
-        "CRV": {
-            "price_in_usd": 0.2147,
-            "price_in_irt": 40108.3217,
-            "change": -1.4417944,
-            "market_cap": 325334953.910565,
-            "volume_24h": 29935121.78889466
-        },
-        "LDO": {
-            "price_in_usd": 0.28659999999999997,
-            "price_in_irt": 53540.03259999999,
-            "change": -1.93410721,
-            "market_cap": 238691210.1283971,
-            "volume_24h": 27533292.97552738
-        },
-        "NEAR": {
-            "price_in_usd": 1.5947,
-            "price_in_irt": 297913.8805,
-            "change": -4.36645089,
-            "market_cap": 2071392062.315142,
-            "volume_24h": 155791992.38185197
-        },
-        "FLOW": {
-            "price_in_usd": 0.027385,
-            "price_in_irt": 5115.819235,
-            "change": -1.46286183,
-            "market_cap": 46056135.61302421,
-            "volume_24h": 3517503.03781392
-        },
-        "RENDER": {
-            "price_in_usd": 1.321,
-            "price_in_irt": 246782.615,
-            "change": -0.97290668,
-            "market_cap": 683042099.2803497,
-            "volume_24h": 13760957.70351307
-        },
-        "GRT": {
-            "price_in_usd": 0.01415,
-            "price_in_irt": 2643.43225,
-            "change": -0.04076525,
-            "market_cap": 157483386.96476054,
-            "volume_24h": 10907347.52998661
-        },
-        "FIL": {
-            "price_in_usd": 0.69955,
-            "price_in_irt": 130683.63505,
-            "change": -2.38734328,
-            "market_cap": 558566837.1485338,
-            "volume_24h": 51478559.63389929
-        },
-        "CHZ": {
-            "price_in_usd": 0.01269,
-            "price_in_irt": 2370.63159,
-            "change": 0.40986411,
-            "market_cap": 133792727.82199731,
-            "volume_24h": 15262432.54525917
-        },
-        "WLD": {
-            "price_in_usd": 0.3055,
-            "price_in_irt": 57071.9825,
-            "change": 1.36051969,
-            "market_cap": 1093263532.294898,
-            "volume_24h": 131050278.58109568
-        },
-        "SLP": {
-            "price_in_usd": 0.0005406,
-            "price_in_irt": 100.98975630000001,
-            "change": -1.52344899,
-            "market_cap": 19686948.712946452,
-            "volume_24h": 1511175.78820759
-        },
-        "1INCH": {
-            "price_in_usd": 0.08330000000000001,
-            "price_in_irt": 15561.356300000003,
-            "change": 0.73907444,
-            "market_cap": 119002457.12946229,
-            "volume_24h": 4477954.62807472
-        },
-        "FLOKI": {
-            "price_in_usd": 0.000021025,
-            "price_in_irt": 3.927701275,
-            "change": -0.15722556,
-            "market_cap": 201415105.80902225,
-            "volume_24h": 16232842.18999835
-        },
-        "GALA": {
-            "price_in_usd": 0.00176,
-            "price_in_irt": 328.78736000000004,
-            "change": -1.30928849,
-            "market_cap": 86865980.28926697,
-            "volume_24h": 25794369.4201894
-        },
-        "CAKE": {
-            "price_in_usd": 1.40025,
-            "price_in_irt": 261582.10275,
-            "change": 1.12714224,
-            "market_cap": 452591672.51477313,
-            "volume_24h": 17139790.19086419
-        },
-        "INJ": {
-            "price_in_usd": 4.482,
-            "price_in_irt": 837284.6610000001,
-            "change": -3.19262847,
-            "market_cap": 446632738.45265,
-            "volume_24h": 47959408.67048429
-        },
-        "AXS": {
-            "price_in_usd": 0.889,
-            "price_in_irt": 166074.979,
-            "change": 0.61842532,
-            "market_cap": 155414212.4090782,
-            "volume_24h": 18189629.53668481
-        },
-        "CELR": {
-            "price_in_usd": 0.001775,
-            "price_in_irt": 331.58952500000004,
-            "change": 2.44230994,
-            "market_cap": 13825428.200852746,
-            "volume_24h": 1512459.39802191
-        },
-        "GMT": {
-            "price_in_usd": 0.00681,
-            "price_in_irt": 1272.18291,
-            "change": -0.20440717,
-            "market_cap": 21050636.540440645,
-            "volume_24h": 3612941.74737748
-        },
-        "ARB": {
-            "price_in_usd": 0.0791,
-            "price_in_irt": 14777.0665,
-            "change": 0.2585838,
-            "market_cap": 521901048.8225907,
-            "volume_24h": 32249863.8344853
-        },
-        "BTTC": {
-            "price_in_usd": 1.6499999999999998e-7,
-            "price_in_irt": 0.030824474999999997,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "MKR": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "ORDI": {
-            "price_in_usd": 3.2655000000000003,
-            "price_in_irt": 610031.3205,
-            "change": -2.52957652,
-            "market_cap": 68633658.49143894,
-            "volume_24h": 10407577.3409394
-        },
-        "MAGIC": {
-            "price_in_usd": 0.04114,
-            "price_in_irt": 7685.569100000001,
-            "change": -0.04203041,
-            "market_cap": 13890141.960546097,
-            "volume_24h": 3266766.8298077
-        },
-        "ALGO": {
-            "price_in_usd": 0.08965000000000001,
-            "price_in_irt": 16747.60615,
-            "change": -1.3673038,
-            "market_cap": 797758766.5070709,
-            "volume_24h": 21037651.33432043
-        },
-        "SNX": {
-            "price_in_usd": 0.2121,
-            "price_in_irt": 39622.6131,
-            "change": -0.95442608,
-            "market_cap": 72438304.12168775,
-            "volume_24h": 13464105.62729511
-        },
-        "LRC": {
-            "price_in_usd": 0.010225000000000001,
-            "price_in_irt": 1910.1424750000003,
-            "change": -1.69553989,
-            "market_cap": 14011320.036423687,
-            "volume_24h": 2868027.30679672
-        },
-        "HBAR": {
-            "price_in_usd": 0.06768,
-            "price_in_irt": 12643.639200000001,
-            "change": -0.98613557,
-            "market_cap": 2961152158.1164947,
-            "volume_24h": 30212123.95708077
-        },
-        "ENJ": {
-            "price_in_usd": 0.02527,
-            "price_in_irt": 4720.71397,
-            "change": -0.99980549,
-            "market_cap": 50097116.504241236,
-            "volume_24h": 2873334.86230004
-        },
-        "APT": {
-            "price_in_usd": 0.5845,
-            "price_in_irt": 109193.36750000001,
-            "change": -0.66800784,
-            "market_cap": 494014641.2060741,
-            "volume_24h": 25420529.49449464
-        },
-        "STORJ": {
-            "price_in_usd": 0.0451,
-            "price_in_irt": 8425.3565,
-            "change": -0.3668176,
-            "market_cap": 19214196.07340339,
-            "volume_24h": 4889624.62161176
-        },
-        "TIA": {
-            "price_in_usd": 0.32730000000000004,
-            "price_in_irt": 61144.54950000001,
-            "change": -0.68251919,
-            "market_cap": 300831761.8727687,
-            "volume_24h": 16193785.01036617
-        },
-        "NTRN": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "OP": {
-            "price_in_usd": 0.08595,
-            "price_in_irt": 16056.749249999999,
-            "change": -0.29401596,
-            "market_cap": 197463178.250963,
-            "volume_24h": 33855510.64423068
-        },
-        "RUNE": {
-            "price_in_usd": 0.453,
-            "price_in_irt": 84625.383,
-            "change": 2.45168534,
-            "market_cap": 153296018.5132359,
-            "volume_24h": 4689905.1614694
-        },
-        "PENDLE": {
-            "price_in_usd": 1.369,
-            "price_in_irt": 255749.735,
-            "change": 1.55657475,
-            "market_cap": 237270590.27413118,
-            "volume_24h": 19470274.90119918
-        },
-        "SUI": {
-            "price_in_usd": 0.67445,
-            "price_in_irt": 125994.67895,
-            "change": -0.08522997,
-            "market_cap": 2743181305.140134,
-            "volume_24h": 177363047.96309742
-        },
-        "IMX": {
-            "price_in_usd": 0.109935,
-            "price_in_irt": 20537.507025000003,
-            "change": -0.36151264,
-            "market_cap": 219841919.96910447,
-            "volume_24h": 5827269.77458094
-        },
-        "PAXG": {
-            "price_in_usd": 4332.5,
-            "price_in_irt": 809358657.5,
-            "change": 2.50344482,
-            "market_cap": 1893745640.4984689,
-            "volume_24h": 231817410.7328675
-        },
-        "STX": {
-            "price_in_usd": 0.13019999999999998,
-            "price_in_irt": 24323.313,
-            "change": -0.0884081,
-            "market_cap": 236008609.83405834,
-            "volume_24h": 3999162.72364229
-        },
-        "TWT": {
-            "price_in_usd": 0.39415,
-            "price_in_irt": 73633.13225,
-            "change": 4.86799781,
-            "market_cap": 170196365.079989,
-            "volume_24h": 7475028.06239602
-        },
-        "BLUR": {
-            "price_in_usd": 0.013635000000000001,
-            "price_in_irt": 2547.167985,
-            "change": -2.53924963,
-            "market_cap": 38457625.30976634,
-            "volume_24h": 16223897.37741505
-        },
-        "JTO": {
-            "price_in_usd": 0.4949,
-            "price_in_irt": 92454.7435,
-            "change": 5.27960833,
-            "market_cap": 250775860.42990953,
-            "volume_24h": 18032994.70784374
-        },
-        "ROSE": {
-            "price_in_usd": 0.0055975,
-            "price_in_irt": 1045.6969625,
-            "change": -1.64073632,
-            "market_cap": 44430376.6773182,
-            "volume_24h": 2305556.28215336
-        },
-        "MINA": {
-            "price_in_usd": 0.04095060928647713,
-            "price_in_irt": 7650.188073853225,
-            "change": 0.70471525,
-            "market_cap": 52713647.75945955,
-            "volume_24h": 1828896.37203217
-        },
-        "THETA": {
-            "price_in_usd": 0.1335983101259056,
-            "price_in_irt": 24958.168306171054,
-            "change": -1.04750337,
-            "market_cap": 133598310.1259056,
-            "volume_24h": 3760058.60544429
-        },
-        "KAVA": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 1.90049603,
-            "market_cap": 44440361.177922346,
-            "volume_24h": 10602844.52487541
-        },
-        "BAKE": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "GMX": {
-            "price_in_usd": 6.3,
-            "price_in_irt": 1176934.5,
-            "change": 2.64062792,
-            "market_cap": 68014341.07181294,
-            "volume_24h": 2796427.16515241
-        },
-        "ICP": {
-            "price_in_usd": 2.0975,
-            "price_in_irt": 391836.0725,
-            "change": 0.43924623,
-            "market_cap": 1164349003.5184026,
-            "volume_24h": 26048313.56554603
-        },
-        "1000SATS": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "BONK": {
-            "price_in_usd": 0.000002485,
-            "price_in_irt": 0.464235275,
-            "change": -10.02070009,
-            "market_cap": 218701820.32957816,
-            "volume_24h": 96100603.00064445
-        },
-        "ACE": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 3.86681157,
-            "market_cap": 12354364.648641666,
-            "volume_24h": 158720370.5311901
-        },
-        "SEI": {
-            "price_in_usd": 0.040764999999999996,
-            "price_in_irt": 7615.350414999999,
-            "change": -1.47823411,
-            "market_cap": 298682777.1267955,
-            "volume_24h": 19000499.48397624
-        },
-        "MEME": {
-            "price_in_usd": 0.00049205,
-            "price_in_irt": 91.92232075,
-            "change": -1.73578165,
-            "market_cap": 31456283.864480387,
-            "volume_24h": 4696516.45467751
-        },
-        "XAUT": {
-            "price_in_usd": 4326.05,
-            "price_in_irt": 808153726.5500001,
-            "change": 2.51083859,
-            "market_cap": 2650913503.184212,
-            "volume_24h": 379320078.6255997
-        },
-        "VIC": {
-            "price_in_usd": 0.035095,
-            "price_in_irt": 6556.132045,
-            "change": -0.80528492,
-            "market_cap": 4137599.649929363,
-            "volume_24h": 16100801.42556323
-        },
-        "USDS": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0.02430386,
-            "market_cap": 513158.46550820454,
-            "volume_24h": 500853.57827283
-        },
-        "CFX": {
-            "price_in_usd": 0.04035946763750705,
-            "price_in_irt": 7539.753946700879,
-            "change": 1.2651809,
-            "market_cap": 211073939.50240546,
-            "volume_24h": 11698170.39948315
-        },
-        "AR": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": -0.5269355,
-            "market_cap": 117168402.31459422,
-            "volume_24h": 3472136.01759615
-        },
-        "CYBER": {
-            "price_in_usd": 0.31026745194903665,
-            "price_in_irt": 57962.61403585928,
-            "change": -0.8822206,
-            "market_cap": 22325423.886520393,
-            "volume_24h": 6269936.02772848
-        },
-        "QNT": {
-            "price_in_usd": 60.269999999999996,
-            "price_in_irt": 11259098.969999999,
-            "change": -0.17800129,
-            "market_cap": 716040943.002967,
-            "volume_24h": 4980625.47632425
-        },
-        "FXS": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "KLAY": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "KAIA": {
-            "price_in_usd": 0.026725256929816015,
-            "price_in_irt": 4992.678873343579,
-            "change": 1.4012686,
-            "market_cap": 170719949.59400475,
-            "volume_24h": 3789052.85759235
-        },
-        "RPL": {
-            "price_in_usd": 1.525,
-            "price_in_irt": 284892.875,
-            "change": -0.57020078,
-            "market_cap": 34550342.5889723,
-            "volume_24h": 7850207.17790312
-        },
-        "IOTA": {
-            "price_in_usd": 0.033805602373932236,
-            "price_in_irt": 6315.39360748615,
-            "change": -0.81390441,
-            "market_cap": 154858715.12590605,
-            "volume_24h": 4403143.67312663
-        },
-        "BEAMX": {
-            "price_in_usd": 0.001379,
-            "price_in_irt": 257.617885,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "NEO": {
-            "price_in_usd": 1.8359999999999999,
-            "price_in_irt": 342992.33999999997,
-            "change": -0.72020362,
-            "market_cap": 129256933.92961204,
-            "volume_24h": 2784950.89339429
-        },
-        "GAS": {
-            "price_in_usd": 0.93575,
-            "price_in_irt": 174808.39325,
-            "change": -0.01087111,
-            "market_cap": 60743515.612023145,
-            "volume_24h": 833008.32109042
-        },
-        "ONT": {
-            "price_in_usd": 0.037970000000000004,
-            "price_in_irt": 7093.194685,
-            "change": -0.8162969,
-            "market_cap": 37888561.08472525,
-            "volume_24h": 1736936.15680078
-        },
-        "WOO": {
-            "price_in_usd": 0.01168,
-            "price_in_irt": 2181.9991999999997,
-            "change": 0.95104794,
-            "market_cap": 21514940.822994977,
-            "volume_24h": 1289521.31207973
-        },
-        "LUNA": {
-            "price_in_usd": 0.004526249106296054,
-            "price_in_irt": 845.5712267926973,
-            "change": -1.88573765,
-            "market_cap": 4526249.106296054,
-            "volume_24h": 0
-        },
-        "XEC": {
-            "price_in_usd": 0.0000067135,
-            "price_in_irt": 1.2541556485,
-            "change": 6.5033738,
-            "market_cap": 133848845.18287276,
-            "volume_24h": 16711538.25293311
-        },
-        "RDNT": {
-            "price_in_usd": 0.0004242,
-            "price_in_irt": 79.2452262,
-            "change": 0.03669248,
-            "market_cap": 637727.3424605248,
-            "volume_24h": 68950.21940761
-        },
-        "ARKM": {
-            "price_in_usd": 0.09517500000000001,
-            "price_in_irt": 17779.736925,
-            "change": -1.05728729,
-            "market_cap": 21379806.916970223,
-            "volume_24h": 78500541.47238626
-        },
-        "EDU": {
-            "price_in_usd": 0.034795,
-            "price_in_irt": 6500.088745,
-            "change": 3.52697311,
-            "market_cap": 28292309.50756315,
-            "volume_24h": 1947653.50900289
-        },
-        "GTC": {
-            "price_in_usd": 0.08479584968618596,
-            "price_in_irt": 15841.13665912483,
-            "change": 2.61460152,
-            "market_cap": 7418916.244290833,
-            "volume_24h": 2834109.01455908
-        },
-        "ZRX": {
-            "price_in_usd": 0.07980000000000001,
-            "price_in_irt": 14907.517800000001,
-            "change": 1.34715731,
-            "market_cap": 68617638.67154224,
-            "volume_24h": 3823302.72218521
-        },
-        "HOOK": {
-            "price_in_usd": 0.0036161834314069954,
-            "price_in_irt": 675.5573077382978,
-            "change": -0.47787708,
-            "market_cap": 1288262.5394724282,
-            "volume_24h": 110631.17254964
-        },
-        "OSMO": {
-            "price_in_usd": 0.0281,
-            "price_in_irt": 5249.5015,
-            "change": 0.04820346,
-            "market_cap": 22435701.87279118,
-            "volume_24h": 2259916.86959507
-        },
-        "ARK": {
-            "price_in_usd": 0.09506500000000001,
-            "price_in_irt": 17759.567975,
-            "change": 0.59193222,
-            "market_cap": 18815558.347683486,
-            "volume_24h": 791811.19496201
-        },
-        "GFT": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "S": {
-            "price_in_usd": 0.021949999999999997,
-            "price_in_irt": 4100.589249999999,
-            "change": -0.07110439,
-            "market_cap": 63067290.37407187,
-            "volume_24h": 3838087.67797929
-        },
-        "IQ": {
-            "price_in_usd": 0.0006514,
-            "price_in_irt": 121.691291,
-            "change": 0.21338718,
-            "market_cap": 17653074.422113728,
-            "volume_24h": 472222.79592391
-        },
-        "MAV": {
-            "price_in_usd": 0.008907,
-            "price_in_irt": 1663.9211235,
-            "change": 8.11713407,
-            "market_cap": 10445310.320319187,
-            "volume_24h": 6333752.34711177
-        },
-        "ZIL": {
-            "price_in_usd": 0.0023775000000000003,
-            "price_in_irt": 444.14315250000004,
-            "change": -8.19217348,
-            "market_cap": 47890575.05219474,
-            "volume_24h": 4316922.54556129
-        },
-        "ID": {
-            "price_in_usd": 0.0271,
-            "price_in_irt": 5062.6865,
-            "change": 0.21605584,
-            "market_cap": 1226557.4207648644,
-            "volume_24h": 0
-        },
-        "LQTY": {
-            "price_in_usd": 0.179785,
-            "price_in_irt": 33585.815635,
-            "change": -0.61550876,
-            "market_cap": 17340643.512108594,
-            "volume_24h": 1495717.1626555
-        },
-        "SYN": {
-            "price_in_usd": 0.107085,
-            "price_in_irt": 20004.655935,
-            "change": -15.39987675,
-            "market_cap": 24912609.72415644,
-            "volume_24h": 29527641.9604196
-        },
-        "GNS": {
-            "price_in_usd": 0.5102500000000001,
-            "price_in_irt": 95320.31275000001,
-            "change": 4.24608121,
-            "market_cap": 11964669.70376028,
-            "volume_24h": 422059.32515481
-        },
-        "PROS": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 1.34745438,
-            "market_cap": 53776847.87134716,
-            "volume_24h": 2529873.0230709
-        },
-        "HIFI": {
-            "price_in_usd": 0.024983684451064376,
-            "price_in_irt": 4667.327010725591,
-            "change": 1764.10924988,
-            "market_cap": 3547279.7618575697,
-            "volume_24h": 0
-        },
-        "HFT": {
-            "price_in_usd": 0.013157499999999999,
-            "price_in_irt": 2457.9657325,
-            "change": -61.19604483,
-            "market_cap": 11973233.702508213,
-            "volume_24h": 175537792.5988822
-        },
-        "BAR": {
-            "price_in_usd": 0.2663790321403419,
-            "price_in_irt": 49763.59888929797,
-            "change": -0.37164701,
-            "market_cap": 6988394.772056734,
-            "volume_24h": 2137760.7889475
-        },
-        "ACM": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": -1.21587014,
-            "market_cap": 3723047.7830732157,
-            "volume_24h": 1487051.66629115
-        },
-        "JUV": {
-            "price_in_usd": 0.31505262482574814,
-            "price_in_irt": 58856.556106822136,
-            "change": -0.12020932,
-            "market_cap": 4962850.089831106,
-            "volume_24h": 2071729.74377134
-        },
-        "PSG": {
-            "price_in_usd": 0.51485,
-            "price_in_irt": 96179.64335,
-            "change": 0.52430109,
-            "market_cap": 8536381.05920201,
-            "volume_24h": 2841811.94383862
-        },
-        "CITY": {
-            "price_in_usd": 0.36498582392318746,
-            "price_in_irt": 68184.82669621026,
-            "change": -0.50367979,
-            "market_cap": 5003867.684403335,
-            "volume_24h": 1326803.45125436
-        },
-        "ASR": {
-            "price_in_usd": 0.8639,
-            "price_in_irt": 161389.4785,
-            "change": 0.74738938,
-            "market_cap": 7538341.480659147,
-            "volume_24h": 2699401.83283587
-        },
-        "ATM": {
-            "price_in_usd": 1.6048,
-            "price_in_irt": 299800.712,
-            "change": 0.14710966,
-            "market_cap": 14147134.181928763,
-            "volume_24h": 5477475.09660598
-        },
-        "PORTO": {
-            "price_in_usd": 0.4610135833954114,
-            "price_in_irt": 86124.25258201378,
-            "change": -1.30476249,
-            "market_cap": 5987739.552256055,
-            "volume_24h": 1735661.92809677
-        },
-        "LAZIO": {
-            "price_in_usd": 0.36420110231622466,
-            "price_in_irt": 68038.2289292055,
-            "change": 1.0782689,
-            "market_cap": 4799776.797136992,
-            "volume_24h": 1080276.35967579
-        },
-        "JST": {
-            "price_in_usd": 0.105185,
-            "price_in_irt": 19650.135775,
-            "change": -0.19123555,
-            "market_cap": 862747446.1427168,
-            "volume_24h": 22609108.24442289
-        },
-        "ALICE": {
-            "price_in_usd": 0.11885,
-            "price_in_irt": 22202.96275,
-            "change": -0.02174102,
-            "market_cap": 11898641.4360207,
-            "volume_24h": 19642089.62541758
-        },
-        "ONE": {
-            "price_in_usd": 0.00123,
-            "price_in_irt": 229.78244999999998,
-            "change": -0.16579563,
-            "market_cap": 3175773.318587685,
-            "volume_24h": 0
-        },
-        "LPT": {
-            "price_in_usd": 1.2530000000000001,
-            "price_in_irt": 234074.18300000002,
-            "change": -1.86935918,
-            "market_cap": 62102830.18709534,
-            "volume_24h": 4367103.30529941
-        },
-        "BAND": {
-            "price_in_usd": 0.1629,
-            "price_in_irt": 30432.1635,
-            "change": 4.12743815,
-            "market_cap": 29820891.05920792,
-            "volume_24h": 2082724.70052283
-        },
-        "API3": {
-            "price_in_usd": 0.1921,
-            "price_in_irt": 35886.3931,
-            "change": 0.39827683,
-            "market_cap": 16390429.602772191,
-            "volume_24h": 5507327.30899428
-        },
-        "BAL": {
-            "price_in_usd": 0.10785051351891153,
-            "price_in_irt": 20148.09368303546,
-            "change": -2.32186194,
-            "market_cap": 7526770.568140139,
-            "volume_24h": 285790.74445103
-        },
-        "OMG": {
-            "price_in_usd": 0.04398893878957238,
-            "price_in_irt": 8217.793599973964,
-            "change": -0.52726045,
-            "market_cap": 6169246.238924348,
-            "volume_24h": 336908.27561797
-        },
-        "SKL": {
-            "price_in_usd": 0.0035900000000000003,
-            "price_in_irt": 670.6514900000001,
-            "change": 1.32426543,
-            "market_cap": 22067634.77957904,
-            "volume_24h": 4863142.94822413
-        },
-        "WIN": {
-            "price_in_usd": 0.00003003667046280148,
-            "price_in_irt": 5.611300592508258,
-            "change": 0.24668007,
-            "market_cap": 29847495.13150711,
-            "volume_24h": 3088170.08333538
-        },
-        "NFP": {
-            "price_in_usd": 0.000555,
-            "price_in_irt": 103.68010500000001,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        },
-        "AI": {
-            "price_in_usd": 0.017655,
-            "price_in_irt": 3298.1393775,
-            "change": -1.28785539,
-            "market_cap": 28183281.484812766,
-            "volume_24h": 3276536.98910723
-        },
-        "CRCLX": {
-            "price_in_usd": 66.725,
-            "price_in_irt": 12464963.975,
-            "change": 4.77615979,
-            "market_cap": 53293211.363576,
-            "volume_24h": 13876930.52338762
-        },
-        "COINX": {
-            "price_in_usd": 153.67000000000002,
-            "price_in_irt": 28707246.370000005,
-            "change": 5.33795676,
-            "market_cap": 9074044.866782999,
-            "volume_24h": 5293906.37153777
-        },
-        "TSLAX": {
-            "price_in_usd": 327.925,
-            "price_in_irt": 61259997.175000004,
-            "change": 2.75471261,
-            "market_cap": 63089363.66123113,
-            "volume_24h": 15672159.87587602
-        },
-        "METAX": {
-            "price_in_usd": 592.89,
-            "price_in_irt": 110758373.78999999,
-            "change": 0.92268287,
-            "market_cap": 7237652.411885003,
-            "volume_24h": 2312676.2518049
-        },
-        "AMZNX": {
-            "price_in_usd": 274.26,
-            "price_in_irt": 51234784.86,
-            "change": 1.0294996,
-            "market_cap": 7835931.253466737,
-            "volume_24h": 8072568.59382233
-        },
-        "NVDAX": {
-            "price_in_usd": 223.8,
-            "price_in_irt": 41808301.800000004,
-            "change": 1.72595306,
-            "market_cap": 38010828.280536145,
-            "volume_24h": 21197441.39069637
-        },
-        "AAPLX": {
-            "price_in_usd": 313.84000000000003,
-            "price_in_irt": 58628764.24000001,
-            "change": 0.33672758,
-            "market_cap": 11416110.922913382,
-            "volume_24h": 3540289.20892089
-        },
-        "SPYX": {
-            "price_in_usd": 777.5699999999999,
-            "price_in_irt": 145258629.26999998,
-            "change": 0.51750015,
-            "market_cap": 47605211.881970756,
-            "volume_24h": 5382697.80929774
-        },
-        "QQQX": {
-            "price_in_usd": 725.095,
-            "price_in_irt": 135458622.425,
-            "change": 0.95573781,
-            "market_cap": 32630647.49240822,
-            "volume_24h": 3270685.0911656
-        },
-        "IRT": {
-            "price_in_usd": 0,
-            "price_in_irt": 0,
-            "change": 0,
-            "market_cap": 0,
-            "volume_24h": 0
-        }
+  "message": {
+    "USDT": {
+      "price_in_usd": 1,
+      "price_in_irt": 186929,
+      "change": 0.02215364,
+      "market_cap": 183371791216.8923,
+      "volume_24h": 46717987734.22812
     },
-    "error": false,
-    "number": 1
+    "BTC": {
+      "price_in_usd": 64903,
+      "price_in_irt": 12124594333,
+      "change": 0.77453412,
+      "market_cap": 1302591850791.9414,
+      "volume_24h": 21669151050.19679
+    },
+    "ETH": {
+      "price_in_usd": 1918.4850000000001,
+      "price_in_irt": 358394101.33500004,
+      "change": 0.52203466,
+      "market_cap": 231326450438.93906,
+      "volume_24h": 9022276560.682829
+    },
+    "BNB": {
+      "price_in_usd": 594.341,
+      "price_in_irt": 111029436.551,
+      "change": 0.49560788,
+      "market_cap": 78922491119.3951,
+      "volume_24h": 1374386232.5455892
+    },
+    "XRP": {
+      "price_in_usd": 1.025915,
+      "price_in_irt": 191652.207065,
+      "change": -1.09241222,
+      "market_cap": 64048180303.44946,
+      "volume_24h": 1688065412.2870476
+    },
+    "SOL": {
+      "price_in_usd": 74.045,
+      "price_in_irt": 13832383.4725,
+      "change": 1.53412705,
+      "market_cap": 42982656717.82995,
+      "volume_24h": 1673048134.1980526
+    },
+    "TRX": {
+      "price_in_usd": 0.3285,
+      "price_in_irt": 61367.4135,
+      "change": 0.07291679,
+      "market_cap": 31036481656.276157,
+      "volume_24h": 394935088.1515549
+    },
+    "DOGE": {
+      "price_in_usd": 0.0698403,
+      "price_in_irt": 13046.901363149998,
+      "change": 1.62510945,
+      "market_cap": 10852144998.502089,
+      "volume_24h": 467887224.7063791
+    },
+    "ZEC": {
+      "price_in_usd": 513.31,
+      "price_in_irt": 95891954.41,
+      "change": 4.1726775,
+      "market_cap": 8634416201.318508,
+      "volume_24h": 295363083.71299267
+    },
+    "XLM": {
+      "price_in_usd": 0.161715,
+      "price_in_irt": 30210.140865,
+      "change": 0.70468432,
+      "market_cap": 5554548439.0877905,
+      "volume_24h": 84742493.97194362
+    },
+    "ADA": {
+      "price_in_usd": 0.20135,
+      "price_in_irt": 37614.39485,
+      "change": -0.08987137,
+      "market_cap": 7352147825.275134,
+      "volume_24h": 501680348.9216942
+    },
+    "LINK": {
+      "price_in_usd": 8.21735,
+      "price_in_irt": 1535091.3708499998,
+      "change": 0.19557805,
+      "market_cap": 6144143592.428506,
+      "volume_24h": 182628415.8359222
+    },
+    "BCH": {
+      "price_in_usd": 216.47,
+      "price_in_irt": 40438977.17,
+      "change": 1.33941154,
+      "market_cap": 4339321931.168658,
+      "volume_24h": 66194713.56509206
+    },
+    "DAI": {
+      "price_in_usd": 0.9991,
+      "price_in_irt": 186642.8701,
+      "change": 0.00551025,
+      "market_cap": 4587344321.323133,
+      "volume_24h": 41156681.05847372
+    },
+    "GRAM": {
+      "price_in_usd": 1.3530000000000002,
+      "price_in_irt": 252755.28300000002,
+      "change": -1.94543052,
+      "market_cap": 3701838980.456091,
+      "volume_24h": 53790395.74849203
+    },
+    "POL": {
+      "price_in_usd": 0.0754,
+      "price_in_irt": 14085.5494,
+      "change": 0.32132577,
+      "market_cap": 802350959.8758922,
+      "volume_24h": 41064352.51443278
+    },
+    "LTC": {
+      "price_in_usd": 45.5,
+      "price_in_irt": 8499900.5,
+      "change": -0.06126985,
+      "market_cap": 3513024390.6409745,
+      "volume_24h": 169478669.29801953
+    },
+    "ETC": {
+      "price_in_usd": 6.470000000000001,
+      "price_in_irt": 1208667.1700000002,
+      "change": 0.1492696,
+      "market_cap": 1022339748.3137155,
+      "volume_24h": 28605485.86547925
+    },
+    "DYDX": {
+      "price_in_usd": 0.11265,
+      "price_in_irt": 21044.25915,
+      "change": -2.63667486,
+      "market_cap": 95406961.14108399,
+      "volume_24h": 2599908.26060817
+    },
+    "A": {
+      "price_in_usd": 0.0645,
+      "price_in_irt": 12049.567500000001,
+      "change": -1.40893695,
+      "market_cap": 107083659.90830186,
+      "volume_24h": 4421890.8402336
+    },
+    "YFI": {
+      "price_in_usd": 2072.25,
+      "price_in_irt": 387127383.75,
+      "change": -0.15326246,
+      "market_cap": 74380532.37412158,
+      "volume_24h": 2841389.9209032
+    },
+    "AAVE": {
+      "price_in_usd": 90.58500000000001,
+      "price_in_irt": 16922274.435000002,
+      "change": 1.04878277,
+      "market_cap": 1387159386.4885883,
+      "volume_24h": 156734482.99339724
+    },
+    "XTZ": {
+      "price_in_usd": 0.20105,
+      "price_in_irt": 37558.35155,
+      "change": 0.47903858,
+      "market_cap": 220280516.42572498,
+      "volume_24h": 5021640.15918493
+    },
+    "DOT": {
+      "price_in_usd": 0.8135,
+      "price_in_irt": 151970.7485,
+      "change": -1.19491558,
+      "market_cap": 1378443200.7857034,
+      "volume_24h": 61044921.65107527
+    },
+    "COMP": {
+      "price_in_usd": 16.75,
+      "price_in_irt": 3129151.25,
+      "change": 3.00622085,
+      "market_cap": 167493994.3848029,
+      "volume_24h": 8505997.90919757
+    },
+    "EGLD": {
+      "price_in_usd": 2.68,
+      "price_in_irt": 500664.2,
+      "change": -4.82886728,
+      "market_cap": 81189699.11554341,
+      "volume_24h": 4943427.33807446
+    },
+    "ATOM": {
+      "price_in_usd": 1.35,
+      "price_in_irt": 252200.25000000003,
+      "change": -0.96902265,
+      "market_cap": 704997502.4090245,
+      "volume_24h": 17228647.53352683
+    },
+    "AVAX": {
+      "price_in_usd": 6.4350000000000005,
+      "price_in_irt": 1202128.7850000001,
+      "change": -0.07250345,
+      "market_cap": 2781218389.459376,
+      "volume_24h": 207821763.04845917
+    },
+    "SUSHI": {
+      "price_in_usd": 0.16595,
+      "price_in_irt": 31001.285449999996,
+      "change": 2.14165576,
+      "market_cap": 48232911.422255695,
+      "volume_24h": 6541284.34059482
+    },
+    "UNI": {
+      "price_in_usd": 4.0373,
+      "price_in_irt": 754212.0503,
+      "change": 0.40709244,
+      "market_cap": 2518665085.91575,
+      "volume_24h": 163273179.14053944
+    },
+    "VET": {
+      "price_in_usd": 0.0046725,
+      "price_in_irt": 872.8720612499999,
+      "change": 0.93475586,
+      "market_cap": 401698909.76304924,
+      "volume_24h": 6399640.80833705
+    },
+    "MASK": {
+      "price_in_usd": 0.36285,
+      "price_in_irt": 67784.37135,
+      "change": 0.9582422,
+      "market_cap": 1093234.864344912,
+      "volume_24h": 55813.86756386
+    },
+    "MANA": {
+      "price_in_usd": 0.06595000000000001,
+      "price_in_irt": 12320.18545,
+      "change": 0.97679981,
+      "market_cap": 131445306.95845534,
+      "volume_24h": 6867233.08742882
+    },
+    "APE": {
+      "price_in_usd": 0.132,
+      "price_in_irt": 24659.58,
+      "change": -0.36180944,
+      "market_cap": 132303263.49225272,
+      "volume_24h": 9003942.77265967
+    },
+    "SHIB": {
+      "price_in_usd": 0.0000046599999999999994,
+      "price_in_irt": 0.8705392599999999,
+      "change": 1.64184175,
+      "market_cap": 655815.5416145744,
+      "volume_24h": 339.4106666
+    },
+    "PEPE": {
+      "price_in_usd": 0.00000283,
+      "price_in_irt": 0.52868645,
+      "change": 1.33750378,
+      "market_cap": 1171265976.2370682,
+      "volume_24h": 107624359.61723952
+    },
+    "SAND": {
+      "price_in_usd": 0.0414,
+      "price_in_irt": 7734.141,
+      "change": 0.54482756,
+      "market_cap": 120813632.11352186,
+      "volume_24h": 10389702.61030621
+    },
+    "CRV": {
+      "price_in_usd": 0.2147,
+      "price_in_irt": 40108.3217,
+      "change": -1.4417944,
+      "market_cap": 325334953.910565,
+      "volume_24h": 29935121.78889466
+    },
+    "LDO": {
+      "price_in_usd": 0.28659999999999997,
+      "price_in_irt": 53540.03259999999,
+      "change": -1.93410721,
+      "market_cap": 238691210.1283971,
+      "volume_24h": 27533292.97552738
+    },
+    "NEAR": {
+      "price_in_usd": 1.5947,
+      "price_in_irt": 297913.8805,
+      "change": -4.36645089,
+      "market_cap": 2071392062.315142,
+      "volume_24h": 155791992.38185197
+    },
+    "FLOW": {
+      "price_in_usd": 0.027385,
+      "price_in_irt": 5115.819235,
+      "change": -1.46286183,
+      "market_cap": 46056135.61302421,
+      "volume_24h": 3517503.03781392
+    },
+    "RENDER": {
+      "price_in_usd": 1.321,
+      "price_in_irt": 246782.615,
+      "change": -0.97290668,
+      "market_cap": 683042099.2803497,
+      "volume_24h": 13760957.70351307
+    },
+    "GRT": {
+      "price_in_usd": 0.01415,
+      "price_in_irt": 2643.43225,
+      "change": -0.04076525,
+      "market_cap": 157483386.96476054,
+      "volume_24h": 10907347.52998661
+    },
+    "FIL": {
+      "price_in_usd": 0.69955,
+      "price_in_irt": 130683.63505,
+      "change": -2.38734328,
+      "market_cap": 558566837.1485338,
+      "volume_24h": 51478559.63389929
+    },
+    "CHZ": {
+      "price_in_usd": 0.01269,
+      "price_in_irt": 2370.63159,
+      "change": 0.40986411,
+      "market_cap": 133792727.82199731,
+      "volume_24h": 15262432.54525917
+    },
+    "WLD": {
+      "price_in_usd": 0.3055,
+      "price_in_irt": 57071.9825,
+      "change": 1.36051969,
+      "market_cap": 1093263532.294898,
+      "volume_24h": 131050278.58109568
+    },
+    "SLP": {
+      "price_in_usd": 0.0005406,
+      "price_in_irt": 100.98975630000001,
+      "change": -1.52344899,
+      "market_cap": 19686948.712946452,
+      "volume_24h": 1511175.78820759
+    },
+    "1INCH": {
+      "price_in_usd": 0.08330000000000001,
+      "price_in_irt": 15561.356300000003,
+      "change": 0.73907444,
+      "market_cap": 119002457.12946229,
+      "volume_24h": 4477954.62807472
+    },
+    "FLOKI": {
+      "price_in_usd": 0.000021025,
+      "price_in_irt": 3.927701275,
+      "change": -0.15722556,
+      "market_cap": 201415105.80902225,
+      "volume_24h": 16232842.18999835
+    },
+    "GALA": {
+      "price_in_usd": 0.00176,
+      "price_in_irt": 328.78736000000004,
+      "change": -1.30928849,
+      "market_cap": 86865980.28926697,
+      "volume_24h": 25794369.4201894
+    },
+    "CAKE": {
+      "price_in_usd": 1.40025,
+      "price_in_irt": 261582.10275,
+      "change": 1.12714224,
+      "market_cap": 452591672.51477313,
+      "volume_24h": 17139790.19086419
+    },
+    "INJ": {
+      "price_in_usd": 4.482,
+      "price_in_irt": 837284.6610000001,
+      "change": -3.19262847,
+      "market_cap": 446632738.45265,
+      "volume_24h": 47959408.67048429
+    },
+    "AXS": {
+      "price_in_usd": 0.889,
+      "price_in_irt": 166074.979,
+      "change": 0.61842532,
+      "market_cap": 155414212.4090782,
+      "volume_24h": 18189629.53668481
+    },
+    "CELR": {
+      "price_in_usd": 0.001775,
+      "price_in_irt": 331.58952500000004,
+      "change": 2.44230994,
+      "market_cap": 13825428.200852746,
+      "volume_24h": 1512459.39802191
+    },
+    "GMT": {
+      "price_in_usd": 0.00681,
+      "price_in_irt": 1272.18291,
+      "change": -0.20440717,
+      "market_cap": 21050636.540440645,
+      "volume_24h": 3612941.74737748
+    },
+    "ARB": {
+      "price_in_usd": 0.0791,
+      "price_in_irt": 14777.0665,
+      "change": 0.2585838,
+      "market_cap": 521901048.8225907,
+      "volume_24h": 32249863.8344853
+    },
+    "BTTC": {
+      "price_in_usd": 1.6499999999999998e-7,
+      "price_in_irt": 0.030824474999999997,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "MKR": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "ORDI": {
+      "price_in_usd": 3.2655000000000003,
+      "price_in_irt": 610031.3205,
+      "change": -2.52957652,
+      "market_cap": 68633658.49143894,
+      "volume_24h": 10407577.3409394
+    },
+    "MAGIC": {
+      "price_in_usd": 0.04114,
+      "price_in_irt": 7685.569100000001,
+      "change": -0.04203041,
+      "market_cap": 13890141.960546097,
+      "volume_24h": 3266766.8298077
+    },
+    "ALGO": {
+      "price_in_usd": 0.08965000000000001,
+      "price_in_irt": 16747.60615,
+      "change": -1.3673038,
+      "market_cap": 797758766.5070709,
+      "volume_24h": 21037651.33432043
+    },
+    "SNX": {
+      "price_in_usd": 0.2121,
+      "price_in_irt": 39622.6131,
+      "change": -0.95442608,
+      "market_cap": 72438304.12168775,
+      "volume_24h": 13464105.62729511
+    },
+    "LRC": {
+      "price_in_usd": 0.010225000000000001,
+      "price_in_irt": 1910.1424750000003,
+      "change": -1.69553989,
+      "market_cap": 14011320.036423687,
+      "volume_24h": 2868027.30679672
+    },
+    "HBAR": {
+      "price_in_usd": 0.06768,
+      "price_in_irt": 12643.639200000001,
+      "change": -0.98613557,
+      "market_cap": 2961152158.1164947,
+      "volume_24h": 30212123.95708077
+    },
+    "ENJ": {
+      "price_in_usd": 0.02527,
+      "price_in_irt": 4720.71397,
+      "change": -0.99980549,
+      "market_cap": 50097116.504241236,
+      "volume_24h": 2873334.86230004
+    },
+    "APT": {
+      "price_in_usd": 0.5845,
+      "price_in_irt": 109193.36750000001,
+      "change": -0.66800784,
+      "market_cap": 494014641.2060741,
+      "volume_24h": 25420529.49449464
+    },
+    "STORJ": {
+      "price_in_usd": 0.0451,
+      "price_in_irt": 8425.3565,
+      "change": -0.3668176,
+      "market_cap": 19214196.07340339,
+      "volume_24h": 4889624.62161176
+    },
+    "TIA": {
+      "price_in_usd": 0.32730000000000004,
+      "price_in_irt": 61144.54950000001,
+      "change": -0.68251919,
+      "market_cap": 300831761.8727687,
+      "volume_24h": 16193785.01036617
+    },
+    "NTRN": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "OP": {
+      "price_in_usd": 0.08595,
+      "price_in_irt": 16056.749249999999,
+      "change": -0.29401596,
+      "market_cap": 197463178.250963,
+      "volume_24h": 33855510.64423068
+    },
+    "RUNE": {
+      "price_in_usd": 0.453,
+      "price_in_irt": 84625.383,
+      "change": 2.45168534,
+      "market_cap": 153296018.5132359,
+      "volume_24h": 4689905.1614694
+    },
+    "PENDLE": {
+      "price_in_usd": 1.369,
+      "price_in_irt": 255749.735,
+      "change": 1.55657475,
+      "market_cap": 237270590.27413118,
+      "volume_24h": 19470274.90119918
+    },
+    "SUI": {
+      "price_in_usd": 0.67445,
+      "price_in_irt": 125994.67895,
+      "change": -0.08522997,
+      "market_cap": 2743181305.140134,
+      "volume_24h": 177363047.96309742
+    },
+    "IMX": {
+      "price_in_usd": 0.109935,
+      "price_in_irt": 20537.507025000003,
+      "change": -0.36151264,
+      "market_cap": 219841919.96910447,
+      "volume_24h": 5827269.77458094
+    },
+    "PAXG": {
+      "price_in_usd": 4332.5,
+      "price_in_irt": 809358657.5,
+      "change": 2.50344482,
+      "market_cap": 1893745640.4984689,
+      "volume_24h": 231817410.7328675
+    },
+    "STX": {
+      "price_in_usd": 0.13019999999999998,
+      "price_in_irt": 24323.313,
+      "change": -0.0884081,
+      "market_cap": 236008609.83405834,
+      "volume_24h": 3999162.72364229
+    },
+    "TWT": {
+      "price_in_usd": 0.39415,
+      "price_in_irt": 73633.13225,
+      "change": 4.86799781,
+      "market_cap": 170196365.079989,
+      "volume_24h": 7475028.06239602
+    },
+    "BLUR": {
+      "price_in_usd": 0.013635000000000001,
+      "price_in_irt": 2547.167985,
+      "change": -2.53924963,
+      "market_cap": 38457625.30976634,
+      "volume_24h": 16223897.37741505
+    },
+    "JTO": {
+      "price_in_usd": 0.4949,
+      "price_in_irt": 92454.7435,
+      "change": 5.27960833,
+      "market_cap": 250775860.42990953,
+      "volume_24h": 18032994.70784374
+    },
+    "ROSE": {
+      "price_in_usd": 0.0055975,
+      "price_in_irt": 1045.6969625,
+      "change": -1.64073632,
+      "market_cap": 44430376.6773182,
+      "volume_24h": 2305556.28215336
+    },
+    "MINA": {
+      "price_in_usd": 0.04095060928647713,
+      "price_in_irt": 7650.188073853225,
+      "change": 0.70471525,
+      "market_cap": 52713647.75945955,
+      "volume_24h": 1828896.37203217
+    },
+    "THETA": {
+      "price_in_usd": 0.1335983101259056,
+      "price_in_irt": 24958.168306171054,
+      "change": -1.04750337,
+      "market_cap": 133598310.1259056,
+      "volume_24h": 3760058.60544429
+    },
+    "KAVA": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 1.90049603,
+      "market_cap": 44440361.177922346,
+      "volume_24h": 10602844.52487541
+    },
+    "BAKE": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "GMX": {
+      "price_in_usd": 6.3,
+      "price_in_irt": 1176934.5,
+      "change": 2.64062792,
+      "market_cap": 68014341.07181294,
+      "volume_24h": 2796427.16515241
+    },
+    "ICP": {
+      "price_in_usd": 2.0975,
+      "price_in_irt": 391836.0725,
+      "change": 0.43924623,
+      "market_cap": 1164349003.5184026,
+      "volume_24h": 26048313.56554603
+    },
+    "1000SATS": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "BONK": {
+      "price_in_usd": 0.000002485,
+      "price_in_irt": 0.464235275,
+      "change": -10.02070009,
+      "market_cap": 218701820.32957816,
+      "volume_24h": 96100603.00064445
+    },
+    "ACE": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 3.86681157,
+      "market_cap": 12354364.648641666,
+      "volume_24h": 158720370.5311901
+    },
+    "SEI": {
+      "price_in_usd": 0.040764999999999996,
+      "price_in_irt": 7615.350414999999,
+      "change": -1.47823411,
+      "market_cap": 298682777.1267955,
+      "volume_24h": 19000499.48397624
+    },
+    "MEME": {
+      "price_in_usd": 0.00049205,
+      "price_in_irt": 91.92232075,
+      "change": -1.73578165,
+      "market_cap": 31456283.864480387,
+      "volume_24h": 4696516.45467751
+    },
+    "XAUT": {
+      "price_in_usd": 4326.05,
+      "price_in_irt": 808153726.5500001,
+      "change": 2.51083859,
+      "market_cap": 2650913503.184212,
+      "volume_24h": 379320078.6255997
+    },
+    "VIC": {
+      "price_in_usd": 0.035095,
+      "price_in_irt": 6556.132045,
+      "change": -0.80528492,
+      "market_cap": 4137599.649929363,
+      "volume_24h": 16100801.42556323
+    },
+    "USDS": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0.02430386,
+      "market_cap": 513158.46550820454,
+      "volume_24h": 500853.57827283
+    },
+    "CFX": {
+      "price_in_usd": 0.04035946763750705,
+      "price_in_irt": 7539.753946700879,
+      "change": 1.2651809,
+      "market_cap": 211073939.50240546,
+      "volume_24h": 11698170.39948315
+    },
+    "AR": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": -0.5269355,
+      "market_cap": 117168402.31459422,
+      "volume_24h": 3472136.01759615
+    },
+    "CYBER": {
+      "price_in_usd": 0.31026745194903665,
+      "price_in_irt": 57962.61403585928,
+      "change": -0.8822206,
+      "market_cap": 22325423.886520393,
+      "volume_24h": 6269936.02772848
+    },
+    "QNT": {
+      "price_in_usd": 60.269999999999996,
+      "price_in_irt": 11259098.969999999,
+      "change": -0.17800129,
+      "market_cap": 716040943.002967,
+      "volume_24h": 4980625.47632425
+    },
+    "FXS": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "KLAY": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "KAIA": {
+      "price_in_usd": 0.026725256929816015,
+      "price_in_irt": 4992.678873343579,
+      "change": 1.4012686,
+      "market_cap": 170719949.59400475,
+      "volume_24h": 3789052.85759235
+    },
+    "RPL": {
+      "price_in_usd": 1.525,
+      "price_in_irt": 284892.875,
+      "change": -0.57020078,
+      "market_cap": 34550342.5889723,
+      "volume_24h": 7850207.17790312
+    },
+    "IOTA": {
+      "price_in_usd": 0.033805602373932236,
+      "price_in_irt": 6315.39360748615,
+      "change": -0.81390441,
+      "market_cap": 154858715.12590605,
+      "volume_24h": 4403143.67312663
+    },
+    "BEAMX": {
+      "price_in_usd": 0.001379,
+      "price_in_irt": 257.617885,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "NEO": {
+      "price_in_usd": 1.8359999999999999,
+      "price_in_irt": 342992.33999999997,
+      "change": -0.72020362,
+      "market_cap": 129256933.92961204,
+      "volume_24h": 2784950.89339429
+    },
+    "GAS": {
+      "price_in_usd": 0.93575,
+      "price_in_irt": 174808.39325,
+      "change": -0.01087111,
+      "market_cap": 60743515.612023145,
+      "volume_24h": 833008.32109042
+    },
+    "ONT": {
+      "price_in_usd": 0.037970000000000004,
+      "price_in_irt": 7093.194685,
+      "change": -0.8162969,
+      "market_cap": 37888561.08472525,
+      "volume_24h": 1736936.15680078
+    },
+    "WOO": {
+      "price_in_usd": 0.01168,
+      "price_in_irt": 2181.9991999999997,
+      "change": 0.95104794,
+      "market_cap": 21514940.822994977,
+      "volume_24h": 1289521.31207973
+    },
+    "LUNA": {
+      "price_in_usd": 0.004526249106296054,
+      "price_in_irt": 845.5712267926973,
+      "change": -1.88573765,
+      "market_cap": 4526249.106296054,
+      "volume_24h": 0
+    },
+    "XEC": {
+      "price_in_usd": 0.0000067135,
+      "price_in_irt": 1.2541556485,
+      "change": 6.5033738,
+      "market_cap": 133848845.18287276,
+      "volume_24h": 16711538.25293311
+    },
+    "RDNT": {
+      "price_in_usd": 0.0004242,
+      "price_in_irt": 79.2452262,
+      "change": 0.03669248,
+      "market_cap": 637727.3424605248,
+      "volume_24h": 68950.21940761
+    },
+    "ARKM": {
+      "price_in_usd": 0.09517500000000001,
+      "price_in_irt": 17779.736925,
+      "change": -1.05728729,
+      "market_cap": 21379806.916970223,
+      "volume_24h": 78500541.47238626
+    },
+    "EDU": {
+      "price_in_usd": 0.034795,
+      "price_in_irt": 6500.088745,
+      "change": 3.52697311,
+      "market_cap": 28292309.50756315,
+      "volume_24h": 1947653.50900289
+    },
+    "GTC": {
+      "price_in_usd": 0.08479584968618596,
+      "price_in_irt": 15841.13665912483,
+      "change": 2.61460152,
+      "market_cap": 7418916.244290833,
+      "volume_24h": 2834109.01455908
+    },
+    "ZRX": {
+      "price_in_usd": 0.07980000000000001,
+      "price_in_irt": 14907.517800000001,
+      "change": 1.34715731,
+      "market_cap": 68617638.67154224,
+      "volume_24h": 3823302.72218521
+    },
+    "HOOK": {
+      "price_in_usd": 0.0036161834314069954,
+      "price_in_irt": 675.5573077382978,
+      "change": -0.47787708,
+      "market_cap": 1288262.5394724282,
+      "volume_24h": 110631.17254964
+    },
+    "OSMO": {
+      "price_in_usd": 0.0281,
+      "price_in_irt": 5249.5015,
+      "change": 0.04820346,
+      "market_cap": 22435701.87279118,
+      "volume_24h": 2259916.86959507
+    },
+    "ARK": {
+      "price_in_usd": 0.09506500000000001,
+      "price_in_irt": 17759.567975,
+      "change": 0.59193222,
+      "market_cap": 18815558.347683486,
+      "volume_24h": 791811.19496201
+    },
+    "GFT": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "S": {
+      "price_in_usd": 0.021949999999999997,
+      "price_in_irt": 4100.589249999999,
+      "change": -0.07110439,
+      "market_cap": 63067290.37407187,
+      "volume_24h": 3838087.67797929
+    },
+    "IQ": {
+      "price_in_usd": 0.0006514,
+      "price_in_irt": 121.691291,
+      "change": 0.21338718,
+      "market_cap": 17653074.422113728,
+      "volume_24h": 472222.79592391
+    },
+    "MAV": {
+      "price_in_usd": 0.008907,
+      "price_in_irt": 1663.9211235,
+      "change": 8.11713407,
+      "market_cap": 10445310.320319187,
+      "volume_24h": 6333752.34711177
+    },
+    "ZIL": {
+      "price_in_usd": 0.0023775000000000003,
+      "price_in_irt": 444.14315250000004,
+      "change": -8.19217348,
+      "market_cap": 47890575.05219474,
+      "volume_24h": 4316922.54556129
+    },
+    "ID": {
+      "price_in_usd": 0.0271,
+      "price_in_irt": 5062.6865,
+      "change": 0.21605584,
+      "market_cap": 1226557.4207648644,
+      "volume_24h": 0
+    },
+    "LQTY": {
+      "price_in_usd": 0.179785,
+      "price_in_irt": 33585.815635,
+      "change": -0.61550876,
+      "market_cap": 17340643.512108594,
+      "volume_24h": 1495717.1626555
+    },
+    "SYN": {
+      "price_in_usd": 0.107085,
+      "price_in_irt": 20004.655935,
+      "change": -15.39987675,
+      "market_cap": 24912609.72415644,
+      "volume_24h": 29527641.9604196
+    },
+    "GNS": {
+      "price_in_usd": 0.5102500000000001,
+      "price_in_irt": 95320.31275000001,
+      "change": 4.24608121,
+      "market_cap": 11964669.70376028,
+      "volume_24h": 422059.32515481
+    },
+    "PROS": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 1.34745438,
+      "market_cap": 53776847.87134716,
+      "volume_24h": 2529873.0230709
+    },
+    "HIFI": {
+      "price_in_usd": 0.024983684451064376,
+      "price_in_irt": 4667.327010725591,
+      "change": 1764.10924988,
+      "market_cap": 3547279.7618575697,
+      "volume_24h": 0
+    },
+    "HFT": {
+      "price_in_usd": 0.013157499999999999,
+      "price_in_irt": 2457.9657325,
+      "change": -61.19604483,
+      "market_cap": 11973233.702508213,
+      "volume_24h": 175537792.5988822
+    },
+    "BAR": {
+      "price_in_usd": 0.2663790321403419,
+      "price_in_irt": 49763.59888929797,
+      "change": -0.37164701,
+      "market_cap": 6988394.772056734,
+      "volume_24h": 2137760.7889475
+    },
+    "ACM": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": -1.21587014,
+      "market_cap": 3723047.7830732157,
+      "volume_24h": 1487051.66629115
+    },
+    "JUV": {
+      "price_in_usd": 0.31505262482574814,
+      "price_in_irt": 58856.556106822136,
+      "change": -0.12020932,
+      "market_cap": 4962850.089831106,
+      "volume_24h": 2071729.74377134
+    },
+    "PSG": {
+      "price_in_usd": 0.51485,
+      "price_in_irt": 96179.64335,
+      "change": 0.52430109,
+      "market_cap": 8536381.05920201,
+      "volume_24h": 2841811.94383862
+    },
+    "CITY": {
+      "price_in_usd": 0.36498582392318746,
+      "price_in_irt": 68184.82669621026,
+      "change": -0.50367979,
+      "market_cap": 5003867.684403335,
+      "volume_24h": 1326803.45125436
+    },
+    "ASR": {
+      "price_in_usd": 0.8639,
+      "price_in_irt": 161389.4785,
+      "change": 0.74738938,
+      "market_cap": 7538341.480659147,
+      "volume_24h": 2699401.83283587
+    },
+    "ATM": {
+      "price_in_usd": 1.6048,
+      "price_in_irt": 299800.712,
+      "change": 0.14710966,
+      "market_cap": 14147134.181928763,
+      "volume_24h": 5477475.09660598
+    },
+    "PORTO": {
+      "price_in_usd": 0.4610135833954114,
+      "price_in_irt": 86124.25258201378,
+      "change": -1.30476249,
+      "market_cap": 5987739.552256055,
+      "volume_24h": 1735661.92809677
+    },
+    "LAZIO": {
+      "price_in_usd": 0.36420110231622466,
+      "price_in_irt": 68038.2289292055,
+      "change": 1.0782689,
+      "market_cap": 4799776.797136992,
+      "volume_24h": 1080276.35967579
+    },
+    "JST": {
+      "price_in_usd": 0.105185,
+      "price_in_irt": 19650.135775,
+      "change": -0.19123555,
+      "market_cap": 862747446.1427168,
+      "volume_24h": 22609108.24442289
+    },
+    "ALICE": {
+      "price_in_usd": 0.11885,
+      "price_in_irt": 22202.96275,
+      "change": -0.02174102,
+      "market_cap": 11898641.4360207,
+      "volume_24h": 19642089.62541758
+    },
+    "ONE": {
+      "price_in_usd": 0.00123,
+      "price_in_irt": 229.78244999999998,
+      "change": -0.16579563,
+      "market_cap": 3175773.318587685,
+      "volume_24h": 0
+    },
+    "LPT": {
+      "price_in_usd": 1.2530000000000001,
+      "price_in_irt": 234074.18300000002,
+      "change": -1.86935918,
+      "market_cap": 62102830.18709534,
+      "volume_24h": 4367103.30529941
+    },
+    "BAND": {
+      "price_in_usd": 0.1629,
+      "price_in_irt": 30432.1635,
+      "change": 4.12743815,
+      "market_cap": 29820891.05920792,
+      "volume_24h": 2082724.70052283
+    },
+    "API3": {
+      "price_in_usd": 0.1921,
+      "price_in_irt": 35886.3931,
+      "change": 0.39827683,
+      "market_cap": 16390429.602772191,
+      "volume_24h": 5507327.30899428
+    },
+    "BAL": {
+      "price_in_usd": 0.10785051351891153,
+      "price_in_irt": 20148.09368303546,
+      "change": -2.32186194,
+      "market_cap": 7526770.568140139,
+      "volume_24h": 285790.74445103
+    },
+    "OMG": {
+      "price_in_usd": 0.04398893878957238,
+      "price_in_irt": 8217.793599973964,
+      "change": -0.52726045,
+      "market_cap": 6169246.238924348,
+      "volume_24h": 336908.27561797
+    },
+    "SKL": {
+      "price_in_usd": 0.0035900000000000003,
+      "price_in_irt": 670.6514900000001,
+      "change": 1.32426543,
+      "market_cap": 22067634.77957904,
+      "volume_24h": 4863142.94822413
+    },
+    "WIN": {
+      "price_in_usd": 0.00003003667046280148,
+      "price_in_irt": 5.611300592508258,
+      "change": 0.24668007,
+      "market_cap": 29847495.13150711,
+      "volume_24h": 3088170.08333538
+    },
+    "NFP": {
+      "price_in_usd": 0.000555,
+      "price_in_irt": 103.68010500000001,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    },
+    "AI": {
+      "price_in_usd": 0.017655,
+      "price_in_irt": 3298.1393775,
+      "change": -1.28785539,
+      "market_cap": 28183281.484812766,
+      "volume_24h": 3276536.98910723
+    },
+    "CRCLX": {
+      "price_in_usd": 66.725,
+      "price_in_irt": 12464963.975,
+      "change": 4.77615979,
+      "market_cap": 53293211.363576,
+      "volume_24h": 13876930.52338762
+    },
+    "COINX": {
+      "price_in_usd": 153.67000000000002,
+      "price_in_irt": 28707246.370000005,
+      "change": 5.33795676,
+      "market_cap": 9074044.866782999,
+      "volume_24h": 5293906.37153777
+    },
+    "TSLAX": {
+      "price_in_usd": 327.925,
+      "price_in_irt": 61259997.175000004,
+      "change": 2.75471261,
+      "market_cap": 63089363.66123113,
+      "volume_24h": 15672159.87587602
+    },
+    "METAX": {
+      "price_in_usd": 592.89,
+      "price_in_irt": 110758373.78999999,
+      "change": 0.92268287,
+      "market_cap": 7237652.411885003,
+      "volume_24h": 2312676.2518049
+    },
+    "AMZNX": {
+      "price_in_usd": 274.26,
+      "price_in_irt": 51234784.86,
+      "change": 1.0294996,
+      "market_cap": 7835931.253466737,
+      "volume_24h": 8072568.59382233
+    },
+    "NVDAX": {
+      "price_in_usd": 223.8,
+      "price_in_irt": 41808301.800000004,
+      "change": 1.72595306,
+      "market_cap": 38010828.280536145,
+      "volume_24h": 21197441.39069637
+    },
+    "AAPLX": {
+      "price_in_usd": 313.84000000000003,
+      "price_in_irt": 58628764.24000001,
+      "change": 0.33672758,
+      "market_cap": 11416110.922913382,
+      "volume_24h": 3540289.20892089
+    },
+    "SPYX": {
+      "price_in_usd": 777.5699999999999,
+      "price_in_irt": 145258629.26999998,
+      "change": 0.51750015,
+      "market_cap": 47605211.881970756,
+      "volume_24h": 5382697.80929774
+    },
+    "QQQX": {
+      "price_in_usd": 725.095,
+      "price_in_irt": 135458622.425,
+      "change": 0.95573781,
+      "market_cap": 32630647.49240822,
+      "volume_24h": 3270685.0911656
+    },
+    "IRT": {
+      "price_in_usd": 0,
+      "price_in_irt": 0,
+      "change": 0,
+      "market_cap": 0,
+      "volume_24h": 0
+    }
+  },
+  "error": false,
+  "number": 1
 }

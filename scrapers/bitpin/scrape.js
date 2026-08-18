@@ -12,11 +12,7 @@ export const COIN_USE = "all"; // own, all, none
  * @param {string[]} $coins
  */
 export async function scrape($coins = []) {
-  const data = await getLatest($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-  return data;
+  return await getLatest($coins);
 }
 
 /**
@@ -41,7 +37,7 @@ async function fetchAllMarkets() {
       ? await axiosRequest({ method: "get", url: nextUrl })
       : await axiosRequest({
           method: "get",
-          url: URL + "mkt/markets/",
+          url: `${URL}mkt/markets/`,
           params: page > 1 ? { page } : {},
         });
 
@@ -68,7 +64,7 @@ async function fetchAllMarkets() {
 }
 
 /**
- * @param {object[]} $list
+ * @param {any[]} $list
  * @param {string[]} $coinsFilter
  */
 function processList($list, $coinsFilter = []) {
@@ -81,18 +77,14 @@ function processList($list, $coinsFilter = []) {
     })
     .map((data) => {
       const date = data?.internal_price_info?.created_at
-        ? dayjs.unix(
-            num(data.internal_price_info.created_at, { roundUp: true })
-          )
+        ? dayjs.unix(num(data.internal_price_info.created_at, { roundUp: true }))
         : dayjs();
       return {
+        source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: data.currency1.code.toUpperCase(),
-        price:
-          num(data.order_book_info.price, { decimalPlaces: 8, multiply: 10 }) ||
-          0,
-        volume_1d:
-          num(data.order_book_info.value, { multiply: 10, roundUp: true }) || 0,
+        price: num(data.order_book_info.price, { decimalPlaces: 8, multiply: 10 }) || 0,
+        volume_1d: num(data.order_book_info.value, { multiply: 10, roundUp: true }) || 0,
         coin_volume_1d: num(data.order_book_info.amount) || 0,
         change_1d: num(data.order_book_info.change, { decimalPlaces: 2 }),
         last_update: {

@@ -27,7 +27,7 @@ export async function scrape($coins = []) {
  * Get latest prices of cryptocurrencies
  *
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any[]>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
   // Should be exactly with last slash
@@ -40,7 +40,7 @@ export async function getLatest($filterCoins = []) {
  *
  * @param {string} $uri URI of the endpoint
  * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any>} Response data from api
  */
 async function request($uri, $params = {}) {
   // Send request via axios helper
@@ -51,7 +51,7 @@ async function request($uri, $params = {}) {
   });
 
   // Validate response data
-  if (!result?.data || !result.data.length) {
+  if (!result?.data?.length) {
     throw new Error("Invalid response data");
   }
 
@@ -61,7 +61,7 @@ async function request($uri, $params = {}) {
 /**
  * Process the list of cryptocurrencies
  *
- * @param {object[]} $list List of cryptocurrencies
+ * @param {any[]} $list List of cryptocurrencies
  * @param {string[]} $coinsFilter List of coins to filter
  * @returns {object[]} Processed list of cryptocurrencies
  */
@@ -69,11 +69,7 @@ function processList($list, $coinsFilter = []) {
   return $list
     .filter((data) => {
       // Check if data is for IRR currency
-      if (
-        !data?.quote_currency_symbol?.en ||
-        data?.quote_currency_symbol?.en.toUpperCase() !== "IRR"
-      )
-        return false;
+      if (data?.quote_currency_symbol?.en?.toUpperCase() !== "IRR") return false;
       // Check price exists
       if (!data?.sell) return false;
       // Check if the coin list is empty or includes the coin filter list
@@ -90,11 +86,9 @@ function processList($list, $coinsFilter = []) {
         currency: "IRR",
         symbol: data.base_currency_symbol.en.toUpperCase(),
         price: num(data.sell, { decimalPlaces: 8 }) || 0,
-        volume_1d:
-          num(data.financial.last24h.quote_volume, { roundUp: true }) || 0,
+        volume_1d: num(data.financial.last24h.quote_volume, { roundUp: true }) || 0,
         coin_volume_1d: num(data.financial.last24h.base_volume) || 0,
-        change_1d:
-          num(data.financial.last24h.change_percent, { decimalPlaces: 2 }) || 0,
+        change_1d: num(data.financial.last24h.change_percent, { decimalPlaces: 2 }) || 0,
         last_update: {
           date: date.toISOString(),
           timestamp: date.unix(),

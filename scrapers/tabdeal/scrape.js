@@ -27,7 +27,7 @@ export async function scrape($coins = []) {
  * Get latest prices of cryptocurrencies
  *
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any[]>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
   // Should be exactly with last slash
@@ -45,7 +45,7 @@ export async function getLatest($filterCoins = []) {
  *
  * @param {string} $uri URI of the endpoint
  * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any>} Response data from api
  */
 async function request($uri, $params = {}) {
   // Send request via axios helper
@@ -67,7 +67,7 @@ async function request($uri, $params = {}) {
 /**
  * Process the list of cryptocurrencies
  *
- * @param {object[]} $list List of cryptocurrencies
+ * @param {any[]} $list List of cryptocurrencies
  * @param {string[]} $coinsFilter List of coins to filter
  * @returns {object[]} Processed list of cryptocurrencies
  */
@@ -78,23 +78,13 @@ function processList($list, $coinsFilter = []) {
   return $list
     .filter((data) => {
       // Check if the currency is IRR
-      if (
-        !data?.markets ||
-        !data?.markets.filter(
-          (y) => y.second_currency.symbol === "IRT" && y.price
-        ).length
-      )
+      if (!data?.markets?.filter((y) => y.second_currency.symbol === "IRT" && y.price).length)
         return false;
       // Check if the coin list is empty or includes the coin filter list
-      return (
-        $coinsFilter.length === 0 ||
-        $coinsFilter.includes(data.symbol.toUpperCase())
-      );
+      return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
     })
     .map((data) => {
-      const market = data.markets.filter(
-        (market) => market.second_currency.symbol === "IRT"
-      )[0];
+      const market = data.markets.filter((market) => market.second_currency.symbol === "IRT")[0];
       const date = dayjs();
 
       // Initialize the transformed object
@@ -104,8 +94,7 @@ function processList($list, $coinsFilter = []) {
         // * 10 to convert to IRR
         price: num(market.price, { decimalPlaces: 8, multiply: 10 }) || 0,
         // Convert usdt equal volume to IRR
-        volume_1d:
-          num(data.usdt_volume, { multiply: usdt, roundUp: true }) || 0,
+        volume_1d: num(data.usdt_volume, { multiply: usdt, roundUp: true }) || 0,
         coin_volume_1d: num(data.volume) || 0,
         change_1d: num(data.change_percent, { decimalPlaces: 2 }),
         last_update: {
@@ -122,12 +111,10 @@ function priceUSDT($list) {
   let item = $list.filter((item) => item?.symbol === "USDT");
   if (!item.length) return 0;
   item = item[0];
-  item = item.markets.filter(
-    (market) => market?.second_currency?.symbol === "IRT"
-  );
+  item = item.markets.filter((market) => market?.second_currency?.symbol === "IRT");
   if (!item.length) return 0;
   // * 10 to convert to IRR
   const price = num(item[0].price, { decimalPlaces: 8, multiply: 10 });
 
-  return typeof price?.toNumber === "function" ? price.toNumber() : price;
+  return price || 0;
 }

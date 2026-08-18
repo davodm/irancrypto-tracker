@@ -8,11 +8,7 @@ const URL = "https://api2.bitimen.com/api/market/stats?quote_asset=IRT";
 export const COIN_USE = "all";
 
 export async function scrape($coins = []) {
-  const data = await getLatest($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-  return data;
+  return await getLatest($coins);
 }
 
 export async function getLatest($filterCoins = []) {
@@ -48,6 +44,7 @@ function processList($list, $coinsFilter = []) {
       const rawVol = (data.volume || "").replace(/,/g, "");
 
       return {
+        source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: symbol,
         price: num(rawPrice, { multiply: 10, decimalPlaces: 8 }) || 0,

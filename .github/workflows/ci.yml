@@ -37,6 +37,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint & Format check
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Scraper parity (js + php + py per slug)
         run: npm run check:parity
 

@@ -7,14 +7,22 @@ const URL = "https://na1.arzpaya.com/orderbook/";
 
 export const COIN_USE = "all";
 
-const POPULAR_COINS = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"];
+const POPULAR_COINS = [
+  "BTC",
+  "ETH",
+  "USDT",
+  "LTC",
+  "BCH",
+  "TRX",
+  "DOGE",
+  "LINK",
+  "XRP",
+  "SOL",
+  "ADA",
+];
 
 export async function scrape($coins = []) {
-  const data = await getLatest($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-  return data;
+  return await getLatest($coins);
 }
 
 export async function getLatest($filterCoins = []) {
@@ -29,6 +37,7 @@ export async function getLatest($filterCoins = []) {
         if (data?.Data && Array.isArray(data.Data) && data.Data.length > 0) {
           const topBid = data.Data[0];
           return {
+            source: PLATFORM.toLowerCase(),
             currency: "IRR",
             symbol: coin.toUpperCase(),
             price: num(topBid.p, { multiply: 10, decimalPlaces: 8 }) || 0,

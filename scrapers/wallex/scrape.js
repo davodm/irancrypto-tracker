@@ -27,7 +27,7 @@ export async function scrape($coins = []) {
  * Get latest prices of cryptocurrencies
  *
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any[]>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
   const data = await request("markets", {});
@@ -42,7 +42,7 @@ export async function getLatest($filterCoins = []) {
  *
  * @param {string} $uri URI of the endpoint
  * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any>} Response data from api
  */
 async function request($uri, $params = {}) {
   // Send request via axios helper
@@ -63,7 +63,7 @@ async function request($uri, $params = {}) {
 /**
  * Process the list of cryptocurrencies
  *
- * @param {object[]} $list List of cryptocurrencies
+ * @param {Record<string, any>} $list List of cryptocurrencies
  * @param {string[]} $coinsFilter List of coins to filter
  * @returns {object[]} Processed list of cryptocurrencies
  */
@@ -78,10 +78,7 @@ function processList($list, $coinsFilter = []) {
       // Check if the price exists
       if (!data?.stats?.lastPrice) return false;
       // Check if the coin list is empty or includes the coin filter list
-      return (
-        $coinsFilter.length === 0 ||
-        $coinsFilter.includes(data.baseAsset.toUpperCase())
-      );
+      return $coinsFilter.length === 0 || $coinsFilter.includes(data.baseAsset.toUpperCase());
     })
     .map((data) => {
       const date = dayjs();
@@ -91,12 +88,9 @@ function processList($list, $coinsFilter = []) {
         currency: "IRR",
         symbol: data.baseAsset.toUpperCase(),
         // *10 for the price to be in IRR
-        price:
-          num(data.stats.lastPrice, { multiply: 10, decimalPlaces: 8 }) || 0,
+        price: num(data.stats.lastPrice, { multiply: 10, decimalPlaces: 8 }) || 0,
         // *10 for the volume to be in IRR
-        volume_1d:
-          num(data.stats["24h_quoteVolume"], { roundUp: true, multiply: 10 }) ||
-          0,
+        volume_1d: num(data.stats["24h_quoteVolume"], { roundUp: true, multiply: 10 }) || 0,
         coin_volume_1d: num(data.stats["24h_volume"]) || 0,
         change_1d: num(data.stats["24h_ch"], { decimalPlaces: 2 }),
         change_7d: num(data.stats["7d_ch"], { decimalPlaces: 2 }),

@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
-import { axiosRequest } from "../../runtime/js/request.js";
 import num from "../../runtime/js/num.js";
+import { axiosRequest } from "../../runtime/js/request.js";
 
 const PLATFORM = "Ariomex";
 const BASE_URL = "https://data.ariomex.ir/exchange_data/markets_details";
@@ -13,11 +13,7 @@ export const COIN_USE = "all"; // own, all, none
  * @param {string[]} $coins
  */
 export async function scrape($coins = []) {
-  const data = await getLatest($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-  return data;
+  return await getLatest($coins);
 }
 
 /**
@@ -25,7 +21,7 @@ export async function scrape($coins = []) {
  */
 export async function getLatest($filterCoins = []) {
   const data = await fetchAllPages();
-  if (!data || !data.length) {
+  if (!data?.length) {
     throw new Error("Response data is empty");
   }
   return processList(data, $filterCoins);
@@ -46,9 +42,7 @@ async function fetchAllPages() {
     });
 
     if (!result?.status || result.status !== "true") {
-      throw new Error(
-        `Invalid response status (${result?.status}): ${result?.message}`
-      );
+      throw new Error(`Invalid response status (${result?.status}): ${result?.message}`);
     }
     if (!result?.result || !Array.isArray(result.result)) {
       throw new Error("Invalid response data");
@@ -61,17 +55,14 @@ async function fetchAllPages() {
 }
 
 /**
- * @param {object[]} $list
+ * @param {any[]} $list
  * @param {string[]} $coinsFilter
  */
 function processList($list, $coinsFilter = []) {
   return $list
     .filter((data) => {
       if (!data?.last_price) return false;
-      return (
-        $coinsFilter.length === 0 ||
-        $coinsFilter.includes(String(data.base).toUpperCase())
-      );
+      return $coinsFilter.length === 0 || $coinsFilter.includes(String(data.base).toUpperCase());
     })
     .map((data) => {
       const date = dayjs();
@@ -79,6 +70,7 @@ function processList($list, $coinsFilter = []) {
       const priceIRT = num(data.last_price) || 0;
       const volumeIRT = coinVolume * priceIRT;
       return {
+        source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: data.base.toUpperCase(),
         price: num(data.last_price, { decimalPlaces: 8, multiply: 10 }) || 0,

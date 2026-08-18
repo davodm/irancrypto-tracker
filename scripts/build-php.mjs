@@ -31,5 +31,5 @@ parts.push(stripPhpOpen(read(path.join(root, "runtime/php/orchestrator.php"))));
 parts.push("\n\n// ===== main =====\n");
 parts.push(read(path.join(root, "runtime/php/main.php")).trimStart());
 
-fs.writeFileSync(out, parts.join("\n") + "\n");
+fs.writeFileSync(out, `${parts.join("\n")}\n`);
 console.log(`Wrote dist/track.php (${slugs.length} scrapers)`);

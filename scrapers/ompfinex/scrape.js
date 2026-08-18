@@ -8,16 +8,12 @@ const URL = "https://api.ompfinex.com/v1/market";
 export const COIN_USE = "all";
 
 export async function scrape($coins = []) {
-  const data = await getLatest($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-  return data;
+  return await getLatest($coins);
 }
 
 export async function getLatest($filterCoins = []) {
   const response = await request("", {});
-  const list = Array.isArray(response) ? response : (response?.data || []);
+  const list = Array.isArray(response) ? response : response?.data || [];
   if (!Array.isArray(list) || list.length === 0) {
     throw new Error("Response data is empty");
   }
@@ -47,6 +43,7 @@ function processList($list, $coinsFilter = []) {
       const date = dayjs();
       const symbol = data.base_currency.id.toUpperCase();
       return {
+        source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: symbol,
         price: num(data.last_price, { multiply: 10, decimalPlaces: 8 }) || 0,

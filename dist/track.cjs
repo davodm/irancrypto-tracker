@@ -17958,43 +17958,6 @@ var import_node_os = __toESM(require("node:os"), 1);
 var import_node_path = __toESM(require("node:path"), 1);
 var import_node_url = require("node:url");
 
-// runtime/js/logger.js
-function logInfo(message) {
-  const time = (/* @__PURE__ */ new Date()).toISOString();
-  const text = typeof message === "string" ? message : JSON.stringify(message);
-  console.log(`${time} [INFO] ${text}`);
-}
-function logError(err) {
-  const time = (/* @__PURE__ */ new Date()).toISOString();
-  if (err instanceof Error) {
-    console.error(`${time} [ERROR] ${err.message}`);
-    if (err.stack) console.error(err.stack);
-  } else {
-    const text = typeof err === "string" ? err : JSON.stringify(err);
-    console.error(`${time} [ERROR] ${text}`);
-  }
-}
-
-// runtime/js/vars.js
-function envBool(key, defaultValue) {
-  const raw = process.env[key];
-  if (raw === void 0 || raw === "") return defaultValue;
-  return /^(1|true|yes|on)$/i.test(String(raw).trim());
-}
-function getTimeoutSec() {
-  const n = Number.parseInt(process.env.TIMEOUT ?? "10", 10);
-  return Number.isFinite(n) && n > 0 ? n : 10;
-}
-function getUserAgent() {
-  return process.env.USER_AGENT || "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
-}
-function getUserAgentPostman() {
-  return "PostmanRuntime/7.26.10";
-}
-function getProxyUrl() {
-  return process.env.PROXY_URL || "";
-}
-
 // scrapers/ariomex/scrape.js
 var scrape_exports = {};
 __export(scrape_exports, {
@@ -18003,182 +17966,6 @@ __export(scrape_exports, {
   scrape: () => scrape
 });
 var import_dayjs = __toESM(require_dayjs_min(), 1);
-
-// runtime/js/request.js
-init_axios2();
-var import_https2 = __toESM(require("https"), 1);
-function exchangeHttpsAgent() {
-  return new import_https2.default.Agent({
-    rejectUnauthorized: envBool("SSL_VERIFY_EXCHANGE", false)
-  });
-}
-async function axiosRequest({
-  method,
-  url: url2,
-  params = {},
-  data = {},
-  userAgent = getUserAgent(),
-  headers = {},
-  retry403 = true,
-  throwOriginalError = false,
-  useProxy = false
-}) {
-  const timeoutMs = getTimeoutSec() * 1e3;
-  const conf = {
-    method,
-    url: url2,
-    headers: {
-      ...headers,
-      Accept: "application/json",
-      "User-Agent": userAgent
-    },
-    responseType: "json",
-    timeout: timeoutMs,
-    httpsAgent: exchangeHttpsAgent(),
-    maxRedirects: 3,
-    validateStatus: function(status) {
-      return status >= 200 && status < 300;
-    }
-  };
-  if (params && Object.keys(params).length) {
-    conf.params = params;
-  }
-  if (data && Object.keys(data).length) {
-    conf.data = data;
-  }
-  const retries = Number.parseInt(process.env.REQUEST_RETRY_COUNT ?? "0", 10) || 0;
-  const baseDelayMs = Number.parseInt(process.env.REQUEST_RETRY_BASE_MS ?? "300", 10) || 300;
-  const maxAttempts = 1 + retries;
-  const proxyUrl = getProxyUrl();
-  const hasProxy = Boolean(proxyUrl && process.env.PROXY_API_KEY);
-  const shouldProxy2 = useProxy && hasProxy;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      let response;
-      if (shouldProxy2) {
-        response = await axiosRequestWithProxy({
-          method: conf.method,
-          url: conf.url,
-          params: conf?.params,
-          data: conf?.data,
-          headers: conf.headers
-        });
-      } else {
-        response = await axios_default(conf);
-      }
-      return JSONizeResponse(response, { unwrapProxy: shouldProxy2 });
-    } catch (error) {
-      const isNetworkError = !!error?.code || /ENOTFOUND|ECONNRESET|ETIMEDOUT/.test(error?.message || "");
-      if (error?.response) {
-        logInfo(
-          `Request to ${url2} failed due to ${error.message} (status: ${error.response.status}) [attempt ${attempt}]`
-        );
-      } else {
-        logInfo(`${error.message} [attempt ${attempt}]`);
-      }
-      if (retry403 && error?.response?.status === 403 && attempt === 1) {
-        logInfo(`Retry with Postman USER-AGENT for ${url2}`);
-        return await axiosRequest({
-          method,
-          url: url2,
-          params,
-          data,
-          headers,
-          userAgent: getUserAgentPostman(),
-          retry403: false,
-          useProxy
-        });
-      }
-      if (isNetworkError && attempt < maxAttempts) {
-        const delay = baseDelayMs * Math.pow(2, attempt - 1);
-        await new Promise((res) => setTimeout(res, delay));
-        continue;
-      }
-      if (throwOriginalError) {
-        throw error;
-      }
-      const statusCode = error?.response?.status;
-      const msg = statusCode ? `Failed to send request to ${url2} server due to ${error.message} (Status: ${statusCode})` : `Failed to send request to ${url2} server due to ${error.message}`;
-      throw new Error(msg);
-    }
-  }
-}
-function JSONizeResponse(response, opts = {}) {
-  let out;
-  if (!response?.data && response?.data !== 0) {
-    throw new Error("Response is empty");
-  }
-  if (typeof response.data === "object") {
-    out = response.data;
-  } else {
-    try {
-      out = JSON.parse(response.data);
-    } catch {
-      throw new Error("Response is not JSON");
-    }
-  }
-  if (opts.unwrapProxy && out && typeof out === "object" && !Array.isArray(out)) {
-    let data = out.data ?? out.body ?? out;
-    if (typeof data === "string") {
-      try {
-        data = JSON.parse(data);
-      } catch {
-      }
-    }
-    out = data;
-  }
-  return out;
-}
-async function axiosRequestWithProxy({
-  method,
-  url: url2,
-  params = {},
-  data = {},
-  headers = {}
-}) {
-  const proxyUrl = getProxyUrl();
-  if (!proxyUrl) {
-    throw new Error("PROXY_URL is not set");
-  }
-  const proxyApiKey = process.env.PROXY_API_KEY;
-  if (!proxyApiKey) {
-    throw new Error("PROXY_API_KEY is required when using proxy");
-  }
-  const timeoutMs = getTimeoutSec() * 1e3;
-  try {
-    return await axios_default({
-      method: "POST",
-      url: proxyUrl,
-      data: {
-        url: url2,
-        method: method.toUpperCase(),
-        params,
-        body: data,
-        headers,
-        timeout: timeoutMs
-      },
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "x-api-key": proxyApiKey
-      },
-      timeout: timeoutMs,
-      httpsAgent: exchangeHttpsAgent(),
-      maxRedirects: 3,
-      validateStatus: function(status) {
-        return status >= 200 && status < 300;
-      }
-    });
-  } catch (error) {
-    const err = error?.response?.data?.error ?? error?.response?.data ?? null;
-    if (err) {
-      logError(err);
-    }
-    const statusCode = error?.response?.status;
-    const errorMessage = statusCode ? `Failed to send request to ${url2} server via proxy due to ${error.message} (Status: ${statusCode})` : `Failed to send request to ${url2} server via proxy due to ${error.message}`;
-    throw new Error(errorMessage);
-  }
-}
 
 // node_modules/decimal.js/decimal.mjs
 var EXP_LIMIT = 9e15;
@@ -20355,7 +20142,6 @@ P[Symbol.toStringTag] = "Decimal";
 var Decimal = P.constructor = clone(DEFAULTS);
 LN10 = new Decimal(LN10);
 PI = new Decimal(PI);
-var decimal_default = Decimal;
 
 // runtime/js/num.js
 function num(input, options = {}) {
@@ -20368,109 +20154,277 @@ function num(input, options = {}) {
     decimalPlaces = 14,
     defaultValue = 0
   } = options;
-  let numericValue;
   if (input === null || input === void 0 || typeof input === "string" && input.trim() === "") {
     return defaultValue;
   }
+  let dec;
   if (typeof input === "string") {
     let trimmedInput = input.trim();
     const isNegativeParens = /^\(.+\)$/.test(trimmedInput);
     if (isNegativeParens) {
-      trimmedInput = "-" + trimmedInput.replace(/^\(|\)$/g, "");
+      trimmedInput = `-${trimmedInput.replace(/^\(|\)$/g, "")}`;
     }
     trimmedInput = trimmedInput.replace(/,/g, "").replace(/%/g, "");
-    if (!/^[-+]?\d+(\.\d+)?$/.test(trimmedInput)) {
+    if (!/^[-+]?\d+(\.\d+)?([eE][-+]?\d+)?$/.test(trimmedInput)) {
       return defaultValue;
     }
-    if (/^-?\d+$/.test(trimmedInput)) {
-      const bigIntValue = BigInt(trimmedInput);
-      if (bigIntValue > BigInt(Number.MAX_SAFE_INTEGER) || bigIntValue < BigInt(Number.MIN_SAFE_INTEGER)) {
-        numericValue = bigIntValue;
-      } else {
-        numericValue = Number(trimmedInput);
-      }
-    } else {
-      numericValue = new decimal_default(trimmedInput);
+    try {
+      dec = new Decimal(trimmedInput);
+    } catch {
+      return defaultValue;
     }
   } else if (typeof input === "number") {
     if (!Number.isFinite(input)) {
-      throw new Error("Input number must be finite");
+      return defaultValue;
     }
-    numericValue = input;
+    try {
+      dec = new Decimal(input);
+    } catch {
+      return defaultValue;
+    }
   } else {
-    throw new TypeError("Input must be a string or number");
+    return defaultValue;
   }
-  const operationSequence = [
-    { op: "add", value: add2 },
-    { op: "subtract", value: subtract },
-    { op: "multiply", value: multiply },
-    { op: "divide", value: divide2 }
-  ];
-  for (const operation of operationSequence) {
-    const { op, value } = operation;
-    if (value === void 0) continue;
-    if (typeof value !== "number" || !Number.isFinite(value)) {
-      throw new Error(`Operation '${op}' requires a finite number`);
+  if (add2 !== void 0) {
+    if (typeof add2 !== "number" || !Number.isFinite(add2)) {
+      throw new Error("Operation 'add' requires a finite number");
     }
-    switch (op) {
-      case "add":
-        if (typeof numericValue === "number") {
-          numericValue += value;
-        } else if (typeof numericValue === "bigint") {
-          numericValue += BigInt(value);
-        } else if (numericValue instanceof decimal_default) {
-          numericValue = numericValue.plus(value);
-        }
-        break;
-      case "subtract":
-        if (typeof numericValue === "number") {
-          numericValue -= value;
-        } else if (typeof numericValue === "bigint") {
-          numericValue -= BigInt(value);
-        } else if (numericValue instanceof decimal_default) {
-          numericValue = numericValue.minus(value);
-        }
-        break;
-      case "multiply":
-        if (typeof numericValue === "number") {
-          numericValue *= value;
-        } else if (typeof numericValue === "bigint") {
-          numericValue *= BigInt(value);
-        } else if (numericValue instanceof decimal_default) {
-          numericValue = numericValue.mul(value);
-        }
-        break;
-      case "divide":
-        if (value === 0) {
-          throw new Error("Division by zero is not allowed");
-        }
-        if (typeof numericValue === "number") {
-          numericValue /= value;
-        } else if (typeof numericValue === "bigint") {
-          numericValue = new decimal_default(numericValue.toString()).div(value);
-        } else if (numericValue instanceof decimal_default) {
-          numericValue = numericValue.div(value);
-        }
-        break;
-      default:
-        throw new Error(`Unsupported operation: ${op}`);
+    dec = dec.plus(add2);
+  }
+  if (subtract !== void 0) {
+    if (typeof subtract !== "number" || !Number.isFinite(subtract)) {
+      throw new Error("Operation 'subtract' requires a finite number");
     }
+    dec = dec.minus(subtract);
+  }
+  if (multiply !== void 0) {
+    if (typeof multiply !== "number" || !Number.isFinite(multiply)) {
+      throw new Error("Operation 'multiply' requires a finite number");
+    }
+    dec = dec.mul(multiply);
+  }
+  if (divide2 !== void 0) {
+    if (typeof divide2 !== "number" || !Number.isFinite(divide2)) {
+      throw new Error("Operation 'divide' requires a finite number");
+    }
+    if (divide2 === 0) {
+      throw new Error("Division by zero is not allowed");
+    }
+    dec = dec.div(divide2);
   }
   if (roundUp) {
-    if (typeof numericValue === "number") {
-      numericValue = Math.ceil(numericValue);
-    } else if (typeof numericValue === "bigint") {
-    } else if (numericValue instanceof decimal_default) {
-      numericValue = numericValue.ceil();
+    dec = dec.ceil();
+  }
+  if (decimalPlaces !== void 0 && decimalPlaces >= 0) {
+    dec = dec.toDecimalPlaces(decimalPlaces);
+  }
+  const out = dec.toNumber();
+  return Number.isFinite(out) ? out : defaultValue;
+}
+
+// runtime/js/request.js
+var import_node_https = __toESM(require("node:https"), 1);
+init_axios2();
+
+// runtime/js/logger.js
+function logInfo(message) {
+  const time = (/* @__PURE__ */ new Date()).toISOString();
+  const text = typeof message === "string" ? message : JSON.stringify(message);
+  console.log(`${time} [INFO] ${text}`);
+}
+function logError(err) {
+  const time = (/* @__PURE__ */ new Date()).toISOString();
+  if (err instanceof Error) {
+    console.error(`${time} [ERROR] ${err.message}`);
+    if (err.stack) console.error(err.stack);
+  } else {
+    const text = typeof err === "string" ? err : JSON.stringify(err);
+    console.error(`${time} [ERROR] ${text}`);
+  }
+}
+
+// runtime/js/vars.js
+function envBool(key, defaultValue) {
+  const raw = process.env[key];
+  if (raw === void 0 || raw === "") return defaultValue;
+  return /^(1|true|yes|on)$/i.test(String(raw).trim());
+}
+function getTimeoutSec() {
+  const n = Number.parseInt(process.env.TIMEOUT ?? "10", 10);
+  return Number.isFinite(n) && n > 0 ? n : 10;
+}
+function getUserAgent() {
+  return process.env.USER_AGENT || "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
+}
+function getUserAgentPostman() {
+  return "PostmanRuntime/7.26.10";
+}
+function getProxyUrl() {
+  return process.env.PROXY_URL || "";
+}
+
+// runtime/js/request.js
+function exchangeHttpsAgent() {
+  return new import_node_https.default.Agent({
+    rejectUnauthorized: envBool("SSL_VERIFY_EXCHANGE", false)
+  });
+}
+async function axiosRequest({
+  method,
+  url: url2,
+  params = {},
+  data = {},
+  userAgent = getUserAgent(),
+  headers = {},
+  retry403 = true,
+  throwOriginalError = false,
+  useProxy = false
+}) {
+  const timeoutMs = getTimeoutSec() * 1e3;
+  const conf = {
+    method,
+    url: url2,
+    headers: {
+      ...headers,
+      Accept: "application/json",
+      "User-Agent": userAgent
+    },
+    responseType: "json",
+    timeout: timeoutMs,
+    httpsAgent: exchangeHttpsAgent(),
+    maxRedirects: 3,
+    validateStatus: (status) => status >= 200 && status < 300
+  };
+  if (params && Object.keys(params).length) {
+    conf.params = params;
+  }
+  if (data && Object.keys(data).length) {
+    conf.data = data;
+  }
+  const retries = Number.parseInt(process.env.REQUEST_RETRY_COUNT ?? "0", 10) || 0;
+  const baseDelayMs = Number.parseInt(process.env.REQUEST_RETRY_BASE_MS ?? "300", 10) || 300;
+  const maxAttempts = 1 + retries;
+  const proxyUrl = getProxyUrl();
+  const hasProxy = Boolean(proxyUrl && process.env.PROXY_API_KEY);
+  const shouldProxy2 = useProxy && hasProxy;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      let response;
+      if (shouldProxy2) {
+        response = await axiosRequestWithProxy({
+          method: conf.method,
+          url: conf.url,
+          params: conf?.params,
+          data: conf?.data,
+          headers: conf.headers
+        });
+      } else {
+        response = await axios_default.request(conf);
+      }
+      return JSONizeResponse(response, { unwrapProxy: shouldProxy2 });
+    } catch (error) {
+      const isNetworkError = !!error?.code || /ENOTFOUND|ECONNRESET|ETIMEDOUT/.test(error?.message || "");
+      if (error?.response) {
+        logInfo(
+          `Request to ${url2} failed due to ${error.message} (status: ${error.response.status}) [attempt ${attempt}]`
+        );
+      } else {
+        logInfo(`${error.message} [attempt ${attempt}]`);
+      }
+      if (retry403 && error?.response?.status === 403 && attempt === 1) {
+        logInfo(`Retry with Postman USER-AGENT for ${url2}`);
+        return await axiosRequest({
+          method,
+          url: url2,
+          params,
+          data,
+          headers,
+          userAgent: getUserAgentPostman(),
+          retry403: false,
+          useProxy
+        });
+      }
+      if (isNetworkError && attempt < maxAttempts) {
+        const delay = baseDelayMs * 2 ** (attempt - 1);
+        await new Promise((res) => setTimeout(res, delay));
+        continue;
+      }
+      if (throwOriginalError) {
+        throw error;
+      }
+      const statusCode = error?.response?.status;
+      const msg = statusCode ? `Failed to send request to ${url2} server due to ${error.message} (Status: ${statusCode})` : `Failed to send request to ${url2} server due to ${error.message}`;
+      throw new Error(msg);
     }
   }
-  if (typeof numericValue === "number") {
-    numericValue = parseFloat(numericValue.toFixed(decimalPlaces));
-  } else if (typeof numericValue === "bigint") {
-  } else if (numericValue instanceof decimal_default) {
-    numericValue = numericValue.toDecimalPlaces(decimalPlaces);
+}
+function JSONizeResponse(response, opts = {}) {
+  let out;
+  if (!response?.data && response?.data !== 0) {
+    throw new Error("Response is empty");
   }
-  return numericValue;
+  if (typeof response.data === "object") {
+    out = response.data;
+  } else {
+    try {
+      out = JSON.parse(response.data);
+    } catch {
+      throw new Error("Response is not JSON");
+    }
+  }
+  if (opts.unwrapProxy && out && typeof out === "object" && !Array.isArray(out)) {
+    let data = out.data ?? out.body ?? out;
+    if (typeof data === "string") {
+      try {
+        data = JSON.parse(data);
+      } catch {
+      }
+    }
+    out = data;
+  }
+  return out;
+}
+async function axiosRequestWithProxy({ method, url: url2, params = {}, data = {}, headers = {} }) {
+  const proxyUrl = getProxyUrl();
+  if (!proxyUrl) {
+    throw new Error("PROXY_URL is not set");
+  }
+  const proxyApiKey = process.env.PROXY_API_KEY;
+  if (!proxyApiKey) {
+    throw new Error("PROXY_API_KEY is required when using proxy");
+  }
+  const timeoutMs = getTimeoutSec() * 1e3;
+  try {
+    return await axios_default({
+      method: "POST",
+      url: proxyUrl,
+      data: {
+        url: url2,
+        method: method.toUpperCase(),
+        params,
+        body: data,
+        headers,
+        timeout: timeoutMs
+      },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "x-api-key": proxyApiKey
+      },
+      timeout: timeoutMs,
+      httpsAgent: exchangeHttpsAgent(),
+      maxRedirects: 3,
+      validateStatus: (status) => status >= 200 && status < 300
+    });
+  } catch (error) {
+    const err = error?.response?.data?.error ?? error?.response?.data ?? null;
+    if (err) {
+      logError(err);
+    }
+    const statusCode = error?.response?.status;
+    const errorMessage = statusCode ? `Failed to send request to ${url2} server via proxy due to ${error.message} (Status: ${statusCode})` : `Failed to send request to ${url2} server via proxy due to ${error.message}`;
+    throw new Error(errorMessage);
+  }
 }
 
 // scrapers/ariomex/scrape.js
@@ -20480,15 +20434,11 @@ var MAX_ROWS = 200;
 var MAX_PAGES = 20;
 var COIN_USE = "all";
 async function scrape($coins = []) {
-  const data = await getLatest($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-  return data;
+  return await getLatest($coins);
 }
 async function getLatest($filterCoins = []) {
   const data = await fetchAllPages();
-  if (!data || !data.length) {
+  if (!data?.length) {
     throw new Error("Response data is empty");
   }
   return processList(data, $filterCoins);
@@ -20507,9 +20457,7 @@ async function fetchAllPages() {
       }
     });
     if (!result?.status || result.status !== "true") {
-      throw new Error(
-        `Invalid response status (${result?.status}): ${result?.message}`
-      );
+      throw new Error(`Invalid response status (${result?.status}): ${result?.message}`);
     }
     if (!result?.result || !Array.isArray(result.result)) {
       throw new Error("Invalid response data");
@@ -20530,6 +20478,7 @@ function processList($list, $coinsFilter = []) {
     const priceIRT = num(data.last_price) || 0;
     const volumeIRT = coinVolume * priceIRT;
     return {
+      source: PLATFORM.toLowerCase(),
       currency: "IRR",
       symbol: data.base.toUpperCase(),
       price: num(data.last_price, { decimalPlaces: 8, multiply: 10 }) || 0,
@@ -20556,13 +20505,21 @@ var import_dayjs2 = __toESM(require_dayjs_min(), 1);
 var PLATFORM2 = "Arzpaya";
 var URL2 = "https://na1.arzpaya.com/orderbook/";
 var COIN_USE2 = "all";
-var POPULAR_COINS = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"];
+var POPULAR_COINS = [
+  "BTC",
+  "ETH",
+  "USDT",
+  "LTC",
+  "BCH",
+  "TRX",
+  "DOGE",
+  "LINK",
+  "XRP",
+  "SOL",
+  "ADA"
+];
 async function scrape2($coins = []) {
-  const data = await getLatest2($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM2.toLowerCase();
-  });
-  return data;
+  return await getLatest2($coins);
 }
 async function getLatest2($filterCoins = []) {
   const targetCoins = $filterCoins.length > 0 ? $filterCoins : POPULAR_COINS;
@@ -20573,6 +20530,7 @@ async function getLatest2($filterCoins = []) {
       if (data?.Data && Array.isArray(data.Data) && data.Data.length > 0) {
         const topBid = data.Data[0];
         return {
+          source: PLATFORM2.toLowerCase(),
           currency: "IRR",
           symbol: coin.toUpperCase(),
           price: num(topBid.p, { multiply: 10, decimalPlaces: 8 }) || 0,
@@ -20610,18 +20568,26 @@ __export(scrape_exports3, {
   getLatest: () => getLatest3,
   scrape: () => scrape3
 });
-var import_dayjs3 = __toESM(require_dayjs_min(), 1);
 init_axios2();
+var import_dayjs3 = __toESM(require_dayjs_min(), 1);
 var PLATFORM3 = "Bidarz";
 var URL3 = "https://bidarz.ir/price/";
 var COIN_USE3 = "all";
-var POPULAR_COINS2 = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"];
+var POPULAR_COINS2 = [
+  "BTC",
+  "ETH",
+  "USDT",
+  "LTC",
+  "BCH",
+  "TRX",
+  "DOGE",
+  "LINK",
+  "XRP",
+  "SOL",
+  "ADA"
+];
 async function scrape3($coins = []) {
-  const data = await getLatest3($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM3.toLowerCase();
-  });
-  return data;
+  return await getLatest3($coins);
 }
 async function getLatest3($filterCoins = []) {
   const targetCoins = $filterCoins.length > 0 ? $filterCoins : POPULAR_COINS2;
@@ -20638,9 +20604,10 @@ async function getLatest3($filterCoins = []) {
       const html = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
       if (html) {
         const match = html.match(/quoteId:"IRR"[^}]*?last:"([0-9.]+)"/);
-        if (match && match[1]) {
+        if (match?.[1]) {
           const rawPrice = parseFloat(match[1]) || 0;
           return {
+            source: PLATFORM3.toLowerCase(),
             currency: "IRR",
             symbol: coin.toUpperCase(),
             price: num(rawPrice, { decimalPlaces: 8 }) || 0,
@@ -20676,11 +20643,7 @@ var PLATFORM4 = "Bitimen";
 var URL4 = "https://api2.bitimen.com/api/market/stats?quote_asset=IRT";
 var COIN_USE4 = "all";
 async function scrape4($coins = []) {
-  const data = await getLatest4($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM4.toLowerCase();
-  });
-  return data;
+  return await getLatest4($coins);
 }
 async function getLatest4($filterCoins = []) {
   const data = await request2("", {});
@@ -20710,6 +20673,7 @@ function processList2($list, $coinsFilter = []) {
     const rawPrice = data.last_price || data.best_bid_raw || 0;
     const rawVol = (data.volume || "").replace(/,/g, "");
     return {
+      source: PLATFORM4.toLowerCase(),
       currency: "IRR",
       symbol,
       price: num(rawPrice, { multiply: 10, decimalPlaces: 8 }) || 0,
@@ -20737,11 +20701,7 @@ var PLATFORM5 = "BitMax";
 var URL5 = "https://api.bitmax.ir/";
 var COIN_USE5 = "all";
 async function scrape5($coins = []) {
-  const data = await getLatest5($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM5.toLowerCase();
-  });
-  return data;
+  return await getLatest5($coins);
 }
 async function getLatest5($filterCoins = []) {
   const data = await request3("watcher/price/alternative", {});
@@ -20772,6 +20732,7 @@ function processList3($data, $coinsFilter = []) {
   }).map(([symbol, data]) => {
     const date = (0, import_dayjs5.default)();
     return {
+      source: PLATFORM5.toLowerCase(),
       currency: "IRR",
       symbol: symbol.toUpperCase(),
       // * 10 to convert to IRR (price_in_irt is in Toman)
@@ -20796,7 +20757,7 @@ function priceUSDT($data) {
   const usdt = $data?.USDT;
   if (!usdt?.price_in_irt) return 0;
   const price = num(usdt.price_in_irt, { decimalPlaces: 8, multiply: 10 }) || 0;
-  return typeof price?.toNumber === "function" ? price.toNumber() : price;
+  return price || 0;
 }
 
 // scrapers/bitpin/scrape.js
@@ -20812,11 +20773,7 @@ var URL6 = "https://api.bitpin.ir/v1/";
 var MAX_PAGES2 = 50;
 var COIN_USE6 = "all";
 async function scrape6($coins = []) {
-  const data = await getLatest6($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM6.toLowerCase();
-  });
-  return data;
+  return await getLatest6($coins);
 }
 async function getLatest6($filterCoins = []) {
   const data = await fetchAllMarkets();
@@ -20832,7 +20789,7 @@ async function fetchAllMarkets() {
   for (let i = 0; i < MAX_PAGES2; i++) {
     const result = nextUrl ? await axiosRequest({ method: "get", url: nextUrl }) : await axiosRequest({
       method: "get",
-      url: URL6 + "mkt/markets/",
+      url: `${URL6}mkt/markets/`,
       params: page > 1 ? { page } : {}
     });
     if (!result?.results || !Array.isArray(result.results)) {
@@ -20860,10 +20817,9 @@ function processList4($list, $coinsFilter = []) {
     const code = String(data.currency1.code || "").toUpperCase();
     return $coinsFilter.length === 0 || $coinsFilter.includes(code);
   }).map((data) => {
-    const date = data?.internal_price_info?.created_at ? import_dayjs6.default.unix(
-      num(data.internal_price_info.created_at, { roundUp: true })
-    ) : (0, import_dayjs6.default)();
+    const date = data?.internal_price_info?.created_at ? import_dayjs6.default.unix(num(data.internal_price_info.created_at, { roundUp: true })) : (0, import_dayjs6.default)();
     return {
+      source: PLATFORM6.toLowerCase(),
       currency: "IRR",
       symbol: data.currency1.code.toUpperCase(),
       price: num(data.order_book_info.price, { decimalPlaces: 8, multiply: 10 }) || 0,
@@ -20892,11 +20848,7 @@ var KEY = process.env.COINAPI_KEY || null;
 var PLATFORM7 = "CoinAPI";
 var COIN_USE7 = "all";
 async function scrape7($coins = []) {
-  const data = await getLatest7($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM7.toLowerCase();
-  });
-  return data;
+  return await getLatest7($coins);
 }
 async function getLatest7($filterCoins = []) {
   const data = await request4("assets", {});
@@ -20914,7 +20866,7 @@ async function request4($uri, $params = {}) {
     },
     params: $params
   });
-  if (!result || !result.length) {
+  if (!result?.length) {
     throw new Error("Empty response data");
   }
   return result;
@@ -20937,6 +20889,7 @@ function processList5($list, $coinsFilter = []) {
   }).map((item) => {
     const date = (0, import_dayjs7.default)(item.data_quote_end || item.data_end || void 0);
     return {
+      source: PLATFORM7.toLowerCase(),
       name: item.name,
       symbol: item.asset_id.toUpperCase(),
       currency: "USD",
@@ -20970,11 +20923,7 @@ function getKeys() {
 }
 var COIN_USE8 = "all";
 async function scrape8($coins = []) {
-  const data = await getLatest8(200, $coins);
-  data.forEach((d) => {
-    d.source = PLATFORM8.toLowerCase();
-  });
-  return data;
+  return await getLatest8(200, $coins);
 }
 async function getLatest8($limit = 200, $filterCoins = []) {
   const data = await request5("cryptocurrency/listings/latest", {
@@ -21045,7 +20994,7 @@ async function request5($uri, $params = {}) {
       "X-CMC_PRO_API_KEY": keys[Math.floor(Math.random() * keys.length)]
     }
   });
-  if (!result?.status || result?.status?.error_code !== 0) {
+  if (result?.status?.error_code !== 0) {
     throw new Error(
       `Invalid response status: ${result?.status?.error_message || result?.status?.error_code}`
     );
@@ -21065,6 +21014,7 @@ function processList6($list, $coinsFilter = []) {
     const price = num(quoteUSD.price, { decimalPlaces: 8 }) || 0;
     const date = (0, import_dayjs8.default)(data.last_updated);
     const transformed = {
+      source: PLATFORM8.toLowerCase(),
       id: data.id,
       currency: "USD",
       name: data.name,
@@ -21085,12 +21035,12 @@ function processList6($list, $coinsFilter = []) {
         moment: date
       }
     };
-    if (data.quote.hasOwnProperty(symbol) && data.quote[symbol]) {
-      transformed["coin_market_cap"] = num(data.quote[symbol].market_cap) || 0;
-      transformed["coin_volume_1d"] = num(data.quote[symbol].volume_24h) || 0;
+    if (data.quote && Object.hasOwn(data.quote, symbol) && data.quote[symbol]) {
+      transformed.coin_market_cap = num(data.quote[symbol].market_cap) || 0;
+      transformed.coin_volume_1d = num(data.quote[symbol].volume_24h) || 0;
     } else if (price > 0) {
-      transformed["coin_market_cap"] = num(quoteUSD.market_cap, { divide: price }) || 0;
-      transformed["coin_volume_1d"] = num(quoteUSD.volume_24h, { divide: price }) || 0;
+      transformed.coin_market_cap = num(quoteUSD.market_cap, { divide: price }) || 0;
+      transformed.coin_volume_1d = num(quoteUSD.volume_24h, { divide: price }) || 0;
     }
     return transformed;
   });
@@ -21108,11 +21058,7 @@ var PLATFORM9 = "Exir";
 var URL9 = "https://api.exir.io/v2/";
 var COIN_USE9 = "all";
 async function scrape9($coins = []) {
-  const data = await getLatest9($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM9.toLowerCase();
-  });
-  return data;
+  return await getLatest9($coins);
 }
 async function getLatest9($filterCoins = []) {
   const data = await request6("ticker/all", {});
@@ -21133,7 +21079,7 @@ async function request6($uri, $params = {}) {
   return result;
 }
 function processList7($list, $coinsFilter = []) {
-  $list = Object.keys($list).map((key) => {
+  const items = Object.keys($list).map((key) => {
     const split = key.toUpperCase().split("-");
     return {
       ...$list[key],
@@ -21141,7 +21087,7 @@ function processList7($list, $coinsFilter = []) {
       currency: split[1]
     };
   });
-  return $list.filter((data) => {
+  return items.filter((data) => {
     if (data.currency !== "IRT") return false;
     if (!data?.last) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol);
@@ -21149,6 +21095,7 @@ function processList7($list, $coinsFilter = []) {
     const date = (0, import_dayjs9.default)();
     const price = num(data.last || data.close, { multiply: 10, decimalPlaces: 8 }) || 0;
     return {
+      source: PLATFORM9.toLowerCase(),
       currency: "IRR",
       symbol: data.symbol,
       price,
@@ -21176,11 +21123,7 @@ var PLATFORM10 = "Hitobit";
 var URL10 = "https://hitobit.com/hapi/exchange/v1/public/";
 var COIN_USE10 = "all";
 async function scrape10($coins = []) {
-  const data = await getLatest10($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM10.toLowerCase();
-  });
-  return data;
+  return await getLatest10($coins);
 }
 async function getLatest10($filterCoins = []) {
   const data = await request7("alltickers/24hr", {});
@@ -21211,6 +21154,7 @@ function processList8($list, $coinsFilter = []) {
   }).map((data) => {
     const date = (0, import_dayjs10.default)(data?.lastMarketInfoChangeDate || void 0);
     return {
+      source: PLATFORM10.toLowerCase(),
       currency: "IRR",
       symbol: data.baseCurrencySymbol.toUpperCase(),
       // * 10 to convert to IRR
@@ -21268,13 +21212,13 @@ async function request8($uri, $params = {}) {
   return result.data;
 }
 function processList9($list, $coinsFilter = []) {
-  const usdt = priceUSDT2($list);
+  const _usdt = priceUSDT2($list);
   return $list.filter((data) => {
     if (!data?.sellPrice && !data?.buyPrice) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
   }).map((data) => {
     const date = (0, import_dayjs11.default)();
-    let price = num(data.sellPrice || data.buyPrice, {
+    const price = num(data.sellPrice || data.buyPrice, {
       decimalPlaces: 8,
       multiply: 10
     }) || 0;
@@ -21285,9 +21229,7 @@ function processList9($list, $coinsFilter = []) {
       price,
       // * 10 to convert to IRR
       volume_1d: num(data.valume || data.volume, { multiply: 10, roundUp: true }) || 0,
-      coin_volume_1d: num(data.valume || data.volume, {
-        divide: typeof price?.toNumber === "function" ? price.toNumber() : price
-      }) || 0,
+      coin_volume_1d: price > 0 ? num(data.valume || data.volume, { divide: price }) || 0 : 0,
       change_1d: num(data.changePrice, { decimalPlaces: 2 }),
       last_update: {
         date: date.toISOString(),
@@ -21315,16 +21257,12 @@ var PLATFORM12 = "KifPool";
 var URL12 = "https://api.kifpool.app/api/";
 var COIN_USE12 = "all";
 async function scrape12($coins = []) {
-  const data = await getLatest12($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM12.toLowerCase();
-  });
-  return data;
+  return await getLatest12($coins);
 }
 async function getLatest12($filterCoins = []) {
   let offset = 0;
   const limit = 200;
-  let allData = [];
+  const allData = [];
   let hasMore = true;
   while (hasMore) {
     const response = await request9("spot/price/paginated", {
@@ -21369,6 +21307,7 @@ function processList10($list, $coinsFilter = []) {
     const coin_volume_1d = priceIRT > 0 ? num(data.volume, { divide: priceIRT }) : 0;
     const change_1d = num(data.priceChangePercent, { decimalPlaces: 2 }) || 0;
     return {
+      source: PLATFORM12.toLowerCase(),
       currency: "IRR",
       symbol: data.symbol.toUpperCase(),
       price,
@@ -21419,20 +21358,18 @@ async function request10($uri, $params = {}) {
       url: URL13 + $uri,
       params: $params,
       headers: {
-        "Origin": "https://nobitex.ir",
-        "Referer": "https://nobitex.ir/"
+        Origin: "https://nobitex.ir",
+        Referer: "https://nobitex.ir/"
       },
       throwOriginalError: true
     });
   } catch (error) {
     const errorMsg = error?.response?.data?.message || error.message;
     logError(`Nobitex API error: ${errorMsg}`);
-    throw new Error(
-      `Failed to send request to ${URL13 + $uri} server due to ${error.message}`
-    );
+    throw new Error(`Failed to send request to ${URL13 + $uri} server due to ${error.message}`);
   }
   if (result?.status && result.status !== "ok") {
-    throw new Error("Invalid response status: " + result.status);
+    throw new Error(`Invalid response status: ${result.status}`);
   }
   return result;
 }
@@ -21478,11 +21415,7 @@ var PLATFORM14 = "OMPFinex";
 var URL14 = "https://api.ompfinex.com/v1/market";
 var COIN_USE14 = "all";
 async function scrape14($coins = []) {
-  const data = await getLatest14($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM14.toLowerCase();
-  });
-  return data;
+  return await getLatest14($coins);
 }
 async function getLatest14($filterCoins = []) {
   const response = await request11("", {});
@@ -21512,6 +21445,7 @@ function processList12($list, $coinsFilter = []) {
     const date = (0, import_dayjs14.default)();
     const symbol = data.base_currency.id.toUpperCase();
     return {
+      source: PLATFORM14.toLowerCase(),
       currency: "IRR",
       symbol,
       price: num(data.last_price, { multiply: 10, decimalPlaces: 8 }) || 0,
@@ -21555,15 +21489,14 @@ async function request12($uri, $params = {}) {
     url: URL15 + $uri,
     params: $params
   });
-  if (!result?.data || !result.data.length) {
+  if (!result?.data?.length) {
     throw new Error("Invalid response data");
   }
   return result.data;
 }
 function processList13($list, $coinsFilter = []) {
   return $list.filter((data) => {
-    if (!data?.quote_currency_symbol?.en || data?.quote_currency_symbol?.en.toUpperCase() !== "IRR")
-      return false;
+    if (data?.quote_currency_symbol?.en?.toUpperCase() !== "IRR") return false;
     if (!data?.sell) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.base_currency_symbol.en.toUpperCase());
   }).map((data) => {
@@ -21596,15 +21529,11 @@ var PLATFORM16 = "Saraf";
 var URL16 = "https://api.saraf.app/v3/prices/crypto";
 var COIN_USE16 = "all";
 async function scrape16($coins = []) {
-  const data = await getLatest16($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM16.toLowerCase();
-  });
-  return data;
+  return await getLatest16($coins);
 }
 async function getLatest16($filterCoins = []) {
   const items = await request13();
-  if (!items || !items.length) {
+  if (!items?.length) {
     throw new Error("Response data is empty");
   }
   return processList14(items, $filterCoins);
@@ -21614,7 +21543,7 @@ async function request13() {
     method: "get",
     url: URL16
   });
-  if (!result || !result.price?.Items) {
+  if (!result?.price?.Items) {
     throw new Error("Invalid response data");
   }
   return Object.values(result.price.Items);
@@ -21632,6 +21561,7 @@ function processList14($list, $coinsFilter = []) {
     const coin_volume_1d = priceIRT > 0 ? num(item.mc, { divide: priceIRT }) : 0;
     const change_1d = num(item.c, { decimalPlaces: 2 }) || 0;
     return {
+      source: PLATFORM16.toLowerCase(),
       currency: "IRR",
       symbol: item.s.toUpperCase(),
       price,
@@ -21654,8 +21584,8 @@ __export(scrape_exports17, {
   getLatest: () => getLatest17,
   scrape: () => scrape17
 });
-var import_dayjs17 = __toESM(require_dayjs_min(), 1);
 init_axios2();
+var import_dayjs17 = __toESM(require_dayjs_min(), 1);
 var PLATFORM17 = "Sarmayex";
 var URL17 = "https://sarmayex.com/crypto-price";
 var COIN_USE17 = "all";
@@ -21684,7 +21614,9 @@ function processHtml($html, $coinsFilter = []) {
   const results = [];
   const date = (0, import_dayjs17.default)();
   const seen = /* @__PURE__ */ new Set();
-  const matches = [...$html.matchAll(/"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"/g)];
+  const matches = [
+    ...$html.matchAll(/"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"/g)
+  ];
   for (const match of matches) {
     const symbol = match[2].toUpperCase();
     if (symbol === "IRT" || symbol === "IRR") continue;
@@ -21751,15 +21683,11 @@ async function request14($uri, $params = {}) {
 function processList15($list, $coinsFilter = []) {
   const usdt = priceUSDT3($list);
   return $list.filter((data) => {
-    if (!data?.markets || !data?.markets.filter(
-      (y) => y.second_currency.symbol === "IRT" && y.price
-    ).length)
+    if (!data?.markets?.filter((y) => y.second_currency.symbol === "IRT" && y.price).length)
       return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
   }).map((data) => {
-    const market = data.markets.filter(
-      (market2) => market2.second_currency.symbol === "IRT"
-    )[0];
+    const market = data.markets.filter((market2) => market2.second_currency.symbol === "IRT")[0];
     const date = (0, import_dayjs18.default)();
     return {
       currency: "IRR",
@@ -21782,12 +21710,10 @@ function priceUSDT3($list) {
   let item = $list.filter((item2) => item2?.symbol === "USDT");
   if (!item.length) return 0;
   item = item[0];
-  item = item.markets.filter(
-    (market) => market?.second_currency?.symbol === "IRT"
-  );
+  item = item.markets.filter((market) => market?.second_currency?.symbol === "IRT");
   if (!item.length) return 0;
   const price = num(item[0].price, { decimalPlaces: 8, multiply: 10 });
-  return typeof price?.toNumber === "function" ? price.toNumber() : price;
+  return price || 0;
 }
 
 // scrapers/tetherland/scrape.js
@@ -21802,11 +21728,7 @@ var PLATFORM19 = "Tetherland";
 var URL19 = "https://api.tetherland.com/currencies";
 var COIN_USE19 = "all";
 async function scrape19($coins = []) {
-  const data = await getLatest19($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM19.toLowerCase();
-  });
-  return data;
+  return await getLatest19($coins);
 }
 async function getLatest19($filterCoins = []) {
   const data = await request15("", {});
@@ -21831,6 +21753,7 @@ function processList16($list, $coinsFilter = []) {
     const data = $list[symbol];
     const date = (0, import_dayjs19.default)();
     return {
+      source: PLATFORM19.toLowerCase(),
       currency: "IRR",
       symbol: symbol.toUpperCase(),
       price: num(data.price || data.buy_price, { multiply: 10, decimalPlaces: 8 }) || 0,
@@ -22023,8 +21946,7 @@ function parseCli(argv) {
     else if (arg.startsWith("--exchange="))
       out.exchange = arg.slice("--exchange=".length).toLowerCase();
     else if (arg.startsWith("--run-id=")) out.runId = arg.slice("--run-id=".length);
-    else if (arg.startsWith("--from-json="))
-      out.fromJson = arg.slice("--from-json=".length);
+    else if (arg.startsWith("--from-json=")) out.fromJson = arg.slice("--from-json=".length);
     else throw new Error(`Unknown argument: ${arg}`);
   }
   return out;
@@ -22173,10 +22095,7 @@ async function waitForIngestReady(runId, logger) {
   const pollSec = envInt("FINALIZE_POLL_SEC", 15, 1);
   const deadline = Date.now() + waitSec * 1e3;
   for (; ; ) {
-    const status = await ingestRequest(
-      "GET",
-      `/status?run_id=${encodeURIComponent(runId)}`
-    );
+    const status = await ingestRequest("GET", `/status?run_id=${encodeURIComponent(runId)}`);
     const missing = Array.isArray(status.missing) ? status.missing : [];
     if (missing.length === 0) {
       logInfo(`Ingest ready for ${runId}`);
@@ -22196,9 +22115,7 @@ async function waitForIngestReady(runId, logger) {
       return status;
     }
     const sleepMs = Math.min(pollSec * 1e3, remainingMs);
-    logInfo(
-      `Waiting for sources (${missing.join(",")}); poll in ${Math.round(sleepMs / 1e3)}s`
-    );
+    logInfo(`Waiting for sources (${missing.join(",")}); poll in ${Math.round(sleepMs / 1e3)}s`);
     logger.event("status_wait", { run_id: runId, missing, sleep_ms: sleepMs });
     await sleep(sleepMs);
   }
@@ -22237,7 +22154,7 @@ function filterRows(raw, coins) {
     const price = Number(d.price);
     if (!Number.isFinite(price) || price <= 0) continue;
     const vol = d.volume_1d != null ? Number(d.volume_1d) : 0;
-    if (Number.isNaN(vol) || vol < 0) continue;
+    if (!Number.isFinite(vol) || vol < 0) continue;
     if (!d.source || typeof d.source !== "string") continue;
     const sym = String(d.symbol || "").toUpperCase().trim();
     if (!sym || !coinSet.has(sym)) continue;
@@ -22248,25 +22165,32 @@ function filterRows(raw, coins) {
       volume_1d: Math.max(0, vol),
       source: String(d.source).toLowerCase().trim()
     };
-    if (d.coin_volume_1d != null && Number.isFinite(Number(d.coin_volume_1d))) {
-      row.coin_volume_1d = Number(d.coin_volume_1d);
+    if (d.coin_volume_1d != null) {
+      const cv = Number(d.coin_volume_1d);
+      if (Number.isFinite(cv) && cv >= 0) row.coin_volume_1d = cv;
     }
-    if (d.change_1d != null && Number.isFinite(Number(d.change_1d))) {
-      row.change_1d = Number(d.change_1d);
+    if (d.change_1d != null) {
+      const c1d = Number(d.change_1d);
+      if (Number.isFinite(c1d)) row.change_1d = c1d;
     }
-    if (d.change_7d != null && Number.isFinite(Number(d.change_7d))) {
-      row.change_7d = Number(d.change_7d);
+    if (d.change_7d != null) {
+      const c7d = Number(d.change_7d);
+      if (Number.isFinite(c7d)) row.change_7d = c7d;
     }
-    if (d.cap != null && Number.isFinite(Number(d.cap))) {
-      row.cap = Number(d.cap);
-    } else if (d.market_cap != null && Number.isFinite(Number(d.market_cap))) {
-      row.cap = Number(d.market_cap);
+    if (d.cap != null) {
+      const cap = Number(d.cap);
+      if (Number.isFinite(cap) && cap >= 0) row.cap = cap;
+    } else if (d.market_cap != null) {
+      const mcap = Number(d.market_cap);
+      if (Number.isFinite(mcap) && mcap >= 0) row.cap = mcap;
     }
-    if (d.supply != null && Number.isFinite(Number(d.supply))) {
-      row.supply = Number(d.supply);
+    if (d.supply != null) {
+      const supply = Number(d.supply);
+      if (Number.isFinite(supply) && supply >= 0) row.supply = supply;
     }
-    if (d.max_supply != null && Number.isFinite(Number(d.max_supply))) {
-      row.max_supply = Number(d.max_supply);
+    if (d.max_supply != null) {
+      const maxSupply = Number(d.max_supply);
+      if (Number.isFinite(maxSupply) && maxSupply >= 0) row.max_supply = maxSupply;
     }
     out.push(row);
   }
@@ -22277,9 +22201,7 @@ function selectExchanges(exchanges, cli) {
   let allow = csvList(process.env.EXCHANGES);
   if (cli.exchange) allow = [cli.exchange];
   const raw = [...exchanges];
-  const existingSlugs = new Set(
-    raw.map((e) => String(e.slug || "").toLowerCase())
-  );
+  const existingSlugs = new Set(raw.map((e) => String(e.slug || "").toLowerCase()));
   for (const slug of Object.keys(SCRAPERS)) {
     if (!existingSlugs.has(slug.toLowerCase())) {
       raw.push({ slug });
@@ -22319,10 +22241,7 @@ async function runTrack(customArgv) {
     return 0;
   }
   const logDir = resolveLogDir(baseDir);
-  const retention = Math.max(
-    1,
-    Number.parseInt(process.env.LOG_RETENTION_DAYS || "7", 10) || 7
-  );
+  const retention = Math.max(1, Number.parseInt(process.env.LOG_RETENTION_DAYS || "7", 10) || 7);
   const nodeId = resolveNodeId();
   if (cli.pruneLogs && !cli.all && !cli.exchange && !cli.finalizeOnly && !cli.fromJson) {
     const n = pruneLogs(logDir, retention);
@@ -22383,7 +22302,8 @@ async function runTrack(customArgv) {
     for (const row of rows) {
       if (!row?.source) continue;
       const src = String(row.source).toLowerCase();
-      (bySource[src] ||= []).push(row);
+      if (!bySource[src]) bySource[src] = [];
+      bySource[src].push(row);
     }
   } else {
     if (!exchanges.length || !coins.length) {
@@ -22391,10 +22311,7 @@ async function runTrack(customArgv) {
       return 1;
     }
     const scraped = [];
-    const concurrency = Math.max(
-      1,
-      parseInt(process.env.SCRAPER_CONCURRENCY || "6", 10)
-    );
+    const concurrency = Math.max(1, parseInt(process.env.SCRAPER_CONCURRENCY || "6", 10));
     await asyncPool(
       exchanges,
       async (ex) => {
@@ -22420,7 +22337,8 @@ async function runTrack(customArgv) {
       `Discovered ${filtered.length} filtered rows from ${new Set(filtered.map((r) => r.source)).size} sources`
     );
     for (const row of filtered) {
-      (bySource[row.source] ||= []).push(row);
+      if (!bySource[row.source]) bySource[row.source] = [];
+      bySource[row.source].push(row);
     }
   }
   const collectedAt = (/* @__PURE__ */ new Date()).toISOString();
@@ -22517,6 +22435,12 @@ function shouldRunCli() {
   return process.argv.slice(2).length > 0;
 }
 if (shouldRunCli()) {
+  const shutdown = (signal) => {
+    logInfo(`Received ${signal}, shutting down gracefully...`);
+    process.exit(128 + (signal === "SIGINT" ? 2 : 15));
+  };
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
   runTrack().then((code) => process.exit(code ?? 0)).catch((err) => {
     logError(err);
     process.exit(1);

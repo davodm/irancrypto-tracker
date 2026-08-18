@@ -21,14 +21,7 @@ export const COIN_USE = "all"; // own, all, none
  * @param {string[]} $coins - List of coins to filter
  */
 export async function scrape($coins = []) {
-  // Get the list of prices
-  const data = await getLatest(200, $coins);
-  // Sign the data with platform name
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-
-  return data;
+  return await getLatest(200, $coins);
 }
 
 /**
@@ -36,7 +29,7 @@ export async function scrape($coins = []) {
  *
  * @param {number} $limit Number of items to return
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any[]>} Response data from api
  */
 export async function getLatest($limit = 200, $filterCoins = []) {
   const data = await request("cryptocurrency/listings/latest", {
@@ -64,7 +57,7 @@ export async function getLatest($limit = 200, $filterCoins = []) {
  *
  * @param {number} $limit Number of items to return
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object>}
+ * @returns {Promise<any[]>}
  */
 export async function getGainers($limit = 20, $filterCoins = []) {
   const data = await request("cryptocurrency/listings/latest", {
@@ -82,7 +75,7 @@ export async function getGainers($limit = 20, $filterCoins = []) {
  *
  * @param {number} $limit Number of items to return
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any[]>} Response data from api
  */
 export async function getLosers($limit = 20, $filterCoins = []) {
   const data = await request("cryptocurrency/listings/latest", {
@@ -98,7 +91,7 @@ export async function getLosers($limit = 20, $filterCoins = []) {
 /**
  * Get global metrics of crypto world to store and show as statistics
  *
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any>} Response data from api
  */
 export async function getGlobalMetrics() {
   const data = await request("global-metrics/quotes/latest");
@@ -120,14 +113,14 @@ export async function getGlobalMetrics() {
  *
  * @param {string} $uri URI of the endpoint
  * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any>} Response data from api
  */
 async function request($uri, $params = {}) {
   const keys = getKeys();
   if (!keys || keys.length === 0) {
     throw new Error("COINMARKETCAP_API_KEY is not set or empty");
   }
-  
+
   // Send request via axios helper
   const result = await axiosRequest({
     method: "get",
@@ -139,11 +132,9 @@ async function request($uri, $params = {}) {
   });
 
   // Validate status
-  if (!result?.status || result?.status?.error_code !== 0) {
+  if (result?.status?.error_code !== 0) {
     throw new Error(
-      `Invalid response status: ${
-        result?.status?.error_message || result?.status?.error_code
-      }`
+      `Invalid response status: ${result?.status?.error_message || result?.status?.error_code}`,
     );
   }
 
@@ -158,7 +149,7 @@ async function request($uri, $params = {}) {
 /**
  * Process the list of cryptocurrencies from CoinMarketCap API
  *
- * @param {object[]} $list List of cryptocurrencies
+ * @param {any[]} $list List of cryptocurrencies
  * @param {string[]} $coinsFilter List of coins to filter
  * @returns {object[]} Processed list of cryptocurrencies
  */
@@ -168,10 +159,7 @@ function processList($list, $coinsFilter = []) {
       // Check if there is no quote data
       if (!data?.quote?.USD) return false;
       // Check if the coin list is empty or includes the coin filter list
-      return (
-        $coinsFilter.length === 0 ||
-        $coinsFilter.includes(data.symbol.toUpperCase())
-      );
+      return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
     })
     .map((data) => {
       const symbol = data.symbol.toUpperCase();
@@ -184,6 +172,7 @@ function processList($list, $coinsFilter = []) {
 
       // Initialize the transformed object
       const transformed = {
+        source: PLATFORM.toLowerCase(),
         id: data.id,
         currency: "USD",
         name: data.name,
@@ -193,10 +182,8 @@ function processList($list, $coinsFilter = []) {
         change_1h: num(quoteUSD.percent_change_1h, { decimalPlaces: 2 }) || 0,
         change_1d: num(quoteUSD.percent_change_24h, { decimalPlaces: 2 }) || 0,
         change_7d: num(quoteUSD.percent_change_7d, { decimalPlaces: 2 }) || 0,
-        cap:
-          num(quoteUSD.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
-        market_cap:
-          num(quoteUSD.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
+        cap: num(quoteUSD.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
+        market_cap: num(quoteUSD.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
         supply: data.circulating_supply || 0,
         max_supply: num(data.max_supply) || 0,
         total_supply: num(data.total_supply) || 0,
@@ -209,16 +196,13 @@ function processList($list, $coinsFilter = []) {
 
       // Conditional assignment of coin's market cap and volume
       // If isset Directly on Quote -> Coin's based data
-      if (data.quote.hasOwnProperty(symbol) && data.quote[symbol]) {
-        transformed["coin_market_cap"] =
-          num(data.quote[symbol].market_cap) || 0;
-        transformed["coin_volume_1d"] = num(data.quote[symbol].volume_24h) || 0;
+      if (data.quote && Object.hasOwn(data.quote, symbol) && data.quote[symbol]) {
+        transformed.coin_market_cap = num(data.quote[symbol].market_cap) || 0;
+        transformed.coin_volume_1d = num(data.quote[symbol].volume_24h) || 0;
       } else if (price > 0) {
         // If there is not direct data then calculate based on price
-        transformed["coin_market_cap"] =
-          num(quoteUSD.market_cap, { divide: price }) || 0;
-        transformed["coin_volume_1d"] =
-          num(quoteUSD.volume_24h, { divide: price }) || 0;
+        transformed.coin_market_cap = num(quoteUSD.market_cap, { divide: price }) || 0;
+        transformed.coin_volume_1d = num(quoteUSD.volume_24h, { divide: price }) || 0;
       }
 
       return transformed;

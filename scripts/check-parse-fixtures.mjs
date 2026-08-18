@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
 /**
  * Golden parse fixtures — bitpin / ariomex / nobitex across JS helpers + PHP + Python.
  * Run: node scripts/check-parse-fixtures.mjs
@@ -6,10 +7,9 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { JSONizeResponse } from "../runtime/js/request.js";
 import num from "../runtime/js/num.js";
+import { JSONizeResponse } from "../runtime/js/request.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fixtures = path.join(root, "fixtures/parse");
@@ -25,7 +25,7 @@ function assert(cond, msg) {
 
 function hasBin(bin) {
   const r = spawnSync(bin, ["-v"], { encoding: "utf8" });
-  return r.error?.code !== "ENOENT" && (r.status === 0 || Boolean(r.stdout));
+  return /** @type {any} */ (r.error)?.code !== "ENOENT" && (r.status === 0 || Boolean(r.stdout));
 }
 
 function run(bin, args, label) {
@@ -45,10 +45,7 @@ function run(bin, args, label) {
 
 // --- JS: proxy unwrap + num ---
 {
-  const wrapped = JSONizeResponse(
-    { data: { data: { ok: true, n: 1 } } },
-    { unwrapProxy: true }
-  );
+  const wrapped = JSONizeResponse({ data: { data: { ok: true, n: 1 } } }, { unwrapProxy: true });
   assert(wrapped.ok === true && wrapped.n === 1, "proxy unwrap nested data");
   const direct = JSONizeResponse({ data: [{ a: 1 }] }, { unwrapProxy: true });
   assert(Array.isArray(direct) && direct[0].a === 1, "proxy unwrap array passthrough");
@@ -91,7 +88,7 @@ function run(bin, args, label) {
   }
   assert(
     rows.length === 1 && rows[0] === "BTC",
-    `nobitex casing expected [BTC], got ${JSON.stringify(rows)}`
+    `nobitex casing expected [BTC], got ${JSON.stringify(rows)}`,
   );
 }
 

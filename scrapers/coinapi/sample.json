@@ -1,58 +1,58 @@
 [
-    {
-        "asset_id": "USD",
-        "name": "US Dollar",
-        "type_is_crypto": 0,
-        "data_quote_start": "2014-02-24T00:00:00.0000000Z",
-        "data_quote_end": "2024-10-15T00:00:00.0000000Z",
-        "data_orderbook_start": "2014-02-24T17:43:05.0000000Z",
-        "data_orderbook_end": "2023-07-07T00:00:00.0000000Z",
-        "data_trade_start": "2010-07-17T00:00:00.0000000Z",
-        "data_trade_end": "2024-10-15T00:00:00.0000000Z",
-        "data_symbols_count": 424983,
-        "volume_1hrs_usd": 97219320059.33,
-        "volume_1day_usd": 6570498542131.57,
-        "volume_1mth_usd": 224938119373331.15,
-        "id_icon": "0a4185f2-1a03-4a7c-b866-ba7076d8c73b",
-        "chain_addresses": [
-            {
-                "chain_id": "ETHEREUM",
-                "network_id": "MAINNET",
-                "address": "0xd233d1f6fd11640081abb8db125f722b5dc729dc"
-            }
-        ],
-        "data_start": "2010-07-17",
-        "data_end": "2024-10-15"
-    },
-    {
-        "asset_id": "BTC",
-        "name": "Bitcoin",
-        "type_is_crypto": 1,
-        "data_quote_start": "2014-02-24T00:00:00.0000000Z",
-        "data_quote_end": "2024-10-15T00:00:00.0000000Z",
-        "data_orderbook_start": "2014-02-24T17:43:05.0000000Z",
-        "data_orderbook_end": "2023-07-07T00:00:00.0000000Z",
-        "data_trade_start": "2010-07-17T00:00:00.0000000Z",
-        "data_trade_end": "2024-10-15T00:00:00.0000000Z",
-        "data_symbols_count": 253486,
-        "volume_1hrs_usd": 21588755308486227.92,
-        "volume_1day_usd": 1245798359885783452.44,
-        "volume_1mth_usd": 48562841476759267733.74,
-        "price_usd": 67553.116294333931948976312663,
-        "id_icon": "4caf2b16-a017-4e26-a348-2cea69c34cba",
-        "chain_addresses": [
-            {
-                "chain_id": "ARBITRUM",
-                "network_id": "MAINNET",
-                "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"
-            },
-            {
-                "chain_id": "ETHEREUM",
-                "network_id": "MAINNET",
-                "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
-            }
-        ],
-        "data_start": "2010-07-17",
-        "data_end": "2024-10-15"
-    }
+  {
+    "asset_id": "USD",
+    "name": "US Dollar",
+    "type_is_crypto": 0,
+    "data_quote_start": "2014-02-24T00:00:00.0000000Z",
+    "data_quote_end": "2024-10-15T00:00:00.0000000Z",
+    "data_orderbook_start": "2014-02-24T17:43:05.0000000Z",
+    "data_orderbook_end": "2023-07-07T00:00:00.0000000Z",
+    "data_trade_start": "2010-07-17T00:00:00.0000000Z",
+    "data_trade_end": "2024-10-15T00:00:00.0000000Z",
+    "data_symbols_count": 424983,
+    "volume_1hrs_usd": 97219320059.33,
+    "volume_1day_usd": 6570498542131.57,
+    "volume_1mth_usd": 224938119373331.15,
+    "id_icon": "0a4185f2-1a03-4a7c-b866-ba7076d8c73b",
+    "chain_addresses": [
+      {
+        "chain_id": "ETHEREUM",
+        "network_id": "MAINNET",
+        "address": "0xd233d1f6fd11640081abb8db125f722b5dc729dc"
+      }
+    ],
+    "data_start": "2010-07-17",
+    "data_end": "2024-10-15"
+  },
+  {
+    "asset_id": "BTC",
+    "name": "Bitcoin",
+    "type_is_crypto": 1,
+    "data_quote_start": "2014-02-24T00:00:00.0000000Z",
+    "data_quote_end": "2024-10-15T00:00:00.0000000Z",
+    "data_orderbook_start": "2014-02-24T17:43:05.0000000Z",
+    "data_orderbook_end": "2023-07-07T00:00:00.0000000Z",
+    "data_trade_start": "2010-07-17T00:00:00.0000000Z",
+    "data_trade_end": "2024-10-15T00:00:00.0000000Z",
+    "data_symbols_count": 253486,
+    "volume_1hrs_usd": 21588755308486227.92,
+    "volume_1day_usd": 1245798359885783452.44,
+    "volume_1mth_usd": 48562841476759267733.74,
+    "price_usd": 67553.116294333931948976312663,
+    "id_icon": "4caf2b16-a017-4e26-a348-2cea69c34cba",
+    "chain_addresses": [
+      {
+        "chain_id": "ARBITRUM",
+        "network_id": "MAINNET",
+        "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f"
+      },
+      {
+        "chain_id": "ETHEREUM",
+        "network_id": "MAINNET",
+        "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+      }
+    ],
+    "data_start": "2010-07-17",
+    "data_end": "2024-10-15"
+  }
 ]

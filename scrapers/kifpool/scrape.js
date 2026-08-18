@@ -13,26 +13,19 @@ export const COIN_USE = "all"; // own, all, none
  * @param {string[]} $coins - List of coins to filter
  */
 export async function scrape($coins = []) {
-  // Get the list of prices
-  const data = await getLatest($coins);
-  // Sign the data with platform name
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-
-  return data;
+  return await getLatest($coins);
 }
 
 /**
  * Get latest prices of cryptocurrencies
  *
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object[]>} Response data from api
+ * @returns {Promise<any[]>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
   let offset = 0;
   const limit = 200;
-  let allData = [];
+  const allData = [];
   let hasMore = true;
 
   while (hasMore) {
@@ -68,7 +61,7 @@ export async function getLatest($filterCoins = []) {
  *
  * @param {string} $uri URI of the endpoint
  * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any>} Response data from api
  */
 async function request($uri, $params = {}) {
   // Send request via axios helper
@@ -89,7 +82,7 @@ async function request($uri, $params = {}) {
 /**
  * Process the list of cryptocurrencies
  *
- * @param {object[]} $list List of cryptocurrencies
+ * @param {any[]} $list List of cryptocurrencies
  * @param {string[]} $coinsFilter List of coins to filter
  * @returns {object[]} Processed list of cryptocurrencies
  */
@@ -99,10 +92,7 @@ function processList($list, $coinsFilter = []) {
       // Check if price exists
       if (!data?.priceSellIRT && !data?.priceBuyIRT) return false;
       // Check if the coin list is empty or includes the coin filter list
-      return (
-        $coinsFilter.length === 0 ||
-        $coinsFilter.includes(data.symbol.toUpperCase())
-      );
+      return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
     })
     .map((data) => {
       const date = data.updatedAt ? dayjs(data.updatedAt) : dayjs();
@@ -124,6 +114,7 @@ function processList($list, $coinsFilter = []) {
 
       // Initialize the transformed object
       return {
+        source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: data.symbol.toUpperCase(),
         price,
