@@ -13,14 +13,7 @@ export const COIN_USE = "all"; // own, all, none
  * @param {string[]} $coins - List of coins to filter
  */
 export async function scrape($coins = []) {
-  // Get the list of prices
-  const data = await getLatest($coins);
-  // Sign the data with platform name
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-
-  return data;
+  return await getLatest($coins);
 }
 
 /**
@@ -31,7 +24,7 @@ export async function scrape($coins = []) {
  */
 export async function getLatest($filterCoins = []) {
   const items = await request();
-  if (!items || !items.length) {
+  if (!items?.length) {
     throw new Error("Response data is empty");
   }
   return processList(items, $filterCoins);
@@ -50,7 +43,7 @@ async function request() {
   });
 
   // Validate response data
-  if (!result || !result.price?.Items) {
+  if (!result?.price?.Items) {
     throw new Error("Invalid response data");
   }
 
@@ -60,7 +53,7 @@ async function request() {
 /**
  * Process the list of cryptocurrencies
  *
- * @param {object[]} $list List of cryptocurrencies
+ * @param {any[]} $list List of cryptocurrencies
  * @param {string[]} $coinsFilter List of coins to filter
  * @returns {object[]} Processed list of cryptocurrencies
  */
@@ -72,10 +65,7 @@ function processList($list, $coinsFilter = []) {
       // Check if price exists
       if (!item?.p) return false;
       // Check if the coin list is empty or includes the coin filter list
-      return (
-        $coinsFilter.length === 0 ||
-        $coinsFilter.includes(item.s.toUpperCase())
-      );
+      return $coinsFilter.length === 0 || $coinsFilter.includes(item.s.toUpperCase());
     })
     .map((item) => {
       // Parse last update (ut is in milliseconds)
@@ -96,6 +86,7 @@ function processList($list, $coinsFilter = []) {
 
       // Initialize the transformed object
       return {
+        source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: item.s.toUpperCase(),
         price,

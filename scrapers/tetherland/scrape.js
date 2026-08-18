@@ -8,11 +8,7 @@ const URL = "https://api.tetherland.com/currencies";
 export const COIN_USE = "all";
 
 export async function scrape($coins = []) {
-  const data = await getLatest($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-  return data;
+  return await getLatest($coins);
 }
 
 export async function getLatest($filterCoins = []) {
@@ -42,6 +38,7 @@ function processList($list, $coinsFilter = []) {
       const data = $list[symbol];
       const date = dayjs();
       return {
+        source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: symbol.toUpperCase(),
         price: num(data.price || data.buy_price, { multiply: 10, decimalPlaces: 8 }) || 0,

@@ -1,6 +1,6 @@
 {
   "name": "irancrypto-runner",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "license": "AGPL-3.0-or-later",
   "description": "IranCrypto.market API-only exchange collectors (JS/PHP/Python single-file workers)",
   "main": "runtime/js/entry.js",
@@ -10,6 +10,10 @@
     "email": "i@davod.me"
   },
   "scripts": {
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "typecheck": "tsc --noEmit",
     "check:parity": "node scripts/check-parity.mjs",
     "check:fixtures": "node scripts/check-parse-fixtures.mjs",
     "generate": "node scripts/generate-registry.mjs",
@@ -31,7 +35,10 @@
     "decimal.js": "^10.6.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.9",
+    "@types/node": "^26.2.0",
     "dotenv": "^17.4.2",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "typescript": "^7.0.2"
   }
 }

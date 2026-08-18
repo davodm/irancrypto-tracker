@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import * as esbuild from "esbuild";
 import fs from "node:fs";
 import path from "node:path";
+import * as esbuild from "esbuild";
 import { projectRoot } from "./lib-slugs.mjs";
 
 const root = projectRoot();

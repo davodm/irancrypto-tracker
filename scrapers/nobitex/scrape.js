@@ -1,5 +1,5 @@
-import { logError } from "../../runtime/js/logger.js";
 import dayjs from "dayjs";
+import { logError } from "../../runtime/js/logger.js";
 import num from "../../runtime/js/num.js";
 import { axiosRequest } from "../../runtime/js/request.js";
 
@@ -20,7 +20,7 @@ export async function scrape($coins) {
   data.forEach((d) => {
     d.source = PLATFORM.toLowerCase();
   });
-  
+
   return data;
 }
 
@@ -28,7 +28,7 @@ export async function scrape($coins) {
  * Get latest prices of cryptocurrencies
  *
  * @param {string[]} $filterCoins List of coins to filter (optional)
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any[]>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
   // Fetch all RLS pairs and filter on our side
@@ -36,7 +36,7 @@ export async function getLatest($filterCoins = []) {
     dstCurrency: "rls",
   });
 
-  if(!data?.stats || !Object.keys(data.stats).length) {
+  if (!data?.stats || !Object.keys(data.stats).length) {
     throw new Error("Response data is empty");
   }
 
@@ -48,7 +48,7 @@ export async function getLatest($filterCoins = []) {
  *
  * @param {string} $uri URI of the endpoint
  * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any>} Response data from api
  */
 async function request($uri, $params = {}) {
   // Send request via axios helper
@@ -59,23 +59,21 @@ async function request($uri, $params = {}) {
       url: URL + $uri,
       params: $params,
       headers: {
-        "Origin": "https://nobitex.ir",
-        "Referer": "https://nobitex.ir/",
+        Origin: "https://nobitex.ir",
+        Referer: "https://nobitex.ir/",
       },
       throwOriginalError: true,
     });
-  } catch(error) {
+  } catch (error) {
     const errorMsg = error?.response?.data?.message || error.message;
     logError(`Nobitex API error: ${errorMsg}`);
 
-    throw new Error(
-      `Failed to send request to ${URL + $uri} server due to ${error.message}`
-    );
+    throw new Error(`Failed to send request to ${URL + $uri} server due to ${error.message}`);
   }
 
   // Validate status
   if (result?.status && result.status !== "ok") {
-    throw new Error("Invalid response status: " + result.status);
+    throw new Error(`Invalid response status: ${result.status}`);
   }
 
   return result;
@@ -84,7 +82,7 @@ async function request($uri, $params = {}) {
 /**
  * Process the list of cryptocurrencies from Nobitex API
  *
- * @param {object[]} $list List of cryptocurrencies
+ * @param {Record<string, any>} $list List of cryptocurrencies
  * @param {string[]} $coinsFilter List of coins to filter
  * @returns {object[]} Processed list of cryptocurrencies
  */
@@ -125,4 +123,3 @@ function processList($list, $coinsFilter = []) {
       };
     });
 }
-

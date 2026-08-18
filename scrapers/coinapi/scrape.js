@@ -13,22 +13,14 @@ export const COIN_USE = "all"; // own, all, none
  * @param {string[]} $coins - List of coins to filter
  */
 export async function scrape($coins = []) {
-  // Get the list of prices
-  const data = await getLatest($coins);
-  // Sign the data with platform name
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-
-  return data;
+  return await getLatest($coins);
 }
 
 /**
  * Get latest prices of cryptocurrencies
  *
- * @param {number} $limit Number of items to return
  * @param {string[]} $filterCoins List of coins to filter
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any[]>} Response data from api
  */
 export async function getLatest($filterCoins = []) {
   const data = await request("assets", {});
@@ -40,13 +32,13 @@ export async function getLatest($filterCoins = []) {
  *
  * @param {string} $uri URI of the endpoint
  * @param {object} $params object of query parameters
- * @returns {Promise<object>} Response data from api
+ * @returns {Promise<any>} Response data from api
  */
 async function request($uri, $params = {}) {
   if (!KEY) {
     throw new Error("COINAPI_KEY is not set");
   }
-  
+
   // Send request via axios helper
   const result = await axiosRequest({
     method: "get",
@@ -58,7 +50,7 @@ async function request($uri, $params = {}) {
   });
 
   // Validate response data
-  if (!result || !result.length) {
+  if (!result?.length) {
     throw new Error("Empty response data");
   }
 
@@ -68,7 +60,7 @@ async function request($uri, $params = {}) {
 /**
  * Processes a list of cryptocurrency data from CoinAPI
  *
- * @param {object[]} $list - List of cryptocurrencies.
+ * @param {any[]} $list - List of cryptocurrencies.
  * @param {string[]} $coinsFilter - List of cryptocurrencies to filter.
  * @returns {object[]} - Processed, filtered list of cryptocurrencies.
  */
@@ -103,6 +95,7 @@ function processList($list, $coinsFilter = []) {
       const date = dayjs(item.data_quote_end || item.data_end || undefined);
 
       return {
+        source: PLATFORM.toLowerCase(),
         name: item.name,
         symbol: item.asset_id.toUpperCase(),
         currency: "USD",

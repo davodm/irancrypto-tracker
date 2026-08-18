@@ -35,8 +35,11 @@ RUN chmod +x ./track-bin && mkdir -p ./logs && chown -R bun:bun /app
 USER bun
 
 # Satellite scrapers only need outbound internet access (no open ports needed).
-# Continuous runner loop scrapes every 1 hour (3600s) automatically.
+# Continuous runner loop: runs immediately, then aligns to RUN_INTERVAL_SEC (default: 3600s / top-of-hour).
 ENV TRACK_ARGS="--all"
 ENV LOG_DIR="/app/logs"
-CMD ["sh", "-c", "while true; do ./track-bin $TRACK_ARGS; sleep 3600; done"]
+ENV RUN_INTERVAL_SEC="3600"
+
+CMD ["sh", "-c", "trap 'exit 0' INT TERM; while true; do ./track-bin $TRACK_ARGS; INTERVAL=${RUN_INTERVAL_SEC:-3600}; if [ \"$INTERVAL\" -ge 60 ]; then NOW=$(date +%s); SLEEP_SEC=$(( INTERVAL - (NOW % INTERVAL) )); [ \"$SLEEP_SEC\" -le 0 ] && SLEEP_SEC=$INTERVAL; else SLEEP_SEC=$INTERVAL; fi; sleep $SLEEP_SEC & wait $!; done"]
+
 

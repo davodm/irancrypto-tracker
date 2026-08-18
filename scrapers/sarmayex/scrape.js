@@ -1,6 +1,6 @@
+import axios from "axios";
 import dayjs from "dayjs";
 import num from "../../runtime/js/num.js";
-import axios from "axios";
 
 const PLATFORM = "Sarmayex";
 const URL = "https://sarmayex.com/crypto-price";
@@ -18,7 +18,8 @@ export async function scrape($coins = []) {
 export async function getLatest($filterCoins = []) {
   const response = await axios.get(URL, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     },
     timeout: 15000,
@@ -36,7 +37,9 @@ function processHtml($html, $coinsFilter = []) {
   const date = dayjs();
   const seen = new Set();
 
-  const matches = [...$html.matchAll(/"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"/g)];
+  const matches = [
+    ...$html.matchAll(/"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"/g),
+  ];
 
   for (const match of matches) {
     const symbol = match[2].toUpperCase();

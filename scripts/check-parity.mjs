@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { listSlugs, projectRoot, scrapersRoot } from "./lib-slugs.mjs";
 
-const root = projectRoot();
+const _root = projectRoot();
 const scrapers = scrapersRoot();
 const required = ["scrape.js", "scrape.php", "scrape.py"];
 
@@ -35,9 +35,7 @@ for (const slug of dirs) {
 
 const complete = listSlugs();
 if (complete.length !== dirs.length) {
-  console.error(
-    `Parity incomplete: ${complete.length}/${dirs.length} slugs have all three files`
-  );
+  console.error(`Parity incomplete: ${complete.length}/${dirs.length} slugs have all three files`);
   failed = true;
 }
 

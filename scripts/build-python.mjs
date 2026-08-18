@@ -44,7 +44,7 @@ parts.push(
   read(path.join(root, "generated/python-scraper-registry.py")).trimEnd(),
   "\n\n# ===== orchestrator + main =====\n",
   read(path.join(root, "runtime/python/orchestrator.py")).trimEnd(),
-  "\n"
+  "\n",
 );
 
 fs.writeFileSync(out, parts.join("\n"));

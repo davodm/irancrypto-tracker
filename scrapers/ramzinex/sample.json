@@ -1,547 +1,547 @@
 {
-    "data": [
-        {
-            "amount_step": 0,
-            "base_currency_id": 406,
-            "base_currency_symbol": {
-                "en": "rfx",
-                "fa": "رمزفیکس"
-            },
-            "base_precision": 0,
-            "buy": 1065790,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 5635,
-                    "change_percent": 0.06,
-                    "close": 1065790,
-                    "highest": 1065800,
-                    "lowest": 1065090,
-                    "open": 1065100,
-                    "quote_volume": 6002135090
-                }
-            },
-            "icon": "exchange/img/coins/rfx.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/rfx.png",
-            "name": {
-                "en": "ramzfix/rial",
-                "fa": "رمزفیکس"
-            },
-            "pair_id": 614,
-            "price_precision": 0,
-            "price_step": 1065,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 1065800,
-            "show_order": 48,
-            "tv_symbol": {
-                "charts": [],
-                "international": "null",
-                "ramzinex": "rfxirr"
-            },
-            "url_name": "ramzfix",
-            "web_link": "https://ramzinex.com/exchange/orderbook/614"
-        },
-        {
-            "amount_step": 21.33,
-            "base_currency_id": 203,
-            "base_currency_symbol": {
-                "en": "rb10",
-                "fa": "سبد شاخصی رمزباکس"
-            },
-            "base_precision": 2,
-            "buy": 46766,
-            "crypto_box": 1,
-            "financial": {
-                "last24h": {
-                    "base_volume": 349860.337,
-                    "change_percent": -0.48,
-                    "close": 46766,
-                    "highest": 47601,
-                    "lowest": 46654,
-                    "open": 46990,
-                    "quote_volume": 164017543
-                }
-            },
-            "icon": "exchange/img/coins/rb10.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/rb10.png",
-            "name": {
-                "en": "ramzbox/rial",
-                "fa": "رمزباکس"
-            },
-            "pair_id": 309,
-            "price_precision": 0,
-            "price_step": 46,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 46860,
-            "show_order": 49,
-            "tv_symbol": {
-                "charts": [],
-                "international": "null",
-                "ramzinex": "rb10irr"
-            },
-            "url_name": "ramz-box",
-            "web_link": "https://ramzinex.com/exchange/orderbook/309"
-        },
-        {
-            "amount_step": 0.00002,
-            "base_currency_id": 1,
-            "base_currency_symbol": {
-                "en": "btc",
-                "fa": "بیت کوین"
-            },
-            "base_precision": 5,
-            "buy": 42694838874,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 1.3034984,
-                    "change_percent": -0.35,
-                    "close": 42750000000,
-                    "highest": 43294642361,
-                    "lowest": 42250000000,
-                    "open": 42900000000,
-                    "quote_volume": 55988844655
-                }
-            },
-            "icon": "exchange/img/coins/btc.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/btc.png",
-            "name": {
-                "en": "bitcoin/rial",
-                "fa": "بیت کوین"
-            },
-            "pair_id": 2,
-            "price_precision": 0,
-            "price_step": 42874999,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 42874999999,
-            "show_order": 50,
-            "tv_symbol": {
-                "charts": {
-                    "bitycle": {
-                        "source": "binance_spot",
-                        "symbol": "BTCUSDT"
-                    },
-                    "tradingview": {
-                        "source": "BINANCE",
-                        "symbol": "BTCUSDT"
-                    }
-                },
-                "international": "BINANCE:BTCUSDT",
-                "ramzinex": "btcirr"
-            },
-            "url_name": "bitcoin-btc",
-            "web_link": "https://ramzinex.com/exchange/orderbook/2"
-        },
-        {
-            "amount_step": 1.55,
-            "base_currency_id": 9,
-            "base_currency_symbol": {
-                "en": "usdt",
-                "fa": "تتر"
-            },
-            "base_precision": 2,
-            "buy": 641558,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 722852.2762,
-                    "change_percent": 0.63,
-                    "close": 641122,
-                    "highest": 642154,
-                    "lowest": 635013,
-                    "open": 637118,
-                    "quote_volume": 461582849025
-                }
-            },
-            "icon": "exchange/img/coins/usdt.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/usdt.png",
-            "name": {
-                "en": "tether/rial",
-                "fa": "تتر(دلار)"
-            },
-            "pair_id": 11,
-            "price_precision": 0,
-            "price_step": 641,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 641929,
-            "show_order": 51,
-            "tv_symbol": {
-                "charts": {
-                    "bitycle": {
-                        "source": "binance_spot",
-                        "symbol": "USDCUSDT"
-                    },
-                    "tradingview": {
-                        "source": "BINANCE",
-                        "symbol": "usdcUSDT"
-                    }
-                },
-                "international": "BINANCE:usdcUSDT",
-                "ramzinex": "usdtirr"
-            },
-            "url_name": "tether-usdt",
-            "web_link": "https://ramzinex.com/exchange/orderbook/11"
-        },
-        {
-            "amount_step": 874.12,
-            "base_currency_id": 46,
-            "base_currency_symbol": {
-                "en": "100shib",
-                "fa": "شیبا(صدتایی)"
-            },
-            "base_precision": 2,
-            "buy": 1142,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 65920726.8832,
-                    "change_percent": -4.03,
-                    "close": 1143,
-                    "highest": 1208,
-                    "lowest": 1128,
-                    "open": 1191,
-                    "quote_volume": 77516223582
-                }
-            },
-            "icon": "exchange/img/coins/100shib.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/100shib.png",
-            "name": {
-                "en": "100shiba/rial",
-                "fa": "شیبا(صدتایی)"
-            },
-            "pair_id": 61,
-            "price_precision": 0,
-            "price_step": 1,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 1143,
-            "show_order": 70,
-            "tv_symbol": {
-                "charts": {
-                    "bitycle": {
-                        "source": "binance_spot",
-                        "symbol": "SHIBUSDT"
-                    },
-                    "tradingview": {
-                        "source": "BINANCE",
-                        "symbol": "shibUSDT"
-                    }
-                },
-                "international": "BINANCE:shibUSDT",
-                "ramzinex": "100shibirr"
-            },
-            "url_name": "shiba-shib",
-            "web_link": "https://ramzinex.com/exchange/orderbook/61"
-        },
-        {
-            "amount_step": 12,
-            "base_currency_id": 7,
-            "base_currency_symbol": {
-                "en": "doge",
-                "fa": "دوج کوین"
-            },
-            "base_precision": 0,
-            "buy": 77509,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 996136.9,
-                    "change_percent": -3.63,
-                    "close": 77204,
-                    "highest": 82500,
-                    "lowest": 76790,
-                    "open": 80113,
-                    "quote_volume": 79290504125
-                }
-            },
-            "icon": "exchange/img/coins/doge.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/doge.png",
-            "name": {
-                "en": "doge/rial",
-                "fa": "دوج کوین"
-            },
-            "pair_id": 10,
-            "price_precision": 0,
-            "price_step": 77,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 77823,
-            "show_order": 71,
-            "tv_symbol": {
-                "charts": {
-                    "bitycle": {
-                        "source": "binance_spot",
-                        "symbol": "DOGEUSDT"
-                    },
-                    "tradingview": {
-                        "source": "BINANCE",
-                        "symbol": "DOGEUSDT"
-                    }
-                },
-                "international": "BINANCE:DOGEUSDT",
-                "ramzinex": "dogeirr"
-            },
-            "url_name": "dogecoin-doge",
-            "web_link": "https://ramzinex.com/exchange/orderbook/10"
-        },
-        {
-            "amount_step": 0.0102,
-            "base_currency_id": 81,
-            "base_currency_symbol": {
-                "en": "sol",
-                "fa": "سولانا"
-            },
-            "base_precision": 4,
-            "buy": 96886071,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 246.790792,
-                    "change_percent": -2.37,
-                    "close": 96555375,
-                    "highest": 99226600,
-                    "lowest": 96544108,
-                    "open": 98901250,
-                    "quote_volume": 24183793162
-                }
-            },
-            "icon": "exchange/img/coins/sol.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/sol.png",
-            "name": {
-                "en": "solana/rial",
-                "fa": "سولانا"
-            },
-            "pair_id": 96,
-            "price_precision": 0,
-            "price_step": 97476,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 97476549,
-            "show_order": 72,
-            "tv_symbol": {
-                "charts": {
-                    "bitycle": {
-                        "source": "binance_spot",
-                        "symbol": "SOLUSDT"
-                    },
-                    "tradingview": {
-                        "source": "BINANCE",
-                        "symbol": "SOLUSDT"
-                    }
-                },
-                "international": "BINANCE:SOLUSDT",
-                "ramzinex": "solirr"
-            },
-            "url_name": "solana-sol",
-            "web_link": "https://ramzinex.com/exchange/orderbook/96"
-        },
-        {
-            "amount_step": 4.4995,
-            "base_currency_id": 19,
-            "base_currency_symbol": {
-                "en": "ada",
-                "fa": "کاردانو"
-            },
-            "base_precision": 4,
-            "buy": 220016,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 34662.54528,
-                    "change_percent": -3.39,
-                    "close": 220793,
-                    "highest": 229155,
-                    "lowest": 218960,
-                    "open": 228546,
-                    "quote_volume": 7775517554
-                }
-            },
-            "icon": "exchange/img/coins/ada.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/ada.png",
-            "name": {
-                "en": "cardano/rial",
-                "fa": "کاردانو"
-            },
-            "pair_id": 33,
-            "price_precision": 0,
-            "price_step": 222,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 222241,
-            "show_order": 79,
-            "tv_symbol": {
-                "charts": {
-                    "bitycle": {
-                        "source": "binance_spot",
-                        "symbol": "ADAUSDT"
-                    },
-                    "tradingview": {
-                        "source": "BINANCE",
-                        "symbol": "ADAUSDT"
-                    }
-                },
-                "international": "BINANCE:ADAUSDT",
-                "ramzinex": "adairr"
-            },
-            "url_name": "cardano-ada",
-            "web_link": "https://ramzinex.com/exchange/orderbook/33"
-        },
-        {
-            "amount_step": 17543.8,
-            "base_currency_id": 28,
-            "base_currency_symbol": {
-                "en": "win",
-                "fa": "وینک"
-            },
-            "base_precision": 1,
-            "buy": 55,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 292904586.797,
-                    "change_percent": 1.82,
-                    "close": 56,
-                    "highest": 56,
-                    "lowest": 55,
-                    "open": 55,
-                    "quote_volume": 16176904989
-                }
-            },
-            "icon": "exchange/img/coins/win.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/win.png",
-            "name": {
-                "en": "wink/rial",
-                "fa": "وینک"
-            },
-            "pair_id": 48,
-            "price_precision": 0,
-            "price_step": 0,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 56,
-            "show_order": 87,
-            "tv_symbol": {
-                "charts": {
-                    "bitycle": {
-                        "source": "binance_spot",
-                        "symbol": "WINUSDT"
-                    },
-                    "tradingview": {
-                        "source": "BINANCE",
-                        "symbol": "WINUSDT"
-                    }
-                },
-                "international": "BINANCE:WINUSDT",
-                "ramzinex": "winirr"
-            },
-            "url_name": "wink-win",
-            "web_link": "https://ramzinex.com/exchange/orderbook/48"
-        },
-        {
-            "amount_step": 0.42311,
-            "base_currency_id": 33,
-            "base_currency_symbol": {
-                "en": "fil",
-                "fa": "فایل"
-            },
-            "base_precision": 5,
-            "buy": 2337255,
-            "crypto_box": 0,
-            "financial": {
-                "last24h": {
-                    "base_volume": 1044.1237116,
-                    "change_percent": -2.65,
-                    "close": 2340012,
-                    "highest": 2427600,
-                    "lowest": 2333380,
-                    "open": 2403800,
-                    "quote_volume": 2477250459
-                }
-            },
-            "icon": "exchange/img/coins/fil.png",
-            "is_delist": 0,
-            "logo": "https://public-assets.ramzinex.com/public/currencies/logo/fil.png",
-            "name": {
-                "en": "filecoin/rial",
-                "fa": "فایل"
-            },
-            "pair_id": 51,
-            "price_precision": 0,
-            "price_step": 2363,
-            "quote_currency_id": 2,
-            "quote_currency_symbol": {
-                "en": "irr",
-                "fa": "ریال"
-            },
-            "quote_precision": 0,
-            "sell": 2363449,
-            "show_order": 99,
-            "tv_symbol": {
-                "charts": {
-                    "bitycle": {
-                        "source": "binance_spot",
-                        "symbol": "FILUSDT"
-                    },
-                    "tradingview": {
-                        "source": "BINANCE",
-                        "symbol": "FILUSDT"
-                    }
-                },
-                "international": "BINANCE:FILUSDT",
-                "ramzinex": "filirr"
-            },
-            "url_name": "filecoin-fil",
-            "web_link": "https://ramzinex.com/exchange/orderbook/51"
+  "data": [
+    {
+      "amount_step": 0,
+      "base_currency_id": 406,
+      "base_currency_symbol": {
+        "en": "rfx",
+        "fa": "رمزفیکس"
+      },
+      "base_precision": 0,
+      "buy": 1065790,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 5635,
+          "change_percent": 0.06,
+          "close": 1065790,
+          "highest": 1065800,
+          "lowest": 1065090,
+          "open": 1065100,
+          "quote_volume": 6002135090
         }
-    ],
-    "status": 0
+      },
+      "icon": "exchange/img/coins/rfx.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/rfx.png",
+      "name": {
+        "en": "ramzfix/rial",
+        "fa": "رمزفیکس"
+      },
+      "pair_id": 614,
+      "price_precision": 0,
+      "price_step": 1065,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 1065800,
+      "show_order": 48,
+      "tv_symbol": {
+        "charts": [],
+        "international": "null",
+        "ramzinex": "rfxirr"
+      },
+      "url_name": "ramzfix",
+      "web_link": "https://ramzinex.com/exchange/orderbook/614"
+    },
+    {
+      "amount_step": 21.33,
+      "base_currency_id": 203,
+      "base_currency_symbol": {
+        "en": "rb10",
+        "fa": "سبد شاخصی رمزباکس"
+      },
+      "base_precision": 2,
+      "buy": 46766,
+      "crypto_box": 1,
+      "financial": {
+        "last24h": {
+          "base_volume": 349860.337,
+          "change_percent": -0.48,
+          "close": 46766,
+          "highest": 47601,
+          "lowest": 46654,
+          "open": 46990,
+          "quote_volume": 164017543
+        }
+      },
+      "icon": "exchange/img/coins/rb10.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/rb10.png",
+      "name": {
+        "en": "ramzbox/rial",
+        "fa": "رمزباکس"
+      },
+      "pair_id": 309,
+      "price_precision": 0,
+      "price_step": 46,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 46860,
+      "show_order": 49,
+      "tv_symbol": {
+        "charts": [],
+        "international": "null",
+        "ramzinex": "rb10irr"
+      },
+      "url_name": "ramz-box",
+      "web_link": "https://ramzinex.com/exchange/orderbook/309"
+    },
+    {
+      "amount_step": 0.00002,
+      "base_currency_id": 1,
+      "base_currency_symbol": {
+        "en": "btc",
+        "fa": "بیت کوین"
+      },
+      "base_precision": 5,
+      "buy": 42694838874,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 1.3034984,
+          "change_percent": -0.35,
+          "close": 42750000000,
+          "highest": 43294642361,
+          "lowest": 42250000000,
+          "open": 42900000000,
+          "quote_volume": 55988844655
+        }
+      },
+      "icon": "exchange/img/coins/btc.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/btc.png",
+      "name": {
+        "en": "bitcoin/rial",
+        "fa": "بیت کوین"
+      },
+      "pair_id": 2,
+      "price_precision": 0,
+      "price_step": 42874999,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 42874999999,
+      "show_order": 50,
+      "tv_symbol": {
+        "charts": {
+          "bitycle": {
+            "source": "binance_spot",
+            "symbol": "BTCUSDT"
+          },
+          "tradingview": {
+            "source": "BINANCE",
+            "symbol": "BTCUSDT"
+          }
+        },
+        "international": "BINANCE:BTCUSDT",
+        "ramzinex": "btcirr"
+      },
+      "url_name": "bitcoin-btc",
+      "web_link": "https://ramzinex.com/exchange/orderbook/2"
+    },
+    {
+      "amount_step": 1.55,
+      "base_currency_id": 9,
+      "base_currency_symbol": {
+        "en": "usdt",
+        "fa": "تتر"
+      },
+      "base_precision": 2,
+      "buy": 641558,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 722852.2762,
+          "change_percent": 0.63,
+          "close": 641122,
+          "highest": 642154,
+          "lowest": 635013,
+          "open": 637118,
+          "quote_volume": 461582849025
+        }
+      },
+      "icon": "exchange/img/coins/usdt.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/usdt.png",
+      "name": {
+        "en": "tether/rial",
+        "fa": "تتر(دلار)"
+      },
+      "pair_id": 11,
+      "price_precision": 0,
+      "price_step": 641,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 641929,
+      "show_order": 51,
+      "tv_symbol": {
+        "charts": {
+          "bitycle": {
+            "source": "binance_spot",
+            "symbol": "USDCUSDT"
+          },
+          "tradingview": {
+            "source": "BINANCE",
+            "symbol": "usdcUSDT"
+          }
+        },
+        "international": "BINANCE:usdcUSDT",
+        "ramzinex": "usdtirr"
+      },
+      "url_name": "tether-usdt",
+      "web_link": "https://ramzinex.com/exchange/orderbook/11"
+    },
+    {
+      "amount_step": 874.12,
+      "base_currency_id": 46,
+      "base_currency_symbol": {
+        "en": "100shib",
+        "fa": "شیبا(صدتایی)"
+      },
+      "base_precision": 2,
+      "buy": 1142,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 65920726.8832,
+          "change_percent": -4.03,
+          "close": 1143,
+          "highest": 1208,
+          "lowest": 1128,
+          "open": 1191,
+          "quote_volume": 77516223582
+        }
+      },
+      "icon": "exchange/img/coins/100shib.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/100shib.png",
+      "name": {
+        "en": "100shiba/rial",
+        "fa": "شیبا(صدتایی)"
+      },
+      "pair_id": 61,
+      "price_precision": 0,
+      "price_step": 1,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 1143,
+      "show_order": 70,
+      "tv_symbol": {
+        "charts": {
+          "bitycle": {
+            "source": "binance_spot",
+            "symbol": "SHIBUSDT"
+          },
+          "tradingview": {
+            "source": "BINANCE",
+            "symbol": "shibUSDT"
+          }
+        },
+        "international": "BINANCE:shibUSDT",
+        "ramzinex": "100shibirr"
+      },
+      "url_name": "shiba-shib",
+      "web_link": "https://ramzinex.com/exchange/orderbook/61"
+    },
+    {
+      "amount_step": 12,
+      "base_currency_id": 7,
+      "base_currency_symbol": {
+        "en": "doge",
+        "fa": "دوج کوین"
+      },
+      "base_precision": 0,
+      "buy": 77509,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 996136.9,
+          "change_percent": -3.63,
+          "close": 77204,
+          "highest": 82500,
+          "lowest": 76790,
+          "open": 80113,
+          "quote_volume": 79290504125
+        }
+      },
+      "icon": "exchange/img/coins/doge.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/doge.png",
+      "name": {
+        "en": "doge/rial",
+        "fa": "دوج کوین"
+      },
+      "pair_id": 10,
+      "price_precision": 0,
+      "price_step": 77,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 77823,
+      "show_order": 71,
+      "tv_symbol": {
+        "charts": {
+          "bitycle": {
+            "source": "binance_spot",
+            "symbol": "DOGEUSDT"
+          },
+          "tradingview": {
+            "source": "BINANCE",
+            "symbol": "DOGEUSDT"
+          }
+        },
+        "international": "BINANCE:DOGEUSDT",
+        "ramzinex": "dogeirr"
+      },
+      "url_name": "dogecoin-doge",
+      "web_link": "https://ramzinex.com/exchange/orderbook/10"
+    },
+    {
+      "amount_step": 0.0102,
+      "base_currency_id": 81,
+      "base_currency_symbol": {
+        "en": "sol",
+        "fa": "سولانا"
+      },
+      "base_precision": 4,
+      "buy": 96886071,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 246.790792,
+          "change_percent": -2.37,
+          "close": 96555375,
+          "highest": 99226600,
+          "lowest": 96544108,
+          "open": 98901250,
+          "quote_volume": 24183793162
+        }
+      },
+      "icon": "exchange/img/coins/sol.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/sol.png",
+      "name": {
+        "en": "solana/rial",
+        "fa": "سولانا"
+      },
+      "pair_id": 96,
+      "price_precision": 0,
+      "price_step": 97476,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 97476549,
+      "show_order": 72,
+      "tv_symbol": {
+        "charts": {
+          "bitycle": {
+            "source": "binance_spot",
+            "symbol": "SOLUSDT"
+          },
+          "tradingview": {
+            "source": "BINANCE",
+            "symbol": "SOLUSDT"
+          }
+        },
+        "international": "BINANCE:SOLUSDT",
+        "ramzinex": "solirr"
+      },
+      "url_name": "solana-sol",
+      "web_link": "https://ramzinex.com/exchange/orderbook/96"
+    },
+    {
+      "amount_step": 4.4995,
+      "base_currency_id": 19,
+      "base_currency_symbol": {
+        "en": "ada",
+        "fa": "کاردانو"
+      },
+      "base_precision": 4,
+      "buy": 220016,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 34662.54528,
+          "change_percent": -3.39,
+          "close": 220793,
+          "highest": 229155,
+          "lowest": 218960,
+          "open": 228546,
+          "quote_volume": 7775517554
+        }
+      },
+      "icon": "exchange/img/coins/ada.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/ada.png",
+      "name": {
+        "en": "cardano/rial",
+        "fa": "کاردانو"
+      },
+      "pair_id": 33,
+      "price_precision": 0,
+      "price_step": 222,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 222241,
+      "show_order": 79,
+      "tv_symbol": {
+        "charts": {
+          "bitycle": {
+            "source": "binance_spot",
+            "symbol": "ADAUSDT"
+          },
+          "tradingview": {
+            "source": "BINANCE",
+            "symbol": "ADAUSDT"
+          }
+        },
+        "international": "BINANCE:ADAUSDT",
+        "ramzinex": "adairr"
+      },
+      "url_name": "cardano-ada",
+      "web_link": "https://ramzinex.com/exchange/orderbook/33"
+    },
+    {
+      "amount_step": 17543.8,
+      "base_currency_id": 28,
+      "base_currency_symbol": {
+        "en": "win",
+        "fa": "وینک"
+      },
+      "base_precision": 1,
+      "buy": 55,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 292904586.797,
+          "change_percent": 1.82,
+          "close": 56,
+          "highest": 56,
+          "lowest": 55,
+          "open": 55,
+          "quote_volume": 16176904989
+        }
+      },
+      "icon": "exchange/img/coins/win.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/win.png",
+      "name": {
+        "en": "wink/rial",
+        "fa": "وینک"
+      },
+      "pair_id": 48,
+      "price_precision": 0,
+      "price_step": 0,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 56,
+      "show_order": 87,
+      "tv_symbol": {
+        "charts": {
+          "bitycle": {
+            "source": "binance_spot",
+            "symbol": "WINUSDT"
+          },
+          "tradingview": {
+            "source": "BINANCE",
+            "symbol": "WINUSDT"
+          }
+        },
+        "international": "BINANCE:WINUSDT",
+        "ramzinex": "winirr"
+      },
+      "url_name": "wink-win",
+      "web_link": "https://ramzinex.com/exchange/orderbook/48"
+    },
+    {
+      "amount_step": 0.42311,
+      "base_currency_id": 33,
+      "base_currency_symbol": {
+        "en": "fil",
+        "fa": "فایل"
+      },
+      "base_precision": 5,
+      "buy": 2337255,
+      "crypto_box": 0,
+      "financial": {
+        "last24h": {
+          "base_volume": 1044.1237116,
+          "change_percent": -2.65,
+          "close": 2340012,
+          "highest": 2427600,
+          "lowest": 2333380,
+          "open": 2403800,
+          "quote_volume": 2477250459
+        }
+      },
+      "icon": "exchange/img/coins/fil.png",
+      "is_delist": 0,
+      "logo": "https://public-assets.ramzinex.com/public/currencies/logo/fil.png",
+      "name": {
+        "en": "filecoin/rial",
+        "fa": "فایل"
+      },
+      "pair_id": 51,
+      "price_precision": 0,
+      "price_step": 2363,
+      "quote_currency_id": 2,
+      "quote_currency_symbol": {
+        "en": "irr",
+        "fa": "ریال"
+      },
+      "quote_precision": 0,
+      "sell": 2363449,
+      "show_order": 99,
+      "tv_symbol": {
+        "charts": {
+          "bitycle": {
+            "source": "binance_spot",
+            "symbol": "FILUSDT"
+          },
+          "tradingview": {
+            "source": "BINANCE",
+            "symbol": "FILUSDT"
+          }
+        },
+        "international": "BINANCE:FILUSDT",
+        "ramzinex": "filirr"
+      },
+      "url_name": "filecoin-fil",
+      "web_link": "https://ramzinex.com/exchange/orderbook/51"
+    }
+  ],
+  "status": 0
 }
