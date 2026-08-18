@@ -441,10 +441,13 @@ function filter_rows_for_ingest(array $raw, array $coins): array
             'volume_1d' => max(0.0, $vol),
             'source' => $src,
         ];
-        foreach (['coin_volume_1d', 'change_1d', 'change_7d', 'market_cap', 'supply', 'max_supply'] as $opt) {
+        foreach (['coin_volume_1d', 'change_1d', 'change_7d', 'cap', 'market_cap', 'supply', 'max_supply'] as $opt) {
             if (isset($d[$opt]) && is_numeric($d[$opt])) {
                 $row[$opt] = (float) $d[$opt];
             }
+        }
+        if (!isset($row['cap']) && isset($row['market_cap'])) {
+            $row['cap'] = $row['market_cap'];
         }
         $out[] = $row;
     }
