@@ -193,6 +193,8 @@ function processList($list, $coinsFilter = []) {
         change_1h: num(quoteUSD.percent_change_1h, { decimalPlaces: 2 }) || 0,
         change_1d: num(quoteUSD.percent_change_24h, { decimalPlaces: 2 }) || 0,
         change_7d: num(quoteUSD.percent_change_7d, { decimalPlaces: 2 }) || 0,
+        cap:
+          num(quoteUSD.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
         market_cap:
           num(quoteUSD.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
         supply: data.circulating_supply || 0,

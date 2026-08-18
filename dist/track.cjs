@@ -21074,6 +21074,7 @@ function processList6($list, $coinsFilter = []) {
       change_1h: num(quoteUSD.percent_change_1h, { decimalPlaces: 2 }) || 0,
       change_1d: num(quoteUSD.percent_change_24h, { decimalPlaces: 2 }) || 0,
       change_7d: num(quoteUSD.percent_change_7d, { decimalPlaces: 2 }) || 0,
+      cap: num(quoteUSD.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
       market_cap: num(quoteUSD.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
       supply: data.circulating_supply || 0,
       max_supply: num(data.max_supply) || 0,
@@ -22250,8 +22251,10 @@ function filterRows(raw, coins) {
     if (d.change_7d != null && Number.isFinite(Number(d.change_7d))) {
       row.change_7d = Number(d.change_7d);
     }
-    if (d.market_cap != null && Number.isFinite(Number(d.market_cap))) {
-      row.market_cap = Number(d.market_cap);
+    if (d.cap != null && Number.isFinite(Number(d.cap))) {
+      row.cap = Number(d.cap);
+    } else if (d.market_cap != null && Number.isFinite(Number(d.market_cap))) {
+      row.cap = Number(d.market_cap);
     }
     if (d.supply != null && Number.isFinite(Number(d.supply))) {
       row.supply = Number(d.supply);

@@ -34,6 +34,7 @@ function parse_coinmarketcap(mixed $data, array $coins): array
             'volume_1d' => num($q['volume_24h'] ?? 0, ['roundUp' => true]),
             'change_1d' => num($q['percent_change_24h'] ?? 0, ['decimalPlaces' => 2]),
             'change_7d' => num($q['percent_change_7d'] ?? 0, ['decimalPlaces' => 2]),
+            'cap' => num($q['market_cap'] ?? 0, ['roundUp' => true]),
             'market_cap' => num($q['market_cap'] ?? 0, ['roundUp' => true]),
             'supply' => num($row['circulating_supply'] ?? 0),
             'max_supply' => num($row['max_supply'] ?? 0),

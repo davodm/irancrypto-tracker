@@ -370,8 +370,10 @@ function filterRows(raw, coins) {
     if (d.change_7d != null && Number.isFinite(Number(d.change_7d))) {
       row.change_7d = Number(d.change_7d);
     }
-    if (d.market_cap != null && Number.isFinite(Number(d.market_cap))) {
-      row.market_cap = Number(d.market_cap);
+    if (d.cap != null && Number.isFinite(Number(d.cap))) {
+      row.cap = Number(d.cap);
+    } else if (d.market_cap != null && Number.isFinite(Number(d.market_cap))) {
+      row.cap = Number(d.market_cap);
     }
     if (d.supply != null && Number.isFinite(Number(d.supply))) {
       row.supply = Number(d.supply);
