@@ -117,21 +117,32 @@ def filter_rows(raw: list[dict[str, Any]], coins: list[str]) -> list[dict[str, A
     coin_set = {str(c).upper() for c in coins}
     out: list[dict[str, Any]] = []
     for d in raw:
-        if not d.get("price") or float(d["price"]) <= 0:
+        if not isinstance(d, dict):
             continue
-        if not d.get("volume_1d") or float(d["volume_1d"]) <= 0:
+        try:
+            price = float(d.get("price") or 0)
+        except (ValueError, TypeError):
             continue
-        if not d.get("source"):
+        if price <= 0:
             continue
-        sym = str(d.get("symbol") or "").upper()
+        try:
+            vol = float(d.get("volume_1d") or 0) if d.get("volume_1d") is not None else 0.0
+        except (ValueError, TypeError):
+            vol = 0.0
+        if vol < 0:
+            continue
+        src = str(d.get("source") or "").strip().lower()
+        if not src:
+            continue
+        sym = str(d.get("symbol") or "").strip().upper()
         if not sym or sym not in coin_set:
             continue
         row: dict[str, Any] = {
             "symbol": sym,
-            "currency": str(d.get("currency") or "IRR").upper(),
-            "price": float(d["price"]),
-            "volume_1d": float(d["volume_1d"]),
-            "source": str(d["source"]).lower(),
+            "currency": str(d.get("currency") or "IRR").strip().upper(),
+            "price": price,
+            "volume_1d": max(0.0, vol),
+            "source": src,
         }
         for opt in (
             "coin_volume_1d",
@@ -141,8 +152,12 @@ def filter_rows(raw: list[dict[str, Any]], coins: list[str]) -> list[dict[str, A
             "supply",
             "max_supply",
         ):
-            if d.get(opt) is not None:
-                row[opt] = float(d[opt])
+            val = d.get(opt)
+            if val is not None:
+                try:
+                    row[opt] = float(val)
+                except (ValueError, TypeError):
+                    pass
         out.append(row)
     return out
 
@@ -155,8 +170,16 @@ def select_exchanges(
     allow = csv_list(EXCHANGES_ALLOW)
     if exchange_flag:
         allow = [exchange_flag.lower()]
+
+    registry = scraper_registry()
+    raw = list(exchanges)
+    existing_slugs = {str(e.get("slug") or "").lower() for e in raw if e.get("slug")}
+    for slug in registry.keys():
+        if slug.lower() not in existing_slugs:
+            raw.append({"slug": slug})
+
     out: list[dict[str, Any]] = []
-    for ex in exchanges:
+    for ex in raw:
         slug = str(ex.get("slug") or "").lower()
         if not slug:
             continue

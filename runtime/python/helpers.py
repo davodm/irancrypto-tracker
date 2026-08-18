@@ -272,9 +272,10 @@ def coin_allowed(filter_coins: list[str], symbol: str) -> bool:
 
 
 def cmc_keys() -> list[str]:
-    if not COINMARKETCAP_API_KEY:
+    raw = os.environ.get("COINMARKETCAP_API_KEY", "") or COINMARKETCAP_API_KEY
+    if not raw:
         return []
-    return [k.strip() for k in COINMARKETCAP_API_KEY.split(",") if k.strip()]
+    return [k.strip() for k in raw.split(",") if k.strip()]
 
 
 # =============================================================================
