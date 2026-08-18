@@ -19,6 +19,7 @@ services:
       - INGEST_URL=${INGEST_URL:-https://irancrypto.market/api/ingest}
       - TRACK_ARGS=${TRACK_ARGS:---all}
       - LOG_DIR=${LOG_DIR:-/app/logs}
+      - RUN_INTERVAL_SEC=${RUN_INTERVAL_SEC:-3600}
 
     # Strict resource caps (tiny memory & CPU limits)
     deploy:
