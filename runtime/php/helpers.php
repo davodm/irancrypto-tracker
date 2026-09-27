@@ -456,3 +456,13 @@ function http_get_json(string $url, array $query = [], array $headers = [], bool
     return http_request('GET', $url, $query, $headers, null, $useProxy)['json'];
 }
 
+/** Fetch a non-JSON body (HTML pages). */
+function http_get_text(string $url, array $headers = []): string
+{
+    $result = curl_once('GET', $url, $headers, null, USER_AGENT);
+    if ($result['status'] < 200 || $result['status'] >= 300 || $result['body'] === '') {
+        throw new RuntimeException("HTTP {$result['status']} for {$url}");
+    }
+    return $result['body'];
+}
+

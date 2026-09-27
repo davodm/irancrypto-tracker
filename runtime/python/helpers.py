@@ -304,6 +304,7 @@ def http_request(
     verify_ssl: bool = True,
     timeout: float | None = None,
     retry_403: bool = True,
+    expect_json: bool = True,
 ) -> dict[str, Any]:
     if use_proxy and PROXY_URL and PROXY_API_KEY:
         return http_via_proxy(method, url, query or {}, headers or {}, body)
@@ -349,6 +350,7 @@ def http_request(
                     verify_ssl=verify_ssl,
                     timeout=timeout,
                     retry_403=False,
+                    expect_json=expect_json,
                 )
             last_error = RuntimeError(f"HTTP {status} for {request_url}: {raw[:300]}")
             if attempt < max_attempts:
@@ -370,7 +372,7 @@ def http_request(
             raise last_error
 
         json_data: Any = None
-        if raw:
+        if raw and expect_json:
             try:
                 json_data = json.loads(raw)
             except json.JSONDecodeError as e:
@@ -457,6 +459,17 @@ def http_get_json(
         use_proxy=use_proxy,
         verify_ssl=SSL_VERIFY_EXCHANGE,
     )["json"]
+
+
+def http_get_text(url: str, headers: dict[str, str] | None = None) -> str:
+    """Fetch a non-JSON body (HTML pages)."""
+    return http_request(
+        "GET",
+        url,
+        headers=headers,
+        verify_ssl=SSL_VERIFY_EXCHANGE,
+        expect_json=False,
+    )["body"]
 
 
 def ingest_request(method: str, url_path: str, body: dict[str, Any] | None = None) -> Any:
