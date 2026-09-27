@@ -12,16 +12,14 @@ def parse_bitmax(data: Any, coins: list[str]) -> list[dict[str, Any]]:
         symbol = str(symbol_key).upper()
         if not coin_allowed(coins, symbol):
             continue
-        price_usd = float(row.get("price_in_usd") or 0)
         out.append(
             {
                 "currency": "IRR",
                 "symbol": symbol,
                 "price": num(row["price_in_irt"], {"decimalPlaces": 8, "multiply": 10}),
-                "volume_1d": num(row.get("volume_24h", 0), {"multiply": usdt, "roundUp": True}),
-                "coin_volume_1d": (
-                    num(row.get("volume_24h", 0), {"divide": price_usd}) if price_usd > 0 else 0.0
-                ),
+                # volume_24h is the global market volume (CoinMarketCap mirror), not BitMax's own trading
+                "volume_1d": 0,
+                "coin_volume_1d": 0,
                 "change_1d": num(row.get("change", 0), {"decimalPlaces": 2}),
                 "change_7d": num(row.get("change_7d", 0), {"decimalPlaces": 2}),
                 "market_cap": num(row.get("market_cap", 0), {"multiply": usdt, "roundUp": True}),

@@ -21,13 +21,13 @@ function parse_bitmax(mixed $data, array $coins): array
         if (!coin_allowed($coins, $symbol)) {
             continue;
         }
-        $priceUsd = (float) ($row['price_in_usd'] ?? 0);
         $item = [
             'currency' => 'IRR',
             'symbol' => $symbol,
             'price' => num($row['price_in_irt'], ['decimalPlaces' => 8, 'multiply' => 10]),
-            'volume_1d' => num($row['volume_24h'] ?? 0, ['multiply' => $usdt, 'roundUp' => true]),
-            'coin_volume_1d' => $priceUsd > 0 ? num($row['volume_24h'] ?? 0, ['divide' => $priceUsd]) : 0.0,
+            // volume_24h is the global market volume (CoinMarketCap mirror), not BitMax's own trading
+            'volume_1d' => 0,
+            'coin_volume_1d' => 0,
             'change_1d' => num($row['change'] ?? 0, ['decimalPlaces' => 2]),
             'change_7d' => num($row['change_7d'] ?? 0, ['decimalPlaces' => 2]),
             'market_cap' => num($row['market_cap'] ?? 0, ['multiply' => $usdt, 'roundUp' => true]),
