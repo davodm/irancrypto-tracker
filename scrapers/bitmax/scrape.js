@@ -66,7 +66,7 @@ async function request($uri, $params = {}) {
  * @returns {object[]} Processed list of cryptocurrencies
  */
 function processList($data, $coinsFilter = []) {
-  // Find USDT Price first to calculate Vols
+  // Find USDT Price first to convert USD market cap to IRR
   const usdt = priceUSDT($data);
 
   return Object.entries($data)
@@ -86,11 +86,9 @@ function processList($data, $coinsFilter = []) {
         symbol: symbol.toUpperCase(),
         // * 10 to convert to IRR (price_in_irt is in Toman)
         price: num(data.price_in_irt, { decimalPlaces: 8, multiply: 10 }) || 0,
-        // volume_24h is in USD, convert to IRR using USDT price
-        volume_1d: num(data.volume_24h, { multiply: usdt, roundUp: true }) || 0,
-        // volume_24h divided by price_in_usd gives coin volume
-        coin_volume_1d:
-          data.price_in_usd > 0 ? num(data.volume_24h, { divide: data.price_in_usd }) || 0 : 0,
+        // volume_24h is the global market volume (CoinMarketCap mirror), not BitMax's own trading
+        volume_1d: 0,
+        coin_volume_1d: 0,
         change_1d: num(data.change, { decimalPlaces: 2 }),
         change_7d: num(data.change_7d, { decimalPlaces: 2 }),
         // market_cap is in USD, convert to IRR using USDT price

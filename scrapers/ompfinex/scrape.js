@@ -17,7 +17,7 @@ export async function getLatest($filterCoins = []) {
   if (!Array.isArray(list) || list.length === 0) {
     throw new Error("Response data is empty");
   }
-  return processList(list, $filterCoins);
+  return parseMarkets(list, $filterCoins);
 }
 
 async function request($uri, $params = {}) {
@@ -29,11 +29,17 @@ async function request($uri, $params = {}) {
   return result;
 }
 
-function processList($list, $coinsFilter = []) {
+/**
+ * OMPFinex labels its Rial markets "Toman" in display names, but `quote_currency.id` is IRR
+ * and `last_price` / `last_volume` are already in Rial.
+ *
+ * @param {any[]} $list
+ * @param {string[]} $coinsFilter
+ */
+export function parseMarkets($list, $coinsFilter = []) {
   return $list
     .filter((data) => {
-      const quote = data?.quote_currency?.id?.toUpperCase();
-      if (quote !== "IRR" && quote !== "IRT") return false;
+      if (data?.quote_currency?.id?.toUpperCase() !== "IRR") return false;
       if (!data?.last_price) return false;
       const symbol = data?.base_currency?.id?.toUpperCase();
       if (!symbol) return false;
@@ -46,8 +52,8 @@ function processList($list, $coinsFilter = []) {
         source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: symbol,
-        price: num(data.last_price, { multiply: 10, decimalPlaces: 8 }) || 0,
-        volume_1d: num(data.last_volume, { multiply: 10, roundUp: true }) || 0,
+        price: num(data.last_price, { decimalPlaces: 8 }) || 0,
+        volume_1d: num(data.last_volume, { roundUp: true }) || 0,
         coin_volume_1d: 0,
         change_1d: num(data.day_change_percent, { decimalPlaces: 2 }) || 0,
         last_update: {
