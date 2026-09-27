@@ -7,12 +7,11 @@ const URL = "https://sarmayex.com/crypto-price";
 
 export const COIN_USE = "all";
 
+// Nuxt payload (devalue) wrappers whose second element is the index of the wrapped value.
+const NUXT_WRAPPERS = new Set(["Reactive", "ShallowReactive", "Ref", "ShallowRef"]);
+
 export async function scrape($coins = []) {
-  const data = await getLatest($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM.toLowerCase();
-  });
-  return data;
+  return await getLatest($coins);
 }
 
 export async function getLatest($filterCoins = []) {
@@ -22,38 +21,63 @@ export async function getLatest($filterCoins = []) {
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     },
+    responseType: "text",
     timeout: 15000,
   });
 
-  const html = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
-  if (!html) {
+  if (!response.data) {
     throw new Error("Response data is empty");
   }
-  return processHtml(html, $filterCoins);
+  return parsePage(response.data, $filterCoins);
 }
 
-function processHtml($html, $coinsFilter = []) {
-  const results = [];
+/**
+ * Parse currencies from the page's `__NUXT_DATA__` payload. Every currency object holds
+ * payload indices; `sell.marketPrice` is the Toman mid-market rate (`sell.price` is
+ * Sarmayex's own marked-up quote).
+ *
+ * @param {string} $html
+ * @param {string[]} $coinsFilter
+ */
+export function parsePage($html, $coinsFilter = []) {
+  const json = String($html).match(/<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)<\/script>/)?.[1];
+  if (!json) {
+    throw new Error("Nuxt payload not found");
+  }
+  const payload = JSON.parse(json);
+  const deref = (index) => {
+    let value = payload[index];
+    while (Array.isArray(value) && NUXT_WRAPPERS.has(value[0])) {
+      value = payload[value[1]];
+    }
+    return value;
+  };
+
   const date = dayjs();
   const seen = new Set();
+  const results = [];
 
-  const matches = [
-    ...$html.matchAll(/"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"/g),
-  ];
+  for (const node of payload) {
+    if (!node || typeof node !== "object" || Array.isArray(node)) continue;
+    if (!("symbol" in node && "sell" in node && "markets" in node)) continue;
 
-  for (const match of matches) {
-    const symbol = match[2].toUpperCase();
-    if (symbol === "IRT" || symbol === "IRR") continue;
-    if (seen.has(symbol)) continue;
+    const symbol = String(deref(node.symbol) ?? "").toUpperCase();
+    if (!symbol || seen.has(symbol)) continue;
     if ($coinsFilter.length > 0 && !$coinsFilter.includes(symbol)) continue;
 
-    seen.add(symbol);
-    const rawPrice = parseFloat(match[1]) || 0;
+    const markets = deref(node.markets);
+    if (!Array.isArray(markets) || !markets.some((i) => deref(i) === `${symbol}_IRT`)) continue;
 
+    const sell = deref(node.sell);
+    const priceToman = num(sell && deref(sell.marketPrice));
+    if (priceToman <= 0) continue;
+
+    seen.add(symbol);
     results.push({
+      source: PLATFORM.toLowerCase(),
       currency: "IRR",
-      symbol: symbol,
-      price: num(rawPrice, { decimalPlaces: 8 }) || 0,
+      symbol,
+      price: num(priceToman, { multiply: 10, decimalPlaces: 8 }),
       volume_1d: 0,
       coin_volume_1d: 0,
       change_1d: 0,

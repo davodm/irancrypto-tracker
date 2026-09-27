@@ -1,63 +1,56 @@
 <?php
 
-function getLatest_ompfinex($filterCoins = []) {
-    $url = "https://api.ompfinex.com/v1/market";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) {
-        throw new Exception("Response data is empty");
+/**
+ * OMPFinex labels its Rial markets "Toman" in display names, but quote_currency.id is IRR
+ * and last_price / last_volume are already in Rial.
+ *
+ * @return list<array<string,mixed>>
+ */
+function parse_ompfinex(mixed $data, array $coins): array
+{
+    $list = is_array($data) && isset($data['data']) && is_array($data['data']) ? $data['data'] : [];
+    if ($list === []) {
+        throw new RuntimeException('Ompfinex: empty data list');
     }
-
-    $decoded = json_decode($response, true);
-    $list = is_array($decoded) && isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : (is_array($decoded) ? $decoded : []);
-
-    if (empty($list)) {
-        throw new Exception("Response data is empty");
-    }
-
-    return processList_ompfinex($list, $filterCoins);
-}
-
-function processList_ompfinex($list, $coinsFilter = []) {
-    $result = [];
-    $now = date('c');
-    $timestamp = time();
-
+    $out = [];
+    $lu = last_update_now();
     foreach ($list as $item) {
-        $quote = strtoupper($item['quote_currency']['id'] ?? '');
-        if ($quote !== 'IRR' && $quote !== 'IRT') continue;
-        if (!isset($item['last_price'])) continue;
-
-        $symbol = strtoupper($item['base_currency']['id'] ?? '');
-        if (!$symbol) continue;
-
-        if (!empty($coinsFilter) && !in_array($symbol, $coinsFilter)) {
+        if (!is_array($item) || strtoupper((string) ($item['quote_currency']['id'] ?? '')) !== 'IRR') {
             continue;
         }
-
-        $price = floatval($item['last_price']) * 10;
-        $volume1d = floatval($item['last_volume'] ?? 0) * 10;
-        $change1d = floatval($item['day_change_percent'] ?? 0);
-
-        $result[] = [
-            'source' => 'ompfinex',
+        if (!isset($item['last_price'])) {
+            continue;
+        }
+        $symbol = strtoupper((string) ($item['base_currency']['id'] ?? ''));
+        if ($symbol === '' || !coin_allowed($coins, $symbol)) {
+            continue;
+        }
+        $out[] = [
             'currency' => 'IRR',
             'symbol' => $symbol,
-            'price' => $price,
-            'volume_1d' => round($volume1d),
+            'price' => num($item['last_price'], ['decimalPlaces' => 8]),
+            'volume_1d' => num($item['last_volume'] ?? 0, ['roundUp' => true]),
             'coin_volume_1d' => 0,
-            'change_1d' => round($change1d, 2),
-            'last_update' => [
-                'date' => $now,
-                'timestamp' => $timestamp,
-            ]
+            'change_1d' => num($item['day_change_percent'] ?? 0, ['decimalPlaces' => 2]),
+            'source' => 'ompfinex',
+            'last_update' => $lu,
         ];
     }
+    return $out;
+}
 
-    return $result;
+function job_ompfinex(): array
+{
+    return [
+        'url' => 'https://api.ompfinex.com/v1/market',
+    ];
+}
+
+function register_ompfinex(): array
+{
+    return [
+        'coin_use' => 'all',
+        'job' => 'job_ompfinex',
+        'parse' => 'parse_ompfinex',
+    ];
 }

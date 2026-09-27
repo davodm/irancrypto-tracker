@@ -1,0 +1,32 @@
+{
+  "status": "OK",
+  "data": [
+    {
+      "id": 1,
+      "base_currency": { "id": "BTC", "name": "بیت کوین" },
+      "quote_currency": { "id": "IRR", "name": "تومان" },
+      "name": "بیت کوین - تومان",
+      "last_price": "198291461000",
+      "last_volume": "550041638623",
+      "day_change_percent": 0.74
+    },
+    {
+      "id": 9,
+      "base_currency": { "id": "USDT", "name": "تتر" },
+      "quote_currency": { "id": "IRR", "name": "تومان" },
+      "name": "تتر - تومان",
+      "last_price": "2351700",
+      "last_volume": "3779899365521",
+      "day_change_percent": 0.54
+    },
+    {
+      "id": 14,
+      "base_currency": { "id": "BTC", "name": "بیت کوین" },
+      "quote_currency": { "id": "USDT", "name": "تتر" },
+      "name": "بیت کوین - تتر",
+      "last_price": "84444.5",
+      "last_volume": "142496.8",
+      "day_change_percent": 0.37
+    }
+  ]
+}
