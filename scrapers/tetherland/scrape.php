@@ -1,55 +1,48 @@
 <?php
 
-function getLatest_tetherland($filterCoins = []) {
-    $url = "https://api.tetherland.com/currencies";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) {
-        throw new Exception("Response data is empty");
+/** @return list<array<string,mixed>> */
+function parse_tetherland(mixed $data, array $coins): array
+{
+    $currencies = is_array($data) ? ($data['data']['currencies'] ?? null) : null;
+    if (!is_array($currencies) || $currencies === []) {
+        throw new RuntimeException('Tetherland: empty currencies');
     }
-
-    $data = json_decode($response, true);
-    if (!isset($data['data']['currencies']) || empty($data['data']['currencies'])) {
-        throw new Exception("Response data is empty");
-    }
-
-    return processList_tetherland($data['data']['currencies'], $filterCoins);
-}
-
-function processList_tetherland($list, $coinsFilter = []) {
-    $result = [];
-    $now = date('c');
-    $timestamp = time();
-
-    foreach ($list as $symbol => $item) {
-        $upperSymbol = strtoupper($symbol);
-        if (!empty($coinsFilter) && !in_array($upperSymbol, $coinsFilter)) {
+    $out = [];
+    $lu = last_update_now();
+    foreach ($currencies as $symbol => $item) {
+        if (!is_array($item)) {
             continue;
         }
-
-        $rawPrice = $item['price'] ?? $item['buy_price'] ?? 0;
-        $price = floatval($rawPrice) * 10;
-        $change1d = floatval($item['diff24d'] ?? 0);
-
-        $result[] = [
-            'source' => 'tetherland',
+        $symbol = strtoupper((string) $symbol);
+        if (!coin_allowed($coins, $symbol)) {
+            continue;
+        }
+        $out[] = [
             'currency' => 'IRR',
-            'symbol' => $upperSymbol,
-            'price' => $price,
+            'symbol' => $symbol,
+            'price' => num(($item['price'] ?? null) ?: ($item['buy_price'] ?? 0), ['multiply' => 10, 'decimalPlaces' => 8]),
             'volume_1d' => 0,
             'coin_volume_1d' => 0,
-            'change_1d' => round($change1d, 2),
-            'last_update' => [
-                'date' => $now,
-                'timestamp' => $timestamp,
-            ]
+            'change_1d' => num($item['diff24d'] ?? 0, ['decimalPlaces' => 2]),
+            'source' => 'tetherland',
+            'last_update' => $lu,
         ];
     }
+    return $out;
+}
 
-    return $result;
+function job_tetherland(): array
+{
+    return [
+        'url' => 'https://api.tetherland.com/currencies',
+    ];
+}
+
+function register_tetherland(): array
+{
+    return [
+        'coin_use' => 'all',
+        'job' => 'job_tetherland',
+        'parse' => 'parse_tetherland',
+    ];
 }
