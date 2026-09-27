@@ -20566,6 +20566,7 @@ var scrape_exports3 = {};
 __export(scrape_exports3, {
   COIN_USE: () => COIN_USE3,
   getLatest: () => getLatest3,
+  parsePage: () => parsePage,
   scrape: () => scrape3
 });
 init_axios2();
@@ -20586,12 +20587,12 @@ var POPULAR_COINS2 = [
   "SOL",
   "ADA"
 ];
+var MIN_PRICE_TOMAN = 100;
 async function scrape3($coins = []) {
   return await getLatest3($coins);
 }
 async function getLatest3($filterCoins = []) {
   const targetCoins = $filterCoins.length > 0 ? $filterCoins : POPULAR_COINS2;
-  const date = (0, import_dayjs3.default)();
   const promises = targetCoins.filter((coin) => coin !== "IRT" && coin !== "IRR").map(async (coin) => {
     try {
       const response = await axios_default.get(URL3 + coin.toLowerCase(), {
@@ -20599,36 +20600,43 @@ async function getLatest3($filterCoins = []) {
           "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
           Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
         },
+        responseType: "text",
         timeout: 1e4
       });
-      const html = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
-      if (html) {
-        const match = html.match(/quoteId:"IRR"[^}]*?last:"([0-9.]+)"/);
-        if (match?.[1]) {
-          const rawPrice = parseFloat(match[1]) || 0;
-          return {
-            source: PLATFORM3.toLowerCase(),
-            currency: "IRR",
-            symbol: coin.toUpperCase(),
-            price: num(rawPrice, { decimalPlaces: 8 }) || 0,
-            volume_1d: 0,
-            coin_volume_1d: 0,
-            change_1d: 0,
-            last_update: {
-              date: date.toISOString(),
-              timestamp: date.unix(),
-              moment: date
-            }
-          };
-        }
-      }
+      return parsePage(response.data, coin);
     } catch {
       return null;
     }
-    return null;
   });
   const results = await Promise.all(promises);
   return results.filter(Boolean);
+}
+function parsePage($html, $coin) {
+  const ticker = String($html).match(/\{[^{}]*quoteId:"IRR"[^{}]*\}/)?.[0];
+  if (!ticker) return null;
+  const field = (key) => {
+    const raw = ticker.match(new RegExp(`[{,]${key}:"?(-?[0-9]*\\.?[0-9]+)`))?.[1];
+    return raw === void 0 ? 0 : Number(raw);
+  };
+  const priceToman = field("last");
+  if (priceToman < MIN_PRICE_TOMAN || field("max24h") <= 0) return null;
+  const volumeToman = field("volume24h");
+  const date = (0, import_dayjs3.default)();
+  return {
+    source: PLATFORM3.toLowerCase(),
+    currency: "IRR",
+    symbol: $coin.toUpperCase(),
+    price: num(priceToman, { multiply: 10, decimalPlaces: 8 }),
+    volume_1d: num(volumeToman, { multiply: 10, roundUp: true }),
+    coin_volume_1d: num(volumeToman, { divide: priceToman }),
+    change_1d: num(field("changePercent24h"), { decimalPlaces: 2 }),
+    change_7d: num(field("changePercent7d"), { decimalPlaces: 2 }),
+    last_update: {
+      date: date.toISOString(),
+      timestamp: date.unix(),
+      moment: date
+    }
+  };
 }
 
 // scrapers/bitimen/scrape.js
@@ -20737,10 +20745,9 @@ function processList3($data, $coinsFilter = []) {
       symbol: symbol.toUpperCase(),
       // * 10 to convert to IRR (price_in_irt is in Toman)
       price: num(data.price_in_irt, { decimalPlaces: 8, multiply: 10 }) || 0,
-      // volume_24h is in USD, convert to IRR using USDT price
-      volume_1d: num(data.volume_24h, { multiply: usdt, roundUp: true }) || 0,
-      // volume_24h divided by price_in_usd gives coin volume
-      coin_volume_1d: data.price_in_usd > 0 ? num(data.volume_24h, { divide: data.price_in_usd }) || 0 : 0,
+      // volume_24h is the global market volume (CoinMarketCap mirror), not BitMax's own trading
+      volume_1d: 0,
+      coin_volume_1d: 0,
       change_1d: num(data.change, { decimalPlaces: 2 }),
       change_7d: num(data.change_7d, { decimalPlaces: 2 }),
       // market_cap is in USD, convert to IRR using USDT price
@@ -21408,6 +21415,7 @@ var scrape_exports14 = {};
 __export(scrape_exports14, {
   COIN_USE: () => COIN_USE14,
   getLatest: () => getLatest14,
+  parseMarkets: () => parseMarkets,
   scrape: () => scrape14
 });
 var import_dayjs14 = __toESM(require_dayjs_min(), 1);
@@ -21423,7 +21431,7 @@ async function getLatest14($filterCoins = []) {
   if (!Array.isArray(list) || list.length === 0) {
     throw new Error("Response data is empty");
   }
-  return processList12(list, $filterCoins);
+  return parseMarkets(list, $filterCoins);
 }
 async function request11($uri, $params = {}) {
   const result = await axiosRequest({
@@ -21433,10 +21441,9 @@ async function request11($uri, $params = {}) {
   });
   return result;
 }
-function processList12($list, $coinsFilter = []) {
+function parseMarkets($list, $coinsFilter = []) {
   return $list.filter((data) => {
-    const quote = data?.quote_currency?.id?.toUpperCase();
-    if (quote !== "IRR" && quote !== "IRT") return false;
+    if (data?.quote_currency?.id?.toUpperCase() !== "IRR") return false;
     if (!data?.last_price) return false;
     const symbol = data?.base_currency?.id?.toUpperCase();
     if (!symbol) return false;
@@ -21448,8 +21455,8 @@ function processList12($list, $coinsFilter = []) {
       source: PLATFORM14.toLowerCase(),
       currency: "IRR",
       symbol,
-      price: num(data.last_price, { multiply: 10, decimalPlaces: 8 }) || 0,
-      volume_1d: num(data.last_volume, { multiply: 10, roundUp: true }) || 0,
+      price: num(data.last_price, { decimalPlaces: 8 }) || 0,
+      volume_1d: num(data.last_volume, { roundUp: true }) || 0,
       coin_volume_1d: 0,
       change_1d: num(data.day_change_percent, { decimalPlaces: 2 }) || 0,
       last_update: {
@@ -21481,7 +21488,7 @@ async function scrape15($coins = []) {
 }
 async function getLatest15($filterCoins = []) {
   const data = await request12("exchange/pairs", {});
-  return processList13(data, $filterCoins);
+  return processList12(data, $filterCoins);
 }
 async function request12($uri, $params = {}) {
   const result = await axiosRequest({
@@ -21494,7 +21501,7 @@ async function request12($uri, $params = {}) {
   }
   return result.data;
 }
-function processList13($list, $coinsFilter = []) {
+function processList12($list, $coinsFilter = []) {
   return $list.filter((data) => {
     if (data?.quote_currency_symbol?.en?.toUpperCase() !== "IRR") return false;
     if (!data?.sell) return false;
@@ -21536,7 +21543,7 @@ async function getLatest16($filterCoins = []) {
   if (!items?.length) {
     throw new Error("Response data is empty");
   }
-  return processList14(items, $filterCoins);
+  return processList13(items, $filterCoins);
 }
 async function request13() {
   const result = await axiosRequest({
@@ -21548,7 +21555,7 @@ async function request13() {
   }
   return Object.values(result.price.Items);
 }
-function processList14($list, $coinsFilter = []) {
+function processList13($list, $coinsFilter = []) {
   return $list.filter((item) => {
     if (item?.assetType?.toUpperCase() !== "CRYPTO") return false;
     if (!item?.p) return false;
@@ -21582,6 +21589,7 @@ var scrape_exports17 = {};
 __export(scrape_exports17, {
   COIN_USE: () => COIN_USE17,
   getLatest: () => getLatest17,
+  parsePage: () => parsePage2,
   scrape: () => scrape17
 });
 init_axios2();
@@ -21589,12 +21597,9 @@ var import_dayjs17 = __toESM(require_dayjs_min(), 1);
 var PLATFORM17 = "Sarmayex";
 var URL17 = "https://sarmayex.com/crypto-price";
 var COIN_USE17 = "all";
+var NUXT_WRAPPERS = /* @__PURE__ */ new Set(["Reactive", "ShallowReactive", "Ref", "ShallowRef"]);
 async function scrape17($coins = []) {
-  const data = await getLatest17($coins);
-  data.forEach((d) => {
-    d.source = PLATFORM17.toLowerCase();
-  });
-  return data;
+  return await getLatest17($coins);
 }
 async function getLatest17($filterCoins = []) {
   const response = await axios_default.get(URL17, {
@@ -21602,32 +21607,47 @@ async function getLatest17($filterCoins = []) {
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
     },
+    responseType: "text",
     timeout: 15e3
   });
-  const html = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
-  if (!html) {
+  if (!response.data) {
     throw new Error("Response data is empty");
   }
-  return processHtml(html, $filterCoins);
+  return parsePage2(response.data, $filterCoins);
 }
-function processHtml($html, $coinsFilter = []) {
-  const results = [];
+function parsePage2($html, $coinsFilter = []) {
+  const json = String($html).match(/<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)<\/script>/)?.[1];
+  if (!json) {
+    throw new Error("Nuxt payload not found");
+  }
+  const payload = JSON.parse(json);
+  const deref = (index) => {
+    let value = payload[index];
+    while (Array.isArray(value) && NUXT_WRAPPERS.has(value[0])) {
+      value = payload[value[1]];
+    }
+    return value;
+  };
   const date = (0, import_dayjs17.default)();
   const seen = /* @__PURE__ */ new Set();
-  const matches = [
-    ...$html.matchAll(/"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"/g)
-  ];
-  for (const match of matches) {
-    const symbol = match[2].toUpperCase();
-    if (symbol === "IRT" || symbol === "IRR") continue;
-    if (seen.has(symbol)) continue;
+  const results = [];
+  for (const node of payload) {
+    if (!node || typeof node !== "object" || Array.isArray(node)) continue;
+    if (!("symbol" in node && "sell" in node && "markets" in node)) continue;
+    const symbol = String(deref(node.symbol) ?? "").toUpperCase();
+    if (!symbol || seen.has(symbol)) continue;
     if ($coinsFilter.length > 0 && !$coinsFilter.includes(symbol)) continue;
+    const markets = deref(node.markets);
+    if (!Array.isArray(markets) || !markets.some((i) => deref(i) === `${symbol}_IRT`)) continue;
+    const sell = deref(node.sell);
+    const priceToman = num(sell && deref(sell.marketPrice));
+    if (priceToman <= 0) continue;
     seen.add(symbol);
-    const rawPrice = parseFloat(match[1]) || 0;
     results.push({
+      source: PLATFORM17.toLowerCase(),
       currency: "IRR",
       symbol,
-      price: num(rawPrice, { decimalPlaces: 8 }) || 0,
+      price: num(priceToman, { multiply: 10, decimalPlaces: 8 }),
       volume_1d: 0,
       coin_volume_1d: 0,
       change_1d: 0,
@@ -21666,7 +21686,7 @@ async function getLatest18($filterCoins = []) {
   if (!data?.length) {
     throw new Error("Response data is empty");
   }
-  return processList15(data, $filterCoins);
+  return processList14(data, $filterCoins);
 }
 async function request14($uri, $params = {}) {
   const result = await axiosRequest({
@@ -21680,7 +21700,7 @@ async function request14($uri, $params = {}) {
   }
   return result;
 }
-function processList15($list, $coinsFilter = []) {
+function processList14($list, $coinsFilter = []) {
   const usdt = priceUSDT3($list);
   return $list.filter((data) => {
     if (!data?.markets?.filter((y) => y.second_currency.symbol === "IRT" && y.price).length)
@@ -21735,7 +21755,7 @@ async function getLatest19($filterCoins = []) {
   if (!data?.data?.currencies || Object.keys(data.data.currencies).length === 0) {
     throw new Error("Response data is empty");
   }
-  return processList16(data.data.currencies, $filterCoins);
+  return processList15(data.data.currencies, $filterCoins);
 }
 async function request15($uri, $params = {}) {
   const result = await axiosRequest({
@@ -21745,7 +21765,7 @@ async function request15($uri, $params = {}) {
   });
   return result;
 }
-function processList16($list, $coinsFilter = []) {
+function processList15($list, $coinsFilter = []) {
   return Object.keys($list).filter((symbol) => {
     const upper = symbol.toUpperCase();
     return $coinsFilter.length === 0 || $coinsFilter.includes(upper);
@@ -21792,7 +21812,7 @@ async function getLatest20($filterCoins = []) {
   if (!data?.symbols || Object.keys(data.symbols).length === 0) {
     throw new Error("Response data is empty");
   }
-  return processList17(data.symbols, $filterCoins);
+  return processList16(data.symbols, $filterCoins);
 }
 async function request16($uri, $params = {}) {
   const result = await axiosRequest({
@@ -21805,7 +21825,7 @@ async function request16($uri, $params = {}) {
   }
   return result.result;
 }
-function processList17($list, $coinsFilter = []) {
+function processList16($list, $coinsFilter = []) {
   $list = Object.keys($list).map((key) => $list[key]);
   return $list.filter((data) => {
     if (data?.quoteAsset?.toUpperCase() !== "TMN") return false;

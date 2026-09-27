@@ -1,6 +1,6 @@
 {
   "name": "irancrypto-runner",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "license": "AGPL-3.0-or-later",
   "description": "IranCrypto.market API-only exchange collectors (JS/PHP/Python single-file workers)",
   "main": "runtime/js/entry.js",

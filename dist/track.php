@@ -972,6 +972,16 @@ function http_get_json(string $url, array $query = [], array $headers = [], bool
     return http_request('GET', $url, $query, $headers, null, $useProxy)['json'];
 }
 
+/** Fetch a non-JSON body (HTML pages). */
+function http_get_text(string $url, array $headers = []): string
+{
+    $result = curl_once('GET', $url, $headers, null, USER_AGENT);
+    if ($result['status'] < 200 || $result['status'] >= 300 || $result['body'] === '') {
+        throw new RuntimeException("HTTP {$result['status']} for {$url}");
+    }
+    return $result['body'];
+}
+
 
 
 
@@ -1057,154 +1067,179 @@ function register_ariomex(): array
 
 // --- arzpaya ---
 
-function getLatest_arzpaya($filterCoins = []) {
-    $popularCoins = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"];
-    $targetCoins = !empty($filterCoins) ? $filterCoins : $popularCoins;
-
-    $result = [];
-    $now = date('c');
-    $timestamp = time();
-
-    foreach ($targetCoins as $coin) {
-        if (strtoupper($coin) === 'IRT' || strtoupper($coin) === 'IRR') continue;
-        $url = "https://na1.arzpaya.com/orderbook/buy/irt/" . strtolower($coin);
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        if (!$response) continue;
-
-        $data = json_decode($response, true);
-        if (isset($data['Data']) && is_array($data['Data']) && count($data['Data']) > 0) {
-            $topBid = $data['Data'][0];
-            $price = floatval($topBid['p']) * 10;
-
-            $result[] = [
-                'source' => 'arzpaya',
-                'currency' => 'IRR',
-                'symbol' => strtoupper($coin),
-                'price' => $price,
-                'volume_1d' => 0,
-                'coin_volume_1d' => 0,
-                'change_1d' => 0,
-                'last_update' => [
-                    'date' => $now,
-                    'timestamp' => $timestamp,
-                ]
-            ];
+/** @return list<array<string,mixed>> */
+function scrape_arzpaya(array $coins): array
+{
+    $popularCoins = ['BTC', 'ETH', 'USDT', 'LTC', 'BCH', 'TRX', 'DOGE', 'LINK', 'XRP', 'SOL', 'ADA'];
+    $out = [];
+    foreach ($coins !== [] ? $coins : $popularCoins as $coin) {
+        $coin = strtoupper((string) $coin);
+        if ($coin === 'IRT' || $coin === 'IRR') {
+            continue;
         }
+        if (!assert_time_budget(HTTP_TIMEOUT_SEC + 5)) {
+            break;
+        }
+        try {
+            $response = http_get_json('https://na1.arzpaya.com/orderbook/buy/irt/' . strtolower($coin));
+        } catch (Throwable $e) {
+            continue;
+        }
+        $topBid = is_array($response) && !empty($response['Data']) && is_array($response['Data'])
+            ? $response['Data'][0]
+            : null;
+        $price = is_array($topBid) ? num($topBid['p'] ?? 0, ['multiply' => 10, 'decimalPlaces' => 8]) : 0.0;
+        if ($price <= 0) {
+            continue;
+        }
+        $out[] = [
+            'currency' => 'IRR',
+            'symbol' => $coin,
+            'price' => $price,
+            'volume_1d' => 0,
+            'coin_volume_1d' => 0,
+            'change_1d' => 0,
+            'source' => 'arzpaya',
+            'last_update' => last_update_now(),
+        ];
     }
+    return $out;
+}
 
-    return $result;
+function register_arzpaya(): array
+{
+    return [
+        'coin_use' => 'all',
+        'scrape' => 'scrape_arzpaya',
+    ];
 }
 
 
 // --- bidarz ---
 
-function getLatest_bidarz($filterCoins = []) {
-    $popularCoins = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"];
-    $targetCoins = !empty($filterCoins) ? $filterCoins : $popularCoins;
+/**
+ * Parse the IRT ticker embedded in a Bidarz price page (`quoteId:"IRR"` is labelled Toman,
+ * and its prices and volume are in Toman).
+ * Returns null when the market is missing, idle for 24h, or too imprecise.
+ *
+ * @return array<string,mixed>|null
+ */
+function parse_bidarz_page(string $html, string $coin): ?array
+{
+    // Bidarz rounds Toman prices to whole units; below this the rounding error exceeds 1%.
+    $minPriceToman = 100;
 
-    $result = [];
-    $now = date('c');
-    $timestamp = time();
+    if (!preg_match('/\{[^{}]*quoteId:"IRR"[^{}]*\}/', $html, $tickerMatch)) {
+        return null;
+    }
+    $ticker = $tickerMatch[0];
+    $field = static function (string $key) use ($ticker): float {
+        return preg_match('/[{,]' . $key . ':"?(-?[0-9]*\.?[0-9]+)/', $ticker, $m) ? (float) $m[1] : 0.0;
+    };
 
-    foreach ($targetCoins as $coin) {
-        if (strtoupper($coin) === 'IRT' || strtoupper($coin) === 'IRR') continue;
-        $url = "https://bidarz.ir/price/" . strtolower($coin);
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        if (!$response) continue;
-
-        if (preg_match('/quoteId:"IRR"[^}]*?last:"([0-9.]+)"/', $response, $match)) {
-            $price = floatval($match[1]);
-            $result[] = [
-                'source' => 'bidarz',
-                'currency' => 'IRR',
-                'symbol' => strtoupper($coin),
-                'price' => $price,
-                'volume_1d' => 0,
-                'coin_volume_1d' => 0,
-                'change_1d' => 0,
-                'last_update' => [
-                    'date' => $now,
-                    'timestamp' => $timestamp,
-                ]
-            ];
-        }
+    $priceToman = $field('last');
+    // A zero 24h high means no trades, so `last` is stale.
+    if ($priceToman < $minPriceToman || $field('max24h') <= 0) {
+        return null;
     }
 
-    return $result;
+    $volumeToman = $field('volume24h');
+    return [
+        'currency' => 'IRR',
+        'symbol' => strtoupper($coin),
+        'price' => num($priceToman, ['multiply' => 10, 'decimalPlaces' => 8]),
+        'volume_1d' => num($volumeToman, ['multiply' => 10, 'roundUp' => true]),
+        'coin_volume_1d' => num($volumeToman, ['divide' => $priceToman]),
+        'change_1d' => num($field('changePercent24h'), ['decimalPlaces' => 2]),
+        'change_7d' => num($field('changePercent7d'), ['decimalPlaces' => 2]),
+        'source' => 'bidarz',
+        'last_update' => last_update_now(),
+    ];
+}
+
+/** @return list<array<string,mixed>> */
+function scrape_bidarz(array $coins): array
+{
+    $popularCoins = ['BTC', 'ETH', 'USDT', 'LTC', 'BCH', 'TRX', 'DOGE', 'LINK', 'XRP', 'SOL', 'ADA'];
+    $out = [];
+    foreach ($coins !== [] ? $coins : $popularCoins as $coin) {
+        $coin = strtoupper((string) $coin);
+        if ($coin === 'IRT' || $coin === 'IRR') {
+            continue;
+        }
+        if (!assert_time_budget(HTTP_TIMEOUT_SEC + 5)) {
+            break;
+        }
+        try {
+            $row = parse_bidarz_page(http_get_text('https://bidarz.ir/price/' . strtolower($coin)), $coin);
+        } catch (Throwable $e) {
+            continue;
+        }
+        if ($row !== null) {
+            $out[] = $row;
+        }
+    }
+    return $out;
+}
+
+function register_bidarz(): array
+{
+    return [
+        'coin_use' => 'all',
+        'scrape' => 'scrape_bidarz',
+    ];
 }
 
 
 // --- bitimen ---
 
-function getLatest_bitimen($filterCoins = []) {
-    $url = "https://api2.bitimen.com/api/market/stats?quote_asset=IRT";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) {
-        throw new Exception("Response data is empty");
+/** @return list<array<string,mixed>> */
+function parse_bitimen(mixed $data, array $coins): array
+{
+    if (!is_array($data) || $data === []) {
+        throw new RuntimeException('Bitimen: empty response');
     }
-
-    $data = json_decode($response, true);
-    if (!is_array($data) || empty($data)) {
-        throw new Exception("Response data is empty");
-    }
-
-    return processList_bitimen($data, $filterCoins);
-}
-
-function processList_bitimen($list, $coinsFilter = []) {
-    $result = [];
-    $now = date('c');
-    $timestamp = time();
-
-    foreach ($list as $key => $item) {
-        $symbol = strtoupper($item['base_asset_ticker'] ?? '');
-        if (!$symbol) continue;
-
-        if (!empty($coinsFilter) && !in_array($symbol, $coinsFilter)) {
+    $out = [];
+    $lu = last_update_now();
+    foreach ($data as $item) {
+        if (!is_array($item)) {
             continue;
         }
-
-        $rawPrice = $item['last_price'] ?? $item['best_bid_raw'] ?? 0;
-        $price = floatval($rawPrice) * 10;
-        $rawVol = str_replace(',', '', $item['volume'] ?? '0');
-        $volume1d = floatval($rawVol) * 10;
-        $change1d = floatval($item['change_display'] ?? $item['change'] ?? 0);
-
-        $result[] = [
-            'source' => 'bitimen',
+        $symbol = strtoupper((string) ($item['base_asset_ticker'] ?? ''));
+        if ($symbol === '' || !coin_allowed($coins, $symbol)) {
+            continue;
+        }
+        $rawPrice = ($item['last_price'] ?? null) ?: ($item['best_bid_raw'] ?? 0);
+        $rawVolume = str_replace(',', '', (string) ($item['volume'] ?? '0'));
+        $out[] = [
             'currency' => 'IRR',
             'symbol' => $symbol,
-            'price' => $price,
-            'volume_1d' => round($volume1d),
+            'price' => num($rawPrice, ['multiply' => 10, 'decimalPlaces' => 8]),
+            'volume_1d' => num($rawVolume, ['multiply' => 10, 'roundUp' => true]),
             'coin_volume_1d' => 0,
-            'change_1d' => round($change1d, 2),
-            'last_update' => [
-                'date' => $now,
-                'timestamp' => $timestamp,
-            ]
+            'change_1d' => num(($item['change_display'] ?? null) ?: ($item['change'] ?? 0), ['decimalPlaces' => 2]),
+            'source' => 'bitimen',
+            'last_update' => $lu,
         ];
     }
+    return $out;
+}
 
-    return $result;
+function job_bitimen(): array
+{
+    return [
+        'url' => 'https://api2.bitimen.com/api/market/stats',
+        'query' => ['quote_asset' => 'IRT'],
+    ];
+}
+
+function register_bitimen(): array
+{
+    return [
+        'coin_use' => 'all',
+        'job' => 'job_bitimen',
+        'parse' => 'parse_bitimen',
+    ];
 }
 
 
@@ -1231,13 +1266,13 @@ function parse_bitmax(mixed $data, array $coins): array
         if (!coin_allowed($coins, $symbol)) {
             continue;
         }
-        $priceUsd = (float) ($row['price_in_usd'] ?? 0);
         $item = [
             'currency' => 'IRR',
             'symbol' => $symbol,
             'price' => num($row['price_in_irt'], ['decimalPlaces' => 8, 'multiply' => 10]),
-            'volume_1d' => num($row['volume_24h'] ?? 0, ['multiply' => $usdt, 'roundUp' => true]),
-            'coin_volume_1d' => $priceUsd > 0 ? num($row['volume_24h'] ?? 0, ['divide' => $priceUsd]) : 0.0,
+            // volume_24h is the global market volume (CoinMarketCap mirror), not BitMax's own trading
+            'volume_1d' => 0,
+            'coin_volume_1d' => 0,
             'change_1d' => num($row['change'] ?? 0, ['decimalPlaces' => 2]),
             'change_7d' => num($row['change_7d'] ?? 0, ['decimalPlaces' => 2]),
             'market_cap' => num($row['market_cap'] ?? 0, ['multiply' => $usdt, 'roundUp' => true]),
@@ -1793,66 +1828,59 @@ function register_nobitex(): array
 
 // --- ompfinex ---
 
-function getLatest_ompfinex($filterCoins = []) {
-    $url = "https://api.ompfinex.com/v1/market";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) {
-        throw new Exception("Response data is empty");
+/**
+ * OMPFinex labels its Rial markets "Toman" in display names, but quote_currency.id is IRR
+ * and last_price / last_volume are already in Rial.
+ *
+ * @return list<array<string,mixed>>
+ */
+function parse_ompfinex(mixed $data, array $coins): array
+{
+    $list = is_array($data) && isset($data['data']) && is_array($data['data']) ? $data['data'] : [];
+    if ($list === []) {
+        throw new RuntimeException('Ompfinex: empty data list');
     }
-
-    $decoded = json_decode($response, true);
-    $list = is_array($decoded) && isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : (is_array($decoded) ? $decoded : []);
-
-    if (empty($list)) {
-        throw new Exception("Response data is empty");
-    }
-
-    return processList_ompfinex($list, $filterCoins);
-}
-
-function processList_ompfinex($list, $coinsFilter = []) {
-    $result = [];
-    $now = date('c');
-    $timestamp = time();
-
+    $out = [];
+    $lu = last_update_now();
     foreach ($list as $item) {
-        $quote = strtoupper($item['quote_currency']['id'] ?? '');
-        if ($quote !== 'IRR' && $quote !== 'IRT') continue;
-        if (!isset($item['last_price'])) continue;
-
-        $symbol = strtoupper($item['base_currency']['id'] ?? '');
-        if (!$symbol) continue;
-
-        if (!empty($coinsFilter) && !in_array($symbol, $coinsFilter)) {
+        if (!is_array($item) || strtoupper((string) ($item['quote_currency']['id'] ?? '')) !== 'IRR') {
             continue;
         }
-
-        $price = floatval($item['last_price']) * 10;
-        $volume1d = floatval($item['last_volume'] ?? 0) * 10;
-        $change1d = floatval($item['day_change_percent'] ?? 0);
-
-        $result[] = [
-            'source' => 'ompfinex',
+        if (!isset($item['last_price'])) {
+            continue;
+        }
+        $symbol = strtoupper((string) ($item['base_currency']['id'] ?? ''));
+        if ($symbol === '' || !coin_allowed($coins, $symbol)) {
+            continue;
+        }
+        $out[] = [
             'currency' => 'IRR',
             'symbol' => $symbol,
-            'price' => $price,
-            'volume_1d' => round($volume1d),
+            'price' => num($item['last_price'], ['decimalPlaces' => 8]),
+            'volume_1d' => num($item['last_volume'] ?? 0, ['roundUp' => true]),
             'coin_volume_1d' => 0,
-            'change_1d' => round($change1d, 2),
-            'last_update' => [
-                'date' => $now,
-                'timestamp' => $timestamp,
-            ]
+            'change_1d' => num($item['day_change_percent'] ?? 0, ['decimalPlaces' => 2]),
+            'source' => 'ompfinex',
+            'last_update' => $lu,
         ];
     }
+    return $out;
+}
 
-    return $result;
+function job_ompfinex(): array
+{
+    return [
+        'url' => 'https://api.ompfinex.com/v1/market',
+    ];
+}
+
+function register_ompfinex(): array
+{
+    return [
+        'coin_use' => 'all',
+        'job' => 'job_ompfinex',
+        'parse' => 'parse_ompfinex',
+    ];
 }
 
 
@@ -1968,57 +1996,87 @@ function register_saraf(): array
 
 // --- sarmayex ---
 
-function getLatest_sarmayex($filterCoins = []) {
-    $url = "https://sarmayex.com/crypto-price";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36");
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) {
-        throw new Exception("Response data is empty");
+/**
+ * Parse currencies from the page's `__NUXT_DATA__` payload. Every currency object holds
+ * payload indices; `sell.marketPrice` is the Toman mid-market rate (`sell.price` is
+ * Sarmayex's own marked-up quote).
+ *
+ * @return list<array<string,mixed>>
+ */
+function parse_sarmayex_page(string $html, array $coins): array
+{
+    if (!preg_match('/<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)<\/script>/', $html, $m)) {
+        throw new RuntimeException('Sarmayex: Nuxt payload not found');
+    }
+    $payload = json_decode($m[1], true);
+    if (!is_array($payload)) {
+        throw new RuntimeException('Sarmayex: invalid Nuxt payload');
     }
 
-    return processHtml_sarmayex($response, $filterCoins);
+    // Nuxt payload (devalue) wrappers whose second element is the index of the wrapped value.
+    $wrappers = ['Reactive', 'ShallowReactive', 'Ref', 'ShallowRef'];
+    $deref = static function (mixed $index) use ($payload, $wrappers): mixed {
+        if (!is_int($index)) {
+            return null;
+        }
+        $value = $payload[$index] ?? null;
+        while (is_array($value) && array_is_list($value) && in_array($value[0] ?? null, $wrappers, true)) {
+            $value = $payload[$value[1]] ?? null;
+        }
+        return $value;
+    };
+
+    $out = [];
+    $seen = [];
+    $lu = last_update_now();
+    foreach ($payload as $node) {
+        if (!is_array($node) || array_is_list($node)) {
+            continue;
+        }
+        if (!isset($node['symbol'], $node['sell'], $node['markets'])) {
+            continue;
+        }
+        $symbol = strtoupper((string) $deref($node['symbol']));
+        if ($symbol === '' || isset($seen[$symbol]) || !coin_allowed($coins, $symbol)) {
+            continue;
+        }
+        $markets = $deref($node['markets']);
+        if (!is_array($markets) || !in_array("{$symbol}_IRT", array_map($deref, $markets), true)) {
+            continue;
+        }
+        $sell = $deref($node['sell']);
+        $priceToman = is_array($sell) ? num($deref($sell['marketPrice'] ?? null) ?? 0) : 0.0;
+        if ($priceToman <= 0) {
+            continue;
+        }
+
+        $seen[$symbol] = true;
+        $out[] = [
+            'currency' => 'IRR',
+            'symbol' => $symbol,
+            'price' => num($priceToman, ['multiply' => 10, 'decimalPlaces' => 8]),
+            'volume_1d' => 0,
+            'coin_volume_1d' => 0,
+            'change_1d' => 0,
+            'source' => 'sarmayex',
+            'last_update' => $lu,
+        ];
+    }
+    return $out;
 }
 
-function processHtml_sarmayex($html, $coinsFilter = []) {
-    $result = [];
-    $now = date('c');
-    $timestamp = time();
-    $seen = [];
+/** @return list<array<string,mixed>> */
+function scrape_sarmayex(array $coins): array
+{
+    return parse_sarmayex_page(http_get_text('https://sarmayex.com/crypto-price'), $coins);
+}
 
-    if (preg_match_all('/"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"/', $html, $matches, PREG_SET_ORDER)) {
-        foreach ($matches as $match) {
-            $symbol = strtoupper($match[2]);
-            if ($symbol === 'IRT' || $symbol === 'IRR') continue;
-            if (isset($seen[$symbol])) continue;
-            if (!empty($coinsFilter) && !in_array($symbol, $coinsFilter)) continue;
-
-            $seen[$symbol] = true;
-            $price = floatval($match[1]);
-
-            $result[] = [
-                'source' => 'sarmayex',
-                'currency' => 'IRR',
-                'symbol' => $symbol,
-                'price' => $price,
-                'volume_1d' => 0,
-                'coin_volume_1d' => 0,
-                'change_1d' => 0,
-                'last_update' => [
-                    'date' => $now,
-                    'timestamp' => $timestamp,
-                ]
-            ];
-        }
-    }
-
-    return $result;
+function register_sarmayex(): array
+{
+    return [
+        'coin_use' => 'all',
+        'scrape' => 'scrape_sarmayex',
+    ];
 }
 
 
@@ -2103,58 +2161,51 @@ function register_tabdeal(): array
 
 // --- tetherland ---
 
-function getLatest_tetherland($filterCoins = []) {
-    $url = "https://api.tetherland.com/currencies";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    if (!$response) {
-        throw new Exception("Response data is empty");
+/** @return list<array<string,mixed>> */
+function parse_tetherland(mixed $data, array $coins): array
+{
+    $currencies = is_array($data) ? ($data['data']['currencies'] ?? null) : null;
+    if (!is_array($currencies) || $currencies === []) {
+        throw new RuntimeException('Tetherland: empty currencies');
     }
-
-    $data = json_decode($response, true);
-    if (!isset($data['data']['currencies']) || empty($data['data']['currencies'])) {
-        throw new Exception("Response data is empty");
-    }
-
-    return processList_tetherland($data['data']['currencies'], $filterCoins);
-}
-
-function processList_tetherland($list, $coinsFilter = []) {
-    $result = [];
-    $now = date('c');
-    $timestamp = time();
-
-    foreach ($list as $symbol => $item) {
-        $upperSymbol = strtoupper($symbol);
-        if (!empty($coinsFilter) && !in_array($upperSymbol, $coinsFilter)) {
+    $out = [];
+    $lu = last_update_now();
+    foreach ($currencies as $symbol => $item) {
+        if (!is_array($item)) {
             continue;
         }
-
-        $rawPrice = $item['price'] ?? $item['buy_price'] ?? 0;
-        $price = floatval($rawPrice) * 10;
-        $change1d = floatval($item['diff24d'] ?? 0);
-
-        $result[] = [
-            'source' => 'tetherland',
+        $symbol = strtoupper((string) $symbol);
+        if (!coin_allowed($coins, $symbol)) {
+            continue;
+        }
+        $out[] = [
             'currency' => 'IRR',
-            'symbol' => $upperSymbol,
-            'price' => $price,
+            'symbol' => $symbol,
+            'price' => num(($item['price'] ?? null) ?: ($item['buy_price'] ?? 0), ['multiply' => 10, 'decimalPlaces' => 8]),
             'volume_1d' => 0,
             'coin_volume_1d' => 0,
-            'change_1d' => round($change1d, 2),
-            'last_update' => [
-                'date' => $now,
-                'timestamp' => $timestamp,
-            ]
+            'change_1d' => num($item['diff24d'] ?? 0, ['decimalPlaces' => 2]),
+            'source' => 'tetherland',
+            'last_update' => $lu,
         ];
     }
+    return $out;
+}
 
-    return $result;
+function job_tetherland(): array
+{
+    return [
+        'url' => 'https://api.tetherland.com/currencies',
+    ];
+}
+
+function register_tetherland(): array
+{
+    return [
+        'coin_use' => 'all',
+        'job' => 'job_tetherland',
+        'parse' => 'parse_tetherland',
+    ];
 }
 
 

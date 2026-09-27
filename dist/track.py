@@ -297,6 +297,7 @@ def http_request(
     verify_ssl: bool = True,
     timeout: float | None = None,
     retry_403: bool = True,
+    expect_json: bool = True,
 ) -> dict[str, Any]:
     if use_proxy and PROXY_URL and PROXY_API_KEY:
         return http_via_proxy(method, url, query or {}, headers or {}, body)
@@ -342,6 +343,7 @@ def http_request(
                     verify_ssl=verify_ssl,
                     timeout=timeout,
                     retry_403=False,
+                    expect_json=expect_json,
                 )
             last_error = RuntimeError(f"HTTP {status} for {request_url}: {raw[:300]}")
             if attempt < max_attempts:
@@ -363,7 +365,7 @@ def http_request(
             raise last_error
 
         json_data: Any = None
-        if raw:
+        if raw and expect_json:
             try:
                 json_data = json.loads(raw)
             except json.JSONDecodeError as e:
@@ -450,6 +452,17 @@ def http_get_json(
         use_proxy=use_proxy,
         verify_ssl=SSL_VERIFY_EXCHANGE,
     )["json"]
+
+
+def http_get_text(url: str, headers: dict[str, str] | None = None) -> str:
+    """Fetch a non-JSON body (HTML pages)."""
+    return http_request(
+        "GET",
+        url,
+        headers=headers,
+        verify_ssl=SSL_VERIFY_EXCHANGE,
+        expect_json=False,
+    )["body"]
 
 
 def ingest_request(method: str, url_path: str, body: dict[str, Any] | None = None) -> Any:
@@ -644,33 +657,54 @@ def register_arzpaya() -> dict[str, Any]:
 
 # --- bidarz ---
 
+def parse_bidarz_page(html: str, coin: str) -> dict[str, Any] | None:
+    """Parse the IRT ticker embedded in a Bidarz price page (`quoteId:"IRR"` is labelled Toman,
+    and its prices and volume are in Toman).
+    Returns None when the market is missing, idle for 24h, or too imprecise.
+    """
+    # Bidarz rounds Toman prices to whole units; below this the rounding error exceeds 1%.
+    min_price_toman = 100
+
+    ticker_match = re.search(r'\{[^{}]*quoteId:"IRR"[^{}]*\}', html)
+    if not ticker_match:
+        return None
+    ticker = ticker_match.group(0)
+
+    def field(key: str) -> float:
+        m = re.search(r"[{,]" + key + r':"?(-?[0-9]*\.?[0-9]+)', ticker)
+        return float(m.group(1)) if m else 0.0
+
+    price_toman = field("last")
+    # A zero 24h high means no trades, so `last` is stale.
+    if price_toman < min_price_toman or field("max24h") <= 0:
+        return None
+
+    volume_toman = field("volume24h")
+    return {
+        "currency": "IRR",
+        "symbol": coin.upper(),
+        "price": num(price_toman, {"multiply": 10, "decimalPlaces": 8}),
+        "volume_1d": num(volume_toman, {"multiply": 10, "roundUp": True}),
+        "coin_volume_1d": num(volume_toman, {"divide": price_toman}),
+        "change_1d": num(field("changePercent24h"), {"decimalPlaces": 2}),
+        "change_7d": num(field("changePercent7d"), {"decimalPlaces": 2}),
+        "source": "bidarz",
+    }
+
+
 def scrape_bidarz(coins: list[str]) -> list[dict[str, Any]]:
     popular_coins = ["BTC", "ETH", "USDT", "LTC", "BCH", "TRX", "DOGE", "LINK", "XRP", "SOL", "ADA"]
-    target_coins = coins if coins else popular_coins
     out: list[dict[str, Any]] = []
 
-    for coin in target_coins:
+    for coin in coins or popular_coins:
         if coin.upper() in ("IRT", "IRR"):
             continue
         try:
-            url = f"https://bidarz.ir/price/{coin.lower()}"
-            res = http_request("GET", url, timeout=5)
-            html = res.get("body", "")
-            match = re.search(r'quoteId:"IRR"[^}]*?last:"([0-9.]+)"', html)
-            if match:
-                price = num(match.group(1), {"decimalPlaces": 8})
-                if price > 0:
-                    out.append({
-                        "currency": "IRR",
-                        "symbol": coin.upper(),
-                        "price": price,
-                        "volume_1d": 0,
-                        "coin_volume_1d": 0,
-                        "change_1d": 0,
-                        "source": "bidarz",
-                    })
+            row = parse_bidarz_page(http_get_text(f"https://bidarz.ir/price/{coin.lower()}"), coin)
         except Exception:
-            pass
+            continue
+        if row is not None:
+            out.append(row)
 
     return out
 
@@ -742,16 +776,14 @@ def parse_bitmax(data: Any, coins: list[str]) -> list[dict[str, Any]]:
         symbol = str(symbol_key).upper()
         if not coin_allowed(coins, symbol):
             continue
-        price_usd = float(row.get("price_in_usd") or 0)
         out.append(
             {
                 "currency": "IRR",
                 "symbol": symbol,
                 "price": num(row["price_in_irt"], {"decimalPlaces": 8, "multiply": 10}),
-                "volume_1d": num(row.get("volume_24h", 0), {"multiply": usdt, "roundUp": True}),
-                "coin_volume_1d": (
-                    num(row.get("volume_24h", 0), {"divide": price_usd}) if price_usd > 0 else 0.0
-                ),
+                # volume_24h is the global market volume (CoinMarketCap mirror), not BitMax's own trading
+                "volume_1d": 0,
+                "coin_volume_1d": 0,
                 "change_1d": num(row.get("change", 0), {"decimalPlaces": 2}),
                 "change_7d": num(row.get("change_7d", 0), {"decimalPlaces": 2}),
                 "market_cap": num(row.get("market_cap", 0), {"multiply": usdt, "roundUp": True}),
@@ -1207,6 +1239,8 @@ def register_nobitex() -> dict[str, Any]:
 # --- ompfinex ---
 
 def parse_ompfinex(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    # OMPFinex labels its Rial markets "Toman" in display names, but quote_currency.id is IRR
+    # and last_price / last_volume are already in Rial.
     if not isinstance(data, dict):
         raise RuntimeError("Ompfinex: empty response")
     list_data = data.get("data", []) if isinstance(data.get("data"), list) else []
@@ -1217,8 +1251,7 @@ def parse_ompfinex(data: Any, coins: list[str]) -> list[dict[str, Any]]:
     for item in list_data:
         if not isinstance(item, dict):
             continue
-        quote = str(item.get("quote_currency", {}).get("id", "")).upper()
-        if quote not in ("IRR", "IRT"):
+        if str(item.get("quote_currency", {}).get("id", "")).upper() != "IRR":
             continue
         if "last_price" not in item or item["last_price"] is None:
             continue
@@ -1226,17 +1259,13 @@ def parse_ompfinex(data: Any, coins: list[str]) -> list[dict[str, Any]]:
         if not symbol or not coin_allowed(coins, symbol):
             continue
 
-        price = num(item.get("last_price", 0), {"multiply": 10, "decimalPlaces": 8})
-        volume_1d = num(item.get("last_volume", 0), {"multiply": 10, "roundUp": True})
-        change_1d = num(item.get("day_change_percent", 0), {"decimalPlaces": 2})
-
         out.append({
             "currency": "IRR",
             "symbol": symbol,
-            "price": price,
-            "volume_1d": volume_1d,
+            "price": num(item.get("last_price", 0), {"decimalPlaces": 8}),
+            "volume_1d": num(item.get("last_volume", 0), {"roundUp": True}),
             "coin_volume_1d": 0,
-            "change_1d": change_1d,
+            "change_1d": num(item.get("day_change_percent", 0), {"decimalPlaces": 2}),
             "source": "ompfinex",
         })
 
@@ -1344,31 +1373,51 @@ def register_saraf() -> dict[str, Any]:
 
 # --- sarmayex ---
 
-def scrape_sarmayex(coins: list[str]) -> list[dict[str, Any]]:
-    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
-    res = http_request("GET", "https://sarmayex.com/crypto-price", headers=headers, timeout=15)
-    html = res.get("body", "")
-    if not html:
-        raise RuntimeError("Sarmayex: empty response")
+def parse_sarmayex_page(html: str, coins: list[str]) -> list[dict[str, Any]]:
+    """Parse currencies from the page's `__NUXT_DATA__` payload. Every currency object holds
+    payload indices; `sell.marketPrice` is the Toman mid-market rate (`sell.price` is
+    Sarmayex's own marked-up quote).
+    """
+    m = re.search(r'<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)</script>', html)
+    if not m:
+        raise RuntimeError("Sarmayex: Nuxt payload not found")
+    payload = json.loads(m.group(1))
+    if not isinstance(payload, list):
+        raise RuntimeError("Sarmayex: invalid Nuxt payload")
+
+    # Nuxt payload (devalue) wrappers whose second element is the index of the wrapped value.
+    wrappers = {"Reactive", "ShallowReactive", "Ref", "ShallowRef"}
+
+    def deref(index: Any) -> Any:
+        if not isinstance(index, int) or isinstance(index, bool) or not 0 <= index < len(payload):
+            return None
+        value = payload[index]
+        while isinstance(value, list) and value and value[0] in wrappers:
+            value = payload[value[1]]
+        return value
 
     out: list[dict[str, Any]] = []
-    seen = set()
+    seen: set[str] = set()
 
-    matches = re.findall(r'"([0-9]{6,14}\.[0-9]+)"(?:(?!"[0-9]{6,14}\.").)*?"([A-Z0-9]+)_IRT"', html)
-    for price_raw, symbol_raw in matches:
-        symbol = symbol_raw.upper()
-        if symbol in ("IRT", "IRR") or symbol in seen:
+    for node in payload:
+        if not isinstance(node, dict) or not {"symbol", "sell", "markets"} <= node.keys():
             continue
-        if not coin_allowed(coins, symbol):
+        symbol = str(deref(node["symbol"]) or "").upper()
+        if not symbol or symbol in seen or not coin_allowed(coins, symbol):
+            continue
+        markets = deref(node["markets"])
+        if not isinstance(markets, list) or f"{symbol}_IRT" not in [deref(i) for i in markets]:
+            continue
+        sell = deref(node["sell"])
+        price_toman = num(deref(sell.get("marketPrice")) if isinstance(sell, dict) else 0)
+        if price_toman <= 0:
             continue
 
         seen.add(symbol)
-        price = num(price_raw, {"decimalPlaces": 8})
-
         out.append({
             "currency": "IRR",
             "symbol": symbol,
-            "price": price,
+            "price": num(price_toman, {"multiply": 10, "decimalPlaces": 8}),
             "volume_1d": 0,
             "coin_volume_1d": 0,
             "change_1d": 0,
@@ -1376,6 +1425,10 @@ def scrape_sarmayex(coins: list[str]) -> list[dict[str, Any]]:
         })
 
     return out
+
+
+def scrape_sarmayex(coins: list[str]) -> list[dict[str, Any]]:
+    return parse_sarmayex_page(http_get_text("https://sarmayex.com/crypto-price"), coins)
 
 
 def register_sarmayex() -> dict[str, Any]:
