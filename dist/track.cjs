@@ -22010,6 +22010,13 @@ function envInt(name, fallback, min2 = 0) {
   if (!Number.isFinite(n)) return fallback;
   return Math.max(min2, n);
 }
+var runDeadlineMs = null;
+function resolveFinalizeBudgetSec() {
+  const configured = envInt("LAMBDA_TIMEOUT_SEC", 300, 30);
+  const marginSec = envInt("FINALIZE_SAFETY_SEC", 45, 5);
+  const totalSec = runDeadlineMs ? (runDeadlineMs - Date.now()) / 1e3 : configured;
+  return Math.max(0, Math.floor(totalSec - marginSec));
+}
 function defaultRunId(d = /* @__PURE__ */ new Date()) {
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -22111,16 +22118,26 @@ async function ingestRequest(method, urlPath, body) {
   return json || {};
 }
 async function waitForIngestReady(runId, logger) {
-  const waitSec = envInt("FINALIZE_WAIT_SEC", 300, 0);
+  const budgetSec = resolveFinalizeBudgetSec();
+  const waitSec = Math.min(envInt("FINALIZE_WAIT_SEC", 90, 0), budgetSec);
   const pollSec = envInt("FINALIZE_POLL_SEC", 15, 1);
   const deadline = Date.now() + waitSec * 1e3;
+  let lastStatus = { missing: [] };
   for (; ; ) {
-    const status = await ingestRequest("GET", `/status?run_id=${encodeURIComponent(runId)}`);
-    const missing = Array.isArray(status.missing) ? status.missing : [];
+    try {
+      lastStatus = await ingestRequest("GET", `/status?run_id=${encodeURIComponent(runId)}`);
+    } catch (err) {
+      logError(err);
+      logger.event("status_err", {
+        run_id: runId,
+        message: err instanceof Error ? err.message : String(err)
+      });
+    }
+    const missing = Array.isArray(lastStatus.missing) ? lastStatus.missing : [];
     if (missing.length === 0) {
       logInfo(`Ingest ready for ${runId}`);
       logger.event("status_ready", { run_id: runId });
-      return status;
+      return lastStatus;
     }
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) {
@@ -22132,7 +22149,7 @@ async function waitForIngestReady(runId, logger) {
         missing,
         waited_sec: waitSec
       });
-      return status;
+      return lastStatus;
     }
     const sleepMs = Math.min(pollSec * 1e3, remainingMs);
     logInfo(`Waiting for sources (${missing.join(",")}); poll in ${Math.round(sleepMs / 1e3)}s`);
@@ -22249,7 +22266,7 @@ async function scrapeOne(exchange, coins) {
   logInfo(`Processing ${slug} finished in ${Math.round((Date.now() - t0) / 1e3)}s`);
   return Array.isArray(result) ? result : [];
 }
-async function runTrack(customArgv) {
+async function runTrack(customArgv, context = null) {
   applyLambdaDefaults();
   const argv = customArgv ?? process.argv;
   const baseDir = resolveBaseDir();
@@ -22263,6 +22280,7 @@ async function runTrack(customArgv) {
   const logDir = resolveLogDir(baseDir);
   const retention = Math.max(1, Number.parseInt(process.env.LOG_RETENTION_DAYS || "7", 10) || 7);
   const nodeId = resolveNodeId();
+  runDeadlineMs = context && typeof context.getRemainingTimeInMillis === "function" ? Date.now() + context.getRemainingTimeInMillis() : null;
   if (cli.pruneLogs && !cli.all && !cli.exchange && !cli.finalizeOnly && !cli.fromJson) {
     const n = pruneLogs(logDir, retention);
     logInfo(`Pruned ${n} log file(s) older than ${retention} days`);
@@ -22419,10 +22437,10 @@ async function runTrack(customArgv) {
   logger.event("run_end", { ok });
   return ok ? 0 : 1;
 }
-async function handler(event = {}, _context = {}) {
+async function handler(event = {}, context = {}) {
   applyLambdaDefaults();
   const argv = argvFromLambdaEvent(event);
-  const code = await runTrack(argv);
+  const code = await runTrack(argv, context);
   return {
     statusCode: code === 0 ? 200 : 500,
     body: JSON.stringify({

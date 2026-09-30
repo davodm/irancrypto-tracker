@@ -142,8 +142,24 @@ SSL_VERIFY_EXCHANGE = env_bool("SSL_VERIFY_EXCHANGE", False)
 SSL_VERIFY_INGEST = env_bool("SSL_VERIFY_INGEST", True)
 REQUEST_RETRY_COUNT = env_int("REQUEST_RETRY_COUNT", 0, minimum=0)
 REQUEST_RETRY_BASE_MS = env_int("REQUEST_RETRY_BASE_MS", 300, minimum=50)
-FINALIZE_WAIT_SEC = env_int("FINALIZE_WAIT_SEC", 300, minimum=0)
+FINALIZE_WAIT_SEC = env_int("FINALIZE_WAIT_SEC", 90, minimum=0)
 FINALIZE_POLL_SEC = env_int("FINALIZE_POLL_SEC", 15, minimum=1)
+FINALIZE_SAFETY_SEC = env_int("FINALIZE_SAFETY_SEC", 45, minimum=5)
+SCRIPT_MAX_SEC = env_int("SCRIPT_MAX_SEC", 0, minimum=0)
+
+# Set by the runtime when the host imposes a hard wall-clock limit (e.g. Lambda).
+SCRIPT_DEADLINE: float | None = None
+
+
+def finalize_budget_sec() -> int:
+    """Seconds available for waiting, never exceeding the host's hard limit.
+
+    Without a wall-clock limit the configured FINALIZE_WAIT_SEC applies as-is;
+    the safety margin is only reserved when something can actually kill us.
+    """
+    if SCRIPT_DEADLINE is None:
+        return FINALIZE_WAIT_SEC
+    return max(0, int((SCRIPT_DEADLINE - time.monotonic()) - FINALIZE_SAFETY_SEC))
 
 
 # =============================================================================
@@ -502,13 +518,24 @@ def ingest_request(method: str, url_path: str, body: dict[str, Any] | None = Non
 
 
 def wait_for_ingest_ready(run_id: str, logger: RunLogger | None = None) -> dict[str, Any]:
-    deadline = time.monotonic() + FINALIZE_WAIT_SEC
+    """Poll until status.missing is empty or the budget runs out.
+
+    Always resolves: a failing status call or a permanently dead source must
+    degrade the run to the sources that did report, never skip the finalize.
+    """
+    budget = finalize_budget_sec()
+    wait_sec = min(FINALIZE_WAIT_SEC, budget)
+    deadline = time.monotonic() + wait_sec
+    status: dict[str, Any] = {}
     while True:
-        status = ingest_request(
-            "GET", f"/status?run_id={urllib.parse.quote(run_id)}"
-        )
-        if not isinstance(status, dict):
-            status = {}
+        try:
+            result = ingest_request("GET", f"/status?run_id={urllib.parse.quote(run_id)}")
+            status = result if isinstance(result, dict) else {}
+        except Exception as e:  # noqa: BLE001 - degrade, never abort finalize
+            log_error(str(e))
+            if logger is not None:
+                logger.event("status_err", {"run_id": run_id, "message": str(e)})
+
         missing = status.get("missing") if isinstance(status.get("missing"), list) else []
         if len(missing) == 0:
             log_info(f"Ingest ready for {run_id}")
@@ -527,7 +554,7 @@ def wait_for_ingest_ready(run_id: str, logger: RunLogger | None = None) -> dict[
                     {
                         "run_id": run_id,
                         "missing": missing,
-                        "waited_sec": FINALIZE_WAIT_SEC,
+                        "waited_sec": wait_sec,
                     },
                 )
             return status
