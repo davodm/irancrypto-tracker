@@ -164,6 +164,21 @@ function envInt(name, fallback, min = 0) {
   return Math.max(min, n);
 }
 
+/** Wall-clock ms after which this process must give up waiting. Set by the Lambda handler. */
+let runDeadlineMs = null;
+
+/**
+ * Seconds left before the runtime kills us, minus a safety margin for the
+ * finalize POST and log flushing. Falls back to a conservative value off-Lambda.
+ * @returns {number}
+ */
+function resolveFinalizeBudgetSec() {
+  const configured = envInt("LAMBDA_TIMEOUT_SEC", 300, 30);
+  const marginSec = envInt("FINALIZE_SAFETY_SEC", 45, 5);
+  const totalSec = runDeadlineMs ? (runDeadlineMs - Date.now()) / 1000 : configured;
+  return Math.max(0, Math.floor(totalSec - marginSec));
+}
+
 function defaultRunId(d = new Date()) {
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -278,20 +293,38 @@ async function ingestRequest(method, urlPath, body) {
   return json || {};
 }
 
-/** Poll GET /status until missing=[] or FINALIZE_WAIT_SEC. */
+/**
+ * Poll GET /status until missing=[] or the deadline.
+ * Always resolves: a status failure or a permanently down source must degrade
+ * the run to whatever arrived, never abort the finalize that follows.
+ * @returns {Promise<{missing: string[]}>}
+ */
 async function waitForIngestReady(runId, logger) {
-  const waitSec = envInt("FINALIZE_WAIT_SEC", 300, 0);
+  // Never wait past the point where the remaining runtime budget cannot finish.
+  const budgetSec = resolveFinalizeBudgetSec();
+  const waitSec = Math.min(envInt("FINALIZE_WAIT_SEC", 90, 0), budgetSec);
   const pollSec = envInt("FINALIZE_POLL_SEC", 15, 1);
   const deadline = Date.now() + waitSec * 1000;
+  let lastStatus = { missing: [] };
 
   for (;;) {
-    const status = await ingestRequest("GET", `/status?run_id=${encodeURIComponent(runId)}`);
-    const missing = Array.isArray(status.missing) ? status.missing : [];
+    try {
+      lastStatus = await ingestRequest("GET", `/status?run_id=${encodeURIComponent(runId)}`);
+    } catch (err) {
+      logError(err);
+      logger.event("status_err", {
+        run_id: runId,
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+
+    const missing = Array.isArray(lastStatus.missing) ? lastStatus.missing : [];
     if (missing.length === 0) {
       logInfo(`Ingest ready for ${runId}`);
       logger.event("status_ready", { run_id: runId });
-      return status;
+      return lastStatus;
     }
+
     const remainingMs = deadline - Date.now();
     if (remainingMs <= 0) {
       logInfo(
@@ -302,8 +335,9 @@ async function waitForIngestReady(runId, logger) {
         missing,
         waited_sec: waitSec,
       });
-      return status;
+      return lastStatus;
     }
+
     const sleepMs = Math.min(pollSec * 1000, remainingMs);
     logInfo(`Waiting for sources (${missing.join(",")}); poll in ${Math.round(sleepMs / 1000)}s`);
     logger.event("status_wait", { run_id: runId, missing, sleep_ms: sleepMs });
@@ -433,7 +467,7 @@ async function scrapeOne(exchange, coins) {
   return Array.isArray(result) ? result : [];
 }
 
-async function runTrack(customArgv) {
+async function runTrack(customArgv, context = null) {
   applyLambdaDefaults();
   const argv = customArgv ?? process.argv;
   const baseDir = resolveBaseDir();
@@ -449,6 +483,11 @@ async function runTrack(customArgv) {
   const logDir = resolveLogDir(baseDir);
   const retention = Math.max(1, Number.parseInt(process.env.LOG_RETENTION_DAYS || "7", 10) || 7);
   const nodeId = resolveNodeId();
+
+  runDeadlineMs =
+    context && typeof context.getRemainingTimeInMillis === "function"
+      ? Date.now() + context.getRemainingTimeInMillis()
+      : null;
 
   if (cli.pruneLogs && !cli.all && !cli.exchange && !cli.finalizeOnly && !cli.fromJson) {
     const n = pruneLogs(logDir, retention);
@@ -620,10 +659,10 @@ async function runTrack(customArgv) {
 }
 
 /** AWS Lambda entry — use handler `track.handler` with EventBridge schedule. */
-export async function handler(event = {}, _context = {}) {
+export async function handler(event = {}, context = {}) {
   applyLambdaDefaults();
   const argv = argvFromLambdaEvent(event);
-  const code = await runTrack(argv);
+  const code = await runTrack(argv, context);
   return {
     statusCode: code === 0 ? 200 : 500,
     body: JSON.stringify({

@@ -74,8 +74,9 @@ define('REQUEST_RETRY_COUNT', max(0, (int) env('REQUEST_RETRY_COUNT', '0')));
 define('REQUEST_RETRY_BASE_MS', max(50, (int) env('REQUEST_RETRY_BASE_MS', '300')));
 define('IGNORE_EXCHANGES', env('IGNORE_EXCHANGES', ''));
 define('EXCHANGES_ALLOW', env('EXCHANGES', ''));
-define('FINALIZE_WAIT_SEC', max(0, (int) env('FINALIZE_WAIT_SEC', '300')));
+define('FINALIZE_WAIT_SEC', max(0, (int) env('FINALIZE_WAIT_SEC', '90')));
 define('FINALIZE_POLL_SEC', max(1, (int) env('FINALIZE_POLL_SEC', '15')));
+define('FINALIZE_SAFETY_SEC', max(5, (int) env('FINALIZE_SAFETY_SEC', '45')));
 define('USER_AGENT', env('USER_AGENT', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'));
 define('USER_AGENT_POSTMAN', 'PostmanRuntime/7.26.10');
 define('PROXY_URL', env('PROXY_URL', ''));
@@ -354,10 +355,20 @@ function ingest_post(array $payload): array
 function wait_for_ingest_ready(string $runId): array
 {
     global $RUN_LOGGER;
-    $deadline = microtime(true) + FINALIZE_WAIT_SEC;
+    $waitSec = min(FINALIZE_WAIT_SEC, finalize_budget_sec());
+    $deadline = microtime(true) + $waitSec;
+    $status = [];
     while (true) {
-        $resp = ingest_request('GET', '/status?run_id=' . rawurlencode($runId));
-        $status = is_array($resp['json']) ? $resp['json'] : [];
+        // A failing status call must degrade the run, never abort the finalize.
+        try {
+            $resp = ingest_request('GET', '/status?run_id=' . rawurlencode($runId));
+            $status = is_array($resp['json']) ? $resp['json'] : [];
+        } catch (Throwable $e) {
+            log_error($e->getMessage());
+            if ($RUN_LOGGER instanceof RunLogger) {
+                $RUN_LOGGER->event('status_err', ['run_id' => $runId, 'message' => $e->getMessage()]);
+            }
+        }
         $missing = isset($status['missing']) && is_array($status['missing']) ? $status['missing'] : [];
         if ($missing === []) {
             log_info("Ingest ready for {$runId}");
@@ -375,7 +386,7 @@ function wait_for_ingest_ready(string $runId): array
                 $RUN_LOGGER->event('status_timeout', [
                     'run_id' => $runId,
                     'missing' => $missing,
-                    'waited_sec' => FINALIZE_WAIT_SEC,
+                    'waited_sec' => $waitSec,
                 ]);
             }
             return $status;
@@ -555,6 +566,18 @@ function assert_time_budget(float $needSec = 15.0): bool
         return false;
     }
     return true;
+}
+
+/**
+ * Seconds available for waiting on a dead source, never exceeding the host limit.
+ */
+function finalize_budget_sec(): int
+{
+    $left = time_left_sec();
+    if ($left === INF) {
+        return FINALIZE_WAIT_SEC;
+    }
+    return max(0, (int) floor($left - FINALIZE_SAFETY_SEC));
 }
 
 function ignore_list(): array

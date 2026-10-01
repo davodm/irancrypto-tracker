@@ -41,6 +41,18 @@ function assert_time_budget(float $needSec = 15.0): bool
     return true;
 }
 
+/**
+ * Seconds available for waiting on a dead source, never exceeding the host limit.
+ */
+function finalize_budget_sec(): int
+{
+    $left = time_left_sec();
+    if ($left === INF) {
+        return FINALIZE_WAIT_SEC;
+    }
+    return max(0, (int) floor($left - FINALIZE_SAFETY_SEC));
+}
+
 function ignore_list(): array
 {
     if (IGNORE_EXCHANGES === '') {

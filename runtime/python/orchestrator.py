@@ -263,7 +263,10 @@ def parse_cli(argv: list[str]) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global SCRIPT_DEADLINE
     args = parse_cli(argv if argv is not None else sys.argv[1:])
+    if SCRIPT_MAX_SEC > 0:
+        SCRIPT_DEADLINE = time.monotonic() + SCRIPT_MAX_SEC
 
     if (
         args.prune_logs

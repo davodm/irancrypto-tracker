@@ -43,7 +43,7 @@ Scrape Phase (Minute :00 - :05) ──► Ingest Partial Payload ──► Statu
 
 | Role | Execution Command | Description & Operational Pattern |
 |------|-------------------|----------------------------------|
-| **Full Node / Finalizer** | `--all --finalize` | **One per hour**. Scrapes all sources, polls `/api/ingest/status` until all expected exchange sources arrive (or until `FINALIZE_WAIT_SEC` elapses), then triggers `POST /finalize`. Typically deployed as an **AWS Lambda function** (scheduled at `:05` UTC) or primary server. |
+| **Full Node / Finalizer** | `--all --finalize` | **One per hour**. Scrapes all sources, polls `/api/ingest/status` until all expected exchange sources arrive, then triggers `POST /finalize` — **on a deadline, unconditionally**. A source that is down or shut down never blocks it; the wait is capped so finalize always fits inside the runtime budget. Typically deployed as an **AWS Lambda function** (scheduled at `:05` UTC) or primary server. |
 | **Satellite Nodes** | `--all` | **Zero or more**. Distributed collector nodes running on VPS hosts, home servers (Raspberry Pi), shared PHP hosts, or Docker containers. Submits partial source data to fill potential network gaps before finalization. Never issues finalize calls. |
 | **Ingest API (Platform)** | central web service | Handles authentication, payload validation, hourly payload replacements, persistent archival in MongoDB, and market index generation. |
 
@@ -115,7 +115,7 @@ sequenceDiagram
     Exchange-->>Finalizer: Raw Response
     Finalizer->>Ingest: POST /api/ingest (mode: partial)
     
-    loop Status Poll (up to FINALIZE_WAIT_SEC)
+    loop Status Poll (up to FINALIZE_WAIT_SEC or the host deadline)
       Finalizer->>Ingest: GET /api/ingest/status
       Ingest-->>Finalizer: missing: [] or missing: ["excoino"]
     end
@@ -123,8 +123,10 @@ sequenceDiagram
     alt All expected sources received
       Finalizer->>Ingest: POST /api/ingest/finalize
       Ingest-->>Finalizer: 200 OK (Markets Rebuilt)
-    else Timeout reached
-      Finalizer->>Finalizer: Exit with error (Hour not finalized)
+    else Deadline reached with sources still missing
+      Finalizer->>Finalizer: Log missing sources, finalize anyway
+      Finalizer->>Ingest: POST /api/ingest/finalize
+      Ingest-->>Finalizer: 200 OK (Markets Rebuilt from available sources)
     end
   end
 ```
@@ -243,9 +245,10 @@ The Node.js worker (`track.cjs`) exposes an async entry point (`track.handler`) 
    INGEST_SECRET=your-secret-key
    INGEST_NODE=aws-lambda-finalizer
    TRACK_ARGS=--all --finalize
-   FINALIZE_WAIT_SEC=300
-   FINALIZE_POLL_SEC=15
-   COINMARKETCAP_API_KEY=your-cmc-pro-key1,your-cmc-pro-key2
+FINALIZE_WAIT_SEC=90
+FINALIZE_POLL_SEC=15
+FINALIZE_SAFETY_SEC=45
+COINMARKETCAP_API_KEY=your-cmc-pro-key1,your-cmc-pro-key2
    COINAPI_KEY=your-coinapi-key
    LOG_DIR=/tmp/irancrypto-logs
    ```
@@ -265,8 +268,10 @@ The Node.js worker (`track.cjs`) exposes an async entry point (`track.handler`) 
 | `COINAPI_KEY` | *(Optional)* | CoinAPI key (`X-CoinAPI-Key`) |
 | `EXCHANGES` | *(All active)* | Comma-separated allow-list of exchange slugs to scrape |
 | `IGNORE_EXCHANGES` | *(Empty)* | Comma-separated deny-list of exchange slugs to skip |
-| `FINALIZE_WAIT_SEC` | `300` | Finalizer only: Max seconds to wait for missing sources before finalizing |
+| `FINALIZE_WAIT_SEC` | `90` | Finalizer only: Max seconds to wait for missing sources before finalizing anyway. Capped by the runtime deadline below. |
 | `FINALIZE_POLL_SEC` | `15` | Finalizer only: Poll interval (seconds) while awaiting missing sources |
+| `FINALIZE_SAFETY_SEC` | `45` | Finalizer only: Headroom reserved for the finalize POST, so the wait never outlives the host limit |
+| `SCRIPT_MAX_SEC` | `0` | Docker/host wall-clock limit; `0` disables the check. JS uses the Lambda context deadline instead. |
 | `SSL_VERIFY_INGEST` | `true` | Set to `false` to disable SSL certificate checks for Ingest API |
 | `SSL_VERIFY_EXCHANGE` | `false` | Set to `true` to enforce strict SSL verification on exchange APIs |
 | `LOG_DIR` | `./logs` | Directory for writing JSONL execution logs |
