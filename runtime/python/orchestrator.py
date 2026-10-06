@@ -217,7 +217,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  TIMEOUT EXCHANGES IGNORE_EXCHANGES PROXY_URL PROXY_API_KEY\n"
             "  FINALIZE_WAIT_SEC FINALIZE_POLL_SEC\n"
             "  Only one node should --finalize (Lambda).\n"
-            "  COINMARKETCAP_API_KEY COINAPI_KEY SSL_VERIFY_EXCHANGE SSL_VERIFY_INGEST\n\n"
+            "  COINMARKETCAP_API_KEY SSL_VERIFY_EXCHANGE SSL_VERIFY_INGEST\n\n"
             "Make executable: chmod +x track.py"
         ),
     )
