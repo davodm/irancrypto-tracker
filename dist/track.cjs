@@ -20533,7 +20533,7 @@ async function getLatest2($filterCoins = []) {
           source: PLATFORM2.toLowerCase(),
           currency: "IRR",
           symbol: coin.toUpperCase(),
-          price: num(topBid.p, { multiply: 10, decimalPlaces: 8 }) || 0,
+          price: num(topBid.p ?? topBid.P, { multiply: 10, decimalPlaces: 8 }) || 0,
           volume_1d: 0,
           coin_volume_1d: 0,
           change_1d: 0,
@@ -20680,13 +20680,16 @@ function processList2($list, $coinsFilter = []) {
     const symbol = data.base_asset_ticker.toUpperCase();
     const rawPrice = data.last_price || data.best_bid_raw || 0;
     const rawVol = (data.volume || "").replace(/,/g, "");
+    const price = num(rawPrice, { multiply: 10, decimalPlaces: 8 }) || 0;
+    const volume_1d = num(rawVol, { multiply: 10, roundUp: true }) || 0;
+    const coinVolume = price > 0 ? num(volume_1d, { divide: price, decimalPlaces: 4 }) || 0 : 0;
     return {
       source: PLATFORM4.toLowerCase(),
       currency: "IRR",
       symbol,
-      price: num(rawPrice, { multiply: 10, decimalPlaces: 8 }) || 0,
-      volume_1d: num(rawVol, { multiply: 10, roundUp: true }) || 0,
-      coin_volume_1d: 0,
+      price,
+      volume_1d,
+      coin_volume_1d: coinVolume,
       change_1d: num(data.change_display || data.change, { decimalPlaces: 2 }) || 0,
       last_update: {
         date: date.toISOString(),
@@ -20842,98 +20845,28 @@ function processList4($list, $coinsFilter = []) {
   });
 }
 
-// scrapers/coinapi/scrape.js
+// scrapers/coinmarketcap/scrape.js
 var scrape_exports7 = {};
 __export(scrape_exports7, {
   COIN_USE: () => COIN_USE7,
+  getGainers: () => getGainers,
+  getGlobalMetrics: () => getGlobalMetrics,
   getLatest: () => getLatest7,
+  getLosers: () => getLosers,
   scrape: () => scrape7
 });
 var import_dayjs7 = __toESM(require_dayjs_min(), 1);
-var URL7 = "https://rest.coinapi.io/v1/";
-var KEY = process.env.COINAPI_KEY || null;
-var PLATFORM7 = "CoinAPI";
-var COIN_USE7 = "all";
-async function scrape7($coins = []) {
-  return await getLatest7($coins);
-}
-async function getLatest7($filterCoins = []) {
-  const data = await request4("assets", {});
-  return processList5(data, $filterCoins);
-}
-async function request4($uri, $params = {}) {
-  if (!KEY) {
-    throw new Error("COINAPI_KEY is not set");
-  }
-  const result = await axiosRequest({
-    method: "get",
-    url: URL7 + $uri,
-    headers: {
-      "X-CoinAPI-Key": KEY
-    },
-    params: $params
-  });
-  if (!result?.length) {
-    throw new Error("Empty response data");
-  }
-  return result;
-}
-function processList5($list, $coinsFilter = []) {
-  return $list.filter((item) => {
-    if (typeof item.type_is_crypto !== "number") {
-      return false;
-    }
-    if (item.type_is_crypto !== 1) {
-      return false;
-    }
-    if ($coinsFilter.length === 0) {
-      return true;
-    }
-    if (typeof item.asset_id !== "string") {
-      return false;
-    }
-    return $coinsFilter.includes(item.asset_id.toUpperCase());
-  }).map((item) => {
-    const date = (0, import_dayjs7.default)(item.data_quote_end || item.data_end || void 0);
-    return {
-      source: PLATFORM7.toLowerCase(),
-      name: item.name,
-      symbol: item.asset_id.toUpperCase(),
-      currency: "USD",
-      price: num(item.price_usd, { decimalPlaces: 8 }) || 0,
-      volume_1h: num(item.volume_1hrs_usd, { roundUp: true }) || 0,
-      volume_1d: num(item.volume_1day_usd, { roundUp: true }) || 0,
-      last_update: {
-        date: date.toISOString(),
-        timestamp: date.unix(),
-        moment: date
-      }
-    };
-  });
-}
-
-// scrapers/coinmarketcap/scrape.js
-var scrape_exports8 = {};
-__export(scrape_exports8, {
-  COIN_USE: () => COIN_USE8,
-  getGainers: () => getGainers,
-  getGlobalMetrics: () => getGlobalMetrics,
-  getLatest: () => getLatest8,
-  getLosers: () => getLosers,
-  scrape: () => scrape8
-});
-var import_dayjs8 = __toESM(require_dayjs_min(), 1);
-var PLATFORM8 = "CoinMarketCap";
-var URL8 = "https://pro-api.coinmarketcap.com/v1/";
+var PLATFORM7 = "CoinMarketCap";
+var URL7 = "https://pro-api.coinmarketcap.com/v1/";
 function getKeys() {
   return process.env.COINMARKETCAP_API_KEY ? process.env.COINMARKETCAP_API_KEY.split(",").map((key) => key.trim()).filter(Boolean) : [];
 }
-var COIN_USE8 = "all";
-async function scrape8($coins = []) {
-  return await getLatest8(200, $coins);
+var COIN_USE7 = "all";
+async function scrape7($coins = []) {
+  return await getLatest7(200, $coins);
 }
-async function getLatest8($limit = 200, $filterCoins = []) {
-  const data = await request5("cryptocurrency/listings/latest", {
+async function getLatest7($limit = 200, $filterCoins = []) {
+  const data = await request4("cryptocurrency/listings/latest", {
     start: 1,
     limit: $limit,
     aux: [
@@ -20950,10 +20883,10 @@ async function getLatest8($limit = 200, $filterCoins = []) {
       "is_market_cap_included_in_calc"
     ].join(",")
   });
-  return processList6(data, $filterCoins);
+  return processList5(data, $filterCoins);
 }
 async function getGainers($limit = 20, $filterCoins = []) {
-  const data = await request5("cryptocurrency/listings/latest", {
+  const data = await request4("cryptocurrency/listings/latest", {
     start: 1,
     limit: $limit,
     sort: "percent_change_24h",
@@ -20961,10 +20894,10 @@ async function getGainers($limit = 20, $filterCoins = []) {
     volume_24h_min: 5e4
     // Min volume of 50k
   });
-  return processList6(data, $filterCoins);
+  return processList5(data, $filterCoins);
 }
 async function getLosers($limit = 20, $filterCoins = []) {
-  const data = await request5("cryptocurrency/listings/latest", {
+  const data = await request4("cryptocurrency/listings/latest", {
     start: 1,
     limit: $limit,
     sort: "percent_change_24h",
@@ -20972,14 +20905,14 @@ async function getLosers($limit = 20, $filterCoins = []) {
     volume_24h_min: 5e4
     // Min volume of 50k
   });
-  return processList6(data, $filterCoins);
+  return processList5(data, $filterCoins);
 }
 async function getGlobalMetrics() {
-  const data = await request5("global-metrics/quotes/latest");
+  const data = await request4("global-metrics/quotes/latest");
   return {
     last_update: {
       date: data.last_updated,
-      timestamp: (0, import_dayjs8.default)(data.last_updated).unix()
+      timestamp: (0, import_dayjs7.default)(data.last_updated).unix()
     },
     dominance: {
       btc: data.btc_dominance,
@@ -20988,14 +20921,14 @@ async function getGlobalMetrics() {
     quote: data.quote.USD
   };
 }
-async function request5($uri, $params = {}) {
+async function request4($uri, $params = {}) {
   const keys = getKeys();
   if (!keys || keys.length === 0) {
     throw new Error("COINMARKETCAP_API_KEY is not set or empty");
   }
   const result = await axiosRequest({
     method: "get",
-    url: URL8 + $uri,
+    url: URL7 + $uri,
     params: $params,
     headers: {
       "X-CMC_PRO_API_KEY": keys[Math.floor(Math.random() * keys.length)]
@@ -21011,7 +20944,7 @@ async function request5($uri, $params = {}) {
   }
   return result.data;
 }
-function processList6($list, $coinsFilter = []) {
+function processList5($list, $coinsFilter = []) {
   return $list.filter((data) => {
     if (!data?.quote?.USD) return false;
     return $coinsFilter.length === 0 || $coinsFilter.includes(data.symbol.toUpperCase());
@@ -21019,9 +20952,9 @@ function processList6($list, $coinsFilter = []) {
     const symbol = data.symbol.toUpperCase();
     const quoteUSD = data.quote.USD;
     const price = num(quoteUSD.price, { decimalPlaces: 8 }) || 0;
-    const date = (0, import_dayjs8.default)(data.last_updated);
+    const date = (0, import_dayjs7.default)(data.last_updated);
     const transformed = {
-      source: PLATFORM8.toLowerCase(),
+      source: PLATFORM7.toLowerCase(),
       id: data.id,
       currency: "USD",
       name: data.name,
@@ -21053,11 +20986,88 @@ function processList6($list, $coinsFilter = []) {
   });
 }
 
+// scrapers/coinpaprika/scrape.js
+var scrape_exports8 = {};
+__export(scrape_exports8, {
+  COIN_USE: () => COIN_USE8,
+  scrape: () => scrape8
+});
+var import_dayjs8 = __toESM(require_dayjs_min(), 1);
+var PLATFORM8 = "CoinPaprika";
+var URL8 = "https://api.coinpaprika.com/v1/tickers";
+var COIN_USE8 = "all";
+async function scrape8($filterCoins = []) {
+  const data = await request5();
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("CoinPaprika: empty tickers");
+  }
+  return processList6(data, $filterCoins);
+}
+async function request5() {
+  return await axiosRequest({ method: "get", url: URL8 });
+}
+function pickBySymbol($list) {
+  const canonicalId = {
+    TON: "ton-tokamak-network",
+    IOTA: "miota-iota",
+    BTT: "bttc-bittorrent-chain"
+  };
+  const best = /* @__PURE__ */ new Map();
+  for (const t of $list) {
+    const sym = String(t?.symbol ?? "").toUpperCase();
+    if (!sym) continue;
+    if (canonicalId[sym] && t.id === canonicalId[sym]) {
+      best.set(sym, t);
+      continue;
+    }
+    const rank = typeof t.rank === "number" ? t.rank : Number.MAX_SAFE_INTEGER;
+    const cur = best.get(sym);
+    if (!cur || rank < (typeof cur.rank === "number" ? cur.rank : Number.MAX_SAFE_INTEGER)) {
+      best.set(sym, t);
+    }
+  }
+  return best;
+}
+function processList6($list, $coinsFilter = []) {
+  const wanted = $coinsFilter.length > 0 ? new Set($coinsFilter.map((c) => String(c).toUpperCase())) : null;
+  const out = [];
+  for (const [sym, t] of pickBySymbol($list)) {
+    if (wanted && !wanted.has(sym)) continue;
+    const quote = t?.quotes?.USD;
+    if (!quote) continue;
+    const price = num(quote.price, { decimalPlaces: 8 }) || 0;
+    const date = (0, import_dayjs8.default)(t.last_updated);
+    const coinVolume = price > 0 ? num(quote.volume_24h, { divide: price, decimalPlaces: 4 }) || 0 : 0;
+    out.push({
+      source: PLATFORM8.toLowerCase(),
+      id: t.id,
+      currency: "USD",
+      name: t.name,
+      symbol: sym,
+      price,
+      volume_1d: num(quote.volume_24h, { roundUp: true }) || 0,
+      coin_volume_1d: coinVolume,
+      change_1d: num(quote.percent_change_24h, { decimalPlaces: 2 }) || 0,
+      change_7d: num(quote.percent_change_7d, { decimalPlaces: 2 }) || 0,
+      cap: num(quote.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
+      market_cap: num(quote.market_cap, { decimalPlaces: 0, roundUp: true }) || 0,
+      supply: t.circulating_supply || 0,
+      max_supply: num(t.max_supply) || 0,
+      last_update: {
+        date: date.toISOString(),
+        timestamp: date.unix(),
+        moment: date
+      }
+    });
+  }
+  return out;
+}
+
 // scrapers/exir/scrape.js
 var scrape_exports9 = {};
 __export(scrape_exports9, {
   COIN_USE: () => COIN_USE9,
-  getLatest: () => getLatest9,
+  getLatest: () => getLatest8,
   scrape: () => scrape9
 });
 var import_dayjs9 = __toESM(require_dayjs_min(), 1);
@@ -21065,9 +21075,9 @@ var PLATFORM9 = "Exir";
 var URL9 = "https://api.exir.io/v2/";
 var COIN_USE9 = "all";
 async function scrape9($coins = []) {
-  return await getLatest9($coins);
+  return await getLatest8($coins);
 }
-async function getLatest9($filterCoins = []) {
+async function getLatest8($filterCoins = []) {
   const data = await request6("ticker/all", {});
   if (!Object.keys(data).length) {
     throw new Error("Response data is empty");
@@ -21122,7 +21132,7 @@ function processList7($list, $coinsFilter = []) {
 var scrape_exports10 = {};
 __export(scrape_exports10, {
   COIN_USE: () => COIN_USE10,
-  getLatest: () => getLatest10,
+  getLatest: () => getLatest9,
   scrape: () => scrape10
 });
 var import_dayjs10 = __toESM(require_dayjs_min(), 1);
@@ -21130,9 +21140,9 @@ var PLATFORM10 = "Hitobit";
 var URL10 = "https://hitobit.com/hapi/exchange/v1/public/";
 var COIN_USE10 = "all";
 async function scrape10($coins = []) {
-  return await getLatest10($coins);
+  return await getLatest9($coins);
 }
-async function getLatest10($filterCoins = []) {
+async function getLatest9($filterCoins = []) {
   const data = await request7("alltickers/24hr", {});
   if (!data?.length) {
     throw new Error("Response data is empty");
@@ -21183,7 +21193,7 @@ function processList8($list, $coinsFilter = []) {
 var scrape_exports11 = {};
 __export(scrape_exports11, {
   COIN_USE: () => COIN_USE11,
-  getLatest: () => getLatest11,
+  getLatest: () => getLatest10,
   scrape: () => scrape11
 });
 var import_dayjs11 = __toESM(require_dayjs_min(), 1);
@@ -21191,13 +21201,13 @@ var PLATFORM11 = "Huluex";
 var URL11 = "https://api.huluex.com/api/";
 var COIN_USE11 = "all";
 async function scrape11($coins = []) {
-  const data = await getLatest11($coins);
+  const data = await getLatest10($coins);
   data.forEach((d) => {
     d.source = PLATFORM11.toLowerCase();
   });
   return data;
 }
-async function getLatest11($filterCoins = []) {
+async function getLatest10($filterCoins = []) {
   const data = await request8("market/getCoinsPriceV3", {
     withGate: true,
     version: 4
@@ -21256,7 +21266,7 @@ function priceUSDT2($list) {
 var scrape_exports12 = {};
 __export(scrape_exports12, {
   COIN_USE: () => COIN_USE12,
-  getLatest: () => getLatest12,
+  getLatest: () => getLatest11,
   scrape: () => scrape12
 });
 var import_dayjs12 = __toESM(require_dayjs_min(), 1);
@@ -21264,9 +21274,9 @@ var PLATFORM12 = "KifPool";
 var URL12 = "https://api.kifpool.app/api/";
 var COIN_USE12 = "all";
 async function scrape12($coins = []) {
-  return await getLatest12($coins);
+  return await getLatest11($coins);
 }
-async function getLatest12($filterCoins = []) {
+async function getLatest11($filterCoins = []) {
   let offset = 0;
   const limit = 200;
   const allData = [];
@@ -21334,7 +21344,7 @@ function processList10($list, $coinsFilter = []) {
 var scrape_exports13 = {};
 __export(scrape_exports13, {
   COIN_USE: () => COIN_USE13,
-  getLatest: () => getLatest13,
+  getLatest: () => getLatest12,
   scrape: () => scrape13
 });
 var import_dayjs13 = __toESM(require_dayjs_min(), 1);
@@ -21342,13 +21352,13 @@ var PLATFORM13 = "Nobitex";
 var URL13 = "https://apiv2.nobitex.ir/";
 var COIN_USE13 = "own";
 async function scrape13($coins) {
-  const data = await getLatest13($coins);
+  const data = await getLatest12($coins);
   data.forEach((d) => {
     d.source = PLATFORM13.toLowerCase();
   });
   return data;
 }
-async function getLatest13($filterCoins = []) {
+async function getLatest12($filterCoins = []) {
   const data = await request10("market/stats", {
     dstCurrency: "rls"
   });
@@ -21414,7 +21424,7 @@ function processList11($list, $coinsFilter = []) {
 var scrape_exports14 = {};
 __export(scrape_exports14, {
   COIN_USE: () => COIN_USE14,
-  getLatest: () => getLatest14,
+  getLatest: () => getLatest13,
   parseMarkets: () => parseMarkets,
   scrape: () => scrape14
 });
@@ -21423,9 +21433,9 @@ var PLATFORM14 = "OMPFinex";
 var URL14 = "https://api.ompfinex.com/v1/market";
 var COIN_USE14 = "all";
 async function scrape14($coins = []) {
-  return await getLatest14($coins);
+  return await getLatest13($coins);
 }
-async function getLatest14($filterCoins = []) {
+async function getLatest13($filterCoins = []) {
   const response = await request11("", {});
   const list = Array.isArray(response) ? response : response?.data || [];
   if (!Array.isArray(list) || list.length === 0) {
@@ -21472,7 +21482,7 @@ function parseMarkets($list, $coinsFilter = []) {
 var scrape_exports15 = {};
 __export(scrape_exports15, {
   COIN_USE: () => COIN_USE15,
-  getLatest: () => getLatest15,
+  getLatest: () => getLatest14,
   scrape: () => scrape15
 });
 var import_dayjs15 = __toESM(require_dayjs_min(), 1);
@@ -21480,13 +21490,13 @@ var PLATFORM15 = "Ramzinex";
 var URL15 = "https://publicapi.ramzinex.com/exchange/api/v1.0/";
 var COIN_USE15 = "all";
 async function scrape15($coins = []) {
-  const data = await getLatest15($coins);
+  const data = await getLatest14($coins);
   data.forEach((d) => {
     d.source = PLATFORM15.toLowerCase();
   });
   return data;
 }
-async function getLatest15($filterCoins = []) {
+async function getLatest14($filterCoins = []) {
   const data = await request12("exchange/pairs", {});
   return processList12(data, $filterCoins);
 }
@@ -21528,7 +21538,7 @@ function processList12($list, $coinsFilter = []) {
 var scrape_exports16 = {};
 __export(scrape_exports16, {
   COIN_USE: () => COIN_USE16,
-  getLatest: () => getLatest16,
+  getLatest: () => getLatest15,
   scrape: () => scrape16
 });
 var import_dayjs16 = __toESM(require_dayjs_min(), 1);
@@ -21536,9 +21546,9 @@ var PLATFORM16 = "Saraf";
 var URL16 = "https://api.saraf.app/v3/prices/crypto";
 var COIN_USE16 = "all";
 async function scrape16($coins = []) {
-  return await getLatest16($coins);
+  return await getLatest15($coins);
 }
-async function getLatest16($filterCoins = []) {
+async function getLatest15($filterCoins = []) {
   const items = await request13();
   if (!items?.length) {
     throw new Error("Response data is empty");
@@ -21588,69 +21598,44 @@ function processList13($list, $coinsFilter = []) {
 var scrape_exports17 = {};
 __export(scrape_exports17, {
   COIN_USE: () => COIN_USE17,
-  getLatest: () => getLatest17,
-  parsePage: () => parsePage2,
+  processList: () => processList14,
   scrape: () => scrape17
 });
-init_axios2();
 var import_dayjs17 = __toESM(require_dayjs_min(), 1);
 var PLATFORM17 = "Sarmayex";
-var URL17 = "https://sarmayex.com/crypto-price";
+var URL17 = "https://api.sarmayex.com/api/v2/currencies";
 var COIN_USE17 = "all";
-var NUXT_WRAPPERS = /* @__PURE__ */ new Set(["Reactive", "ShallowReactive", "Ref", "ShallowRef"]);
-async function scrape17($coins = []) {
-  return await getLatest17($coins);
-}
-async function getLatest17($filterCoins = []) {
-  const response = await axios_default.get(URL17, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-    },
-    responseType: "text",
-    timeout: 15e3
-  });
-  if (!response.data) {
-    throw new Error("Response data is empty");
+async function scrape17($filterCoins = []) {
+  const data = await axiosRequest({ method: "get", url: URL17 });
+  const currencies = data?.data?.currencies;
+  if (!Array.isArray(currencies) || currencies.length === 0) {
+    throw new Error("Sarmayex: empty currencies");
   }
-  return parsePage2(response.data, $filterCoins);
+  const lastUpdate = Number(data?.data?.setting?.lastUpdate) || 0;
+  return processList14(currencies, $filterCoins, lastUpdate);
 }
-function parsePage2($html, $coinsFilter = []) {
-  const json = String($html).match(/<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)<\/script>/)?.[1];
-  if (!json) {
-    throw new Error("Nuxt payload not found");
-  }
-  const payload = JSON.parse(json);
-  const deref = (index) => {
-    let value = payload[index];
-    while (Array.isArray(value) && NUXT_WRAPPERS.has(value[0])) {
-      value = payload[value[1]];
-    }
-    return value;
-  };
-  const date = (0, import_dayjs17.default)();
-  const seen = /* @__PURE__ */ new Set();
-  const results = [];
-  for (const node of payload) {
-    if (!node || typeof node !== "object" || Array.isArray(node)) continue;
-    if (!("symbol" in node && "sell" in node && "markets" in node)) continue;
-    const symbol = String(deref(node.symbol) ?? "").toUpperCase();
-    if (!symbol || seen.has(symbol)) continue;
-    if ($coinsFilter.length > 0 && !$coinsFilter.includes(symbol)) continue;
-    const markets = deref(node.markets);
-    if (!Array.isArray(markets) || !markets.some((i) => deref(i) === `${symbol}_IRT`)) continue;
-    const sell = deref(node.sell);
-    const priceToman = num(sell && deref(sell.marketPrice));
+function processList14($list, $coinsFilter = [], $lastUpdate = 0) {
+  const wanted = $coinsFilter.length > 0 ? new Set($coinsFilter.map((c) => String(c).toUpperCase())) : null;
+  const date = $lastUpdate > 0 ? import_dayjs17.default.unix($lastUpdate) : (0, import_dayjs17.default)();
+  const out = [];
+  for (const c of $list) {
+    if (!c || typeof c !== "object" || Array.isArray(c)) continue;
+    const symbol = String(c.symbol ?? "").toUpperCase();
+    if (!symbol || wanted && !wanted.has(symbol)) continue;
+    const markets = Array.isArray(c.markets) ? c.markets : [];
+    if (!markets.includes(`${symbol}_IRT`)) continue;
+    const sell = c.sell && typeof c.sell === "object" ? c.sell : null;
+    const priceToman = num(sell?.marketPrice);
     if (priceToman <= 0) continue;
-    seen.add(symbol);
-    results.push({
+    out.push({
       source: PLATFORM17.toLowerCase(),
       currency: "IRR",
       symbol,
       price: num(priceToman, { multiply: 10, decimalPlaces: 8 }),
       volume_1d: 0,
       coin_volume_1d: 0,
-      change_1d: 0,
+      change_1d: num(c.percentChange_24h, { decimalPlaces: 2 }) || 0,
+      change_7d: num(c.percentChange_7d, { decimalPlaces: 2 }) || 0,
       last_update: {
         date: date.toISOString(),
         timestamp: date.unix(),
@@ -21658,14 +21643,14 @@ function parsePage2($html, $coinsFilter = []) {
       }
     });
   }
-  return results;
+  return out;
 }
 
 // scrapers/tabdeal/scrape.js
 var scrape_exports18 = {};
 __export(scrape_exports18, {
   COIN_USE: () => COIN_USE18,
-  getLatest: () => getLatest18,
+  getLatest: () => getLatest16,
   scrape: () => scrape18
 });
 var import_dayjs18 = __toESM(require_dayjs_min(), 1);
@@ -21673,20 +21658,20 @@ var PLATFORM18 = "Tabdeal";
 var URL18 = "https://api-web.tabdeal.org/r/plots/";
 var COIN_USE18 = "all";
 async function scrape18($coins = []) {
-  const data = await getLatest18($coins);
+  const data = await getLatest16($coins);
   data.forEach((d) => {
     d.source = PLATFORM18.toLowerCase();
   });
   return data;
 }
-async function getLatest18($filterCoins = []) {
+async function getLatest16($filterCoins = []) {
   const data = await request14("currency_prices", {
     limit: 1e3
   });
   if (!data?.length) {
     throw new Error("Response data is empty");
   }
-  return processList14(data, $filterCoins);
+  return processList15(data, $filterCoins);
 }
 async function request14($uri, $params = {}) {
   const result = await axiosRequest({
@@ -21700,7 +21685,7 @@ async function request14($uri, $params = {}) {
   }
   return result;
 }
-function processList14($list, $coinsFilter = []) {
+function processList15($list, $coinsFilter = []) {
   const usdt = priceUSDT3($list);
   return $list.filter((data) => {
     if (!data?.markets?.filter((y) => y.second_currency.symbol === "IRT" && y.price).length)
@@ -21740,7 +21725,7 @@ function priceUSDT3($list) {
 var scrape_exports19 = {};
 __export(scrape_exports19, {
   COIN_USE: () => COIN_USE19,
-  getLatest: () => getLatest19,
+  getLatest: () => getLatest17,
   scrape: () => scrape19
 });
 var import_dayjs19 = __toESM(require_dayjs_min(), 1);
@@ -21748,14 +21733,14 @@ var PLATFORM19 = "Tetherland";
 var URL19 = "https://api.tetherland.com/currencies";
 var COIN_USE19 = "all";
 async function scrape19($coins = []) {
-  return await getLatest19($coins);
+  return await getLatest17($coins);
 }
-async function getLatest19($filterCoins = []) {
+async function getLatest17($filterCoins = []) {
   const data = await request15("", {});
   if (!data?.data?.currencies || Object.keys(data.data.currencies).length === 0) {
     throw new Error("Response data is empty");
   }
-  return processList15(data.data.currencies, $filterCoins);
+  return processList16(data.data.currencies, $filterCoins);
 }
 async function request15($uri, $params = {}) {
   const result = await axiosRequest({
@@ -21765,7 +21750,7 @@ async function request15($uri, $params = {}) {
   });
   return result;
 }
-function processList15($list, $coinsFilter = []) {
+function processList16($list, $coinsFilter = []) {
   return Object.keys($list).filter((symbol) => {
     const upper = symbol.toUpperCase();
     return $coinsFilter.length === 0 || $coinsFilter.includes(upper);
@@ -21793,7 +21778,7 @@ function processList15($list, $coinsFilter = []) {
 var scrape_exports20 = {};
 __export(scrape_exports20, {
   COIN_USE: () => COIN_USE20,
-  getLatest: () => getLatest20,
+  getLatest: () => getLatest18,
   scrape: () => scrape20
 });
 var import_dayjs20 = __toESM(require_dayjs_min(), 1);
@@ -21801,18 +21786,18 @@ var PLATFORM20 = "Wallex";
 var URL20 = "https://api.wallex.ir/v1/";
 var COIN_USE20 = "all";
 async function scrape20($coins = []) {
-  const data = await getLatest20($coins);
+  const data = await getLatest18($coins);
   data.forEach((d) => {
     d.source = PLATFORM20.toLowerCase();
   });
   return data;
 }
-async function getLatest20($filterCoins = []) {
+async function getLatest18($filterCoins = []) {
   const data = await request16("markets", {});
   if (!data?.symbols || Object.keys(data.symbols).length === 0) {
     throw new Error("Response data is empty");
   }
-  return processList16(data.symbols, $filterCoins);
+  return processList17(data.symbols, $filterCoins);
 }
 async function request16($uri, $params = {}) {
   const result = await axiosRequest({
@@ -21825,7 +21810,7 @@ async function request16($uri, $params = {}) {
   }
   return result.result;
 }
-function processList16($list, $coinsFilter = []) {
+function processList17($list, $coinsFilter = []) {
   $list = Object.keys($list).map((key) => $list[key]);
   return $list.filter((data) => {
     if (data?.quoteAsset?.toUpperCase() !== "TMN") return false;
@@ -21860,8 +21845,8 @@ var SCRAPERS = {
   "bitimen": scrape_exports4,
   "bitmax": scrape_exports5,
   "bitpin": scrape_exports6,
-  "coinapi": scrape_exports7,
-  "coinmarketcap": scrape_exports8,
+  "coinmarketcap": scrape_exports7,
+  "coinpaprika": scrape_exports8,
   "exir": scrape_exports9,
   "hitobit": scrape_exports10,
   "huluex": scrape_exports11,

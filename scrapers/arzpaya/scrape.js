@@ -40,7 +40,7 @@ export async function getLatest($filterCoins = []) {
             source: PLATFORM.toLowerCase(),
             currency: "IRR",
             symbol: coin.toUpperCase(),
-            price: num(topBid.p, { multiply: 10, decimalPlaces: 8 }) || 0,
+            price: num(topBid.p ?? topBid.P, { multiply: 10, decimalPlaces: 8 }) || 0,
             volume_1d: 0,
             coin_volume_1d: 0,
             change_1d: 0,

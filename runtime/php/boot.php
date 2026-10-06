@@ -82,7 +82,6 @@ define('USER_AGENT_POSTMAN', 'PostmanRuntime/7.26.10');
 define('PROXY_URL', env('PROXY_URL', ''));
 define('PROXY_API_KEY', env('PROXY_API_KEY', ''));
 define('COINMARKETCAP_API_KEY', env('COINMARKETCAP_API_KEY', ''));
-define('COINAPI_KEY', env('COINAPI_KEY', ''));
 // Exchange scrapes may hit broken certs; ingest calls always verify TLS.
 define('SSL_VERIFY', filter_var(env('SSL_VERIFY_EXCHANGE', 'false'), FILTER_VALIDATE_BOOLEAN));
 define('SSL_VERIFY_INGEST', filter_var(env('SSL_VERIFY_INGEST', 'true'), FILTER_VALIDATE_BOOLEAN));
@@ -198,7 +197,7 @@ Usage:
 Env:
   INGEST_SECRET (required) INGEST_URL INGEST_NODE LOG_DIR
   INGEST_URL defaults to https://irancrypto.market/api/ingest
-  EXCHANGES IGNORE_EXCHANGES PROXY_* COINMARKETCAP_API_KEY COINAPI_KEY
+  EXCHANGES IGNORE_EXCHANGES PROXY_* COINMARKETCAP_API_KEY
   FINALIZE_WAIT_SEC FINALIZE_POLL_SEC
   Only one node should --finalize (Lambda). Others scrape without --finalize.
 

@@ -9,7 +9,7 @@
 ![Workers](https://img.shields.io/badge/workers-JS%20%7C%20PHP%20%7C%20Python-f7df1e)
 ![Exchanges](https://img.shields.io/badge/scrapers-20-blue)
 
-**IranCrypto Tracker** is a lightweight, high-availability market data collection system powering [IranCrypto.market](https://irancrypto.market). It periodically fetches real-time ticker prices, order books, and 24-hour trading volumes across 20 cryptocurrency exchanges and global data feeds (including Iranian exchanges and CoinMarketCap / CoinAPI), standardizes raw payloads into a unified schema, and securely ships them to the platform **Ingest API**.
+**IranCrypto Tracker** is a lightweight, high-availability market data collection system powering [IranCrypto.market](https://irancrypto.market). It periodically fetches real-time ticker prices, order books, and 24-hour trading volumes across 20 cryptocurrency exchanges and global data feeds (including Iranian exchanges and CoinMarketCap / CoinPaprika), standardizes raw payloads into a unified schema, and securely ships them to the platform **Ingest API**.
 
 ---
 
@@ -65,7 +65,7 @@ flowchart TB
   end
 
   subgraph exchanges["20 Exchange APIs & Feeds"]
-    E["nobitex · wallex · bitpin · coinmarketcap · coinapi · …"]
+    E["nobitex · wallex · bitpin · coinmarketcap · coinpaprika · …"]
   end
 
   subgraph platform["IranCrypto.market Platform"]
@@ -245,11 +245,10 @@ The Node.js worker (`track.cjs`) exposes an async entry point (`track.handler`) 
    INGEST_SECRET=your-secret-key
    INGEST_NODE=aws-lambda-finalizer
    TRACK_ARGS=--all --finalize
-FINALIZE_WAIT_SEC=90
-FINALIZE_POLL_SEC=15
-FINALIZE_SAFETY_SEC=45
-COINMARKETCAP_API_KEY=your-cmc-pro-key1,your-cmc-pro-key2
-   COINAPI_KEY=your-coinapi-key
+   FINALIZE_WAIT_SEC=90
+   FINALIZE_POLL_SEC=15
+   FINALIZE_SAFETY_SEC=45
+   COINMARKETCAP_API_KEY=your-cmc-pro-key1,your-cmc-pro-key2
    LOG_DIR=/tmp/irancrypto-logs
    ```
 
@@ -265,7 +264,6 @@ COINMARKETCAP_API_KEY=your-cmc-pro-key1,your-cmc-pro-key2
 | `INGEST_URL` | `https://irancrypto.market/api/ingest` | Base URL of platform Ingest API |
 | `INGEST_NODE` | system hostname / Lambda name | Identifier label recorded in ingest ledger logs |
 | `COINMARKETCAP_API_KEY` | *(Optional)* | CoinMarketCap Pro API key(s) (supports comma-separated keys for random rotation) |
-| `COINAPI_KEY` | *(Optional)* | CoinAPI key (`X-CoinAPI-Key`) |
 | `EXCHANGES` | *(All active)* | Comma-separated allow-list of exchange slugs to scrape |
 | `IGNORE_EXCHANGES` | *(Empty)* | Comma-separated deny-list of exchange slugs to skip |
 | `FINALIZE_WAIT_SEC` | `90` | Finalizer only: Max seconds to wait for missing sources before finalizing anyway. Capped by the runtime deadline below. |

@@ -1,0 +1,45 @@
+{
+  "state": null,
+  "messages": [],
+  "data": {
+    "setting": { "lastUpdate": 1791278527 },
+    "currencies": [
+      {
+        "currencyId": 87,
+        "symbol": "USDT",
+        "percentChange_24h": "0.01",
+        "percentChange_7d": "0.01",
+        "sell": {
+          "status": false,
+          "price": "268981.776000000000",
+          "marketPrice": "234515.000000000000"
+        },
+        "markets": ["USDT_IRT"]
+      },
+      {
+        "currencyId": 37,
+        "symbol": "BTC",
+        "percentChange_24h": "-0.15",
+        "percentChange_7d": "2.64",
+        "sell": {
+          "status": false,
+          "price": "23121691530.336000000000",
+          "marketPrice": "19686105243.000000000000"
+        },
+        "markets": ["BTC_USDT", "BTC_IRT"]
+      },
+      {
+        "currencyId": 200,
+        "symbol": "NOT",
+        "percentChange_24h": "0.00",
+        "percentChange_7d": "0.00",
+        "sell": {
+          "status": false,
+          "price": "1.000000000000",
+          "marketPrice": "1.000000000000"
+        },
+        "markets": []
+      }
+    ]
+  }
+}

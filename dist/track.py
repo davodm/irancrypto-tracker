@@ -130,7 +130,6 @@ EXCHANGES_ALLOW = env("EXCHANGES", "")
 PROXY_URL = env("PROXY_URL", "")
 PROXY_API_KEY = env("PROXY_API_KEY", "")
 COINMARKETCAP_API_KEY = env("COINMARKETCAP_API_KEY", "")
-COINAPI_KEY = env("COINAPI_KEY", "")
 SSL_VERIFY_EXCHANGE = env_bool("SSL_VERIFY_EXCHANGE", False)
 SSL_VERIFY_INGEST = env_bool("SSL_VERIFY_INGEST", True)
 REQUEST_RETRY_COUNT = env_int("REQUEST_RETRY_COUNT", 0, minimum=0)
@@ -659,7 +658,7 @@ def scrape_arzpaya(coins: list[str]) -> list[dict[str, Any]]:
             res = http_get_json(url)
             if isinstance(res, dict) and isinstance(res.get("Data"), list) and res["Data"]:
                 top_bid = res["Data"][0]
-                price = num(top_bid.get("p"), {"multiply": 10, "decimalPlaces": 8})
+                price = num(top_bid.get("p", top_bid.get("P")), {"multiply": 10, "decimalPlaces": 8})
                 if price > 0:
                     out.append({
                         "currency": "IRR",
@@ -758,6 +757,7 @@ def parse_bitimen(data: Any, coins: list[str]) -> list[dict[str, Any]]:
         price = num(raw_price, {"multiply": 10, "decimalPlaces": 8})
         raw_vol = str(item.get("volume", "0") or "0").replace(",", "")
         volume_1d = num(raw_vol, {"multiply": 10, "roundUp": True})
+        coin_volume_1d = num(volume_1d, {"divide": price, "decimalPlaces": 4}) if price > 0 else 0
         change_1d = num(item.get("change_display") or item.get("change") or 0, {"decimalPlaces": 2})
 
         out.append({
@@ -765,7 +765,7 @@ def parse_bitimen(data: Any, coins: list[str]) -> list[dict[str, Any]]:
             "symbol": symbol,
             "price": price,
             "volume_1d": volume_1d,
-            "coin_volume_1d": 0,
+            "coin_volume_1d": coin_volume_1d,
             "change_1d": change_1d,
             "source": "bitimen",
         })
@@ -911,51 +911,6 @@ def register_bitpin() -> dict[str, Any]:
         "scrape": scrape_bitpin,
     }
 
-# --- coinapi ---
-
-def parse_coinapi(data: Any, coins: list[str]) -> list[dict[str, Any]]:
-    if not isinstance(data, list) or not data:
-        raise RuntimeError("CoinAPI: empty")
-    out: list[dict[str, Any]] = []
-    for item in data:
-        if not isinstance(item, dict):
-            continue
-        if int(item.get("type_is_crypto") or 0) != 1:
-            continue
-        symbol = str(item.get("asset_id") or "").upper()
-        if not symbol or not coin_allowed(coins, symbol):
-            continue
-        out.append(
-            {
-                "currency": "USD",
-                "symbol": symbol,
-                "price": num(item.get("price_usd", 0), {"decimalPlaces": 8}),
-                "volume_1d": num(item.get("volume_1day_usd", 0), {"roundUp": True}),
-                "source": "coinapi",
-            }
-        )
-    return out
-
-
-def skip_coinapi() -> str | None:
-    return "COINAPI_KEY empty" if not COINAPI_KEY else None
-
-
-def job_coinapi() -> dict[str, Any]:
-    return {
-        "url": "https://rest.coinapi.io/v1/assets",
-        "headers": {"X-CoinAPI-Key": COINAPI_KEY},
-    }
-
-
-def register_coinapi() -> dict[str, Any]:
-    return {
-        "coin_use": "all",
-        "skip": skip_coinapi,
-        "job": job_coinapi,
-        "parse": parse_coinapi,
-    }
-
 # --- coinmarketcap ---
 
 
@@ -1032,6 +987,83 @@ def register_coinmarketcap() -> dict[str, Any]:
         "skip": skip_coinmarketcap,
         "job": job_coinmarketcap,
         "parse": parse_coinmarketcap,
+    }
+
+# --- coinpaprika ---
+
+
+
+
+def coinpaprika_pick_by_symbol(data: list[Any]) -> dict[str, Any]:
+    # Several tokens share a ticker (USDT, TON, IOTA, …); keep the canonical one per
+    # symbol: the exact CoinPaprika id where known, else the highest-ranked entry.
+    canonical_id = {
+        "TON": "ton-tokamak-network",
+        "IOTA": "miota-iota",
+        "BTT": "bttc-bittorrent-chain",
+    }
+    best: dict[str, Any] = {}
+    for t in data:
+        if not isinstance(t, dict):
+            continue
+        sym = str(t.get("symbol") or "").upper()
+        if not sym:
+            continue
+        rank = t.get("rank")
+        rank_val = rank if isinstance(rank, int) else float("inf")
+        if sym in canonical_id and t.get("id") == canonical_id[sym]:
+            best[sym] = t
+            continue
+        cur = best.get(sym)
+        if cur is None:
+            best[sym] = t
+            continue
+        cur_rank = cur.get("rank")
+        cur_rank_val = cur_rank if isinstance(cur_rank, int) else float("inf")
+        if rank_val < cur_rank_val:
+            best[sym] = t
+    return best
+
+
+def parse_coinpaprika(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    if not isinstance(data, list) or not data:
+        raise RuntimeError("CoinPaprika: empty tickers")
+    wanted = None if not coins else {str(c).upper() for c in coins}
+    out: list[dict[str, Any]] = []
+    for sym, t in coinpaprika_pick_by_symbol(data).items():
+        if wanted is not None and sym not in wanted:
+            continue
+        quote = (t.get("quotes") or {}).get("USD")
+        if not isinstance(quote, dict):
+            continue
+        price = num(quote.get("price", 0), {"decimalPlaces": 8})
+        coin_volume = num(quote.get("volume_24h", 0), {"divide": price, "decimalPlaces": 4}) if price > 0 else 0
+        out.append({
+            "currency": "USD",
+            "symbol": sym,
+            "price": price,
+            "volume_1d": num(quote.get("volume_24h", 0), {"roundUp": True}),
+            "coin_volume_1d": coin_volume,
+            "change_1d": num(quote.get("percent_change_24h", 0), {"decimalPlaces": 2}),
+            "change_7d": num(quote.get("percent_change_7d", 0), {"decimalPlaces": 2}),
+            "cap": num(quote.get("market_cap", 0), {"decimalPlaces": 0, "roundUp": True}),
+            "market_cap": num(quote.get("market_cap", 0), {"decimalPlaces": 0, "roundUp": True}),
+            "supply": num(t.get("circulating_supply", 0)),
+            "max_supply": num(t.get("max_supply", 0)),
+            "source": "coinpaprika",
+        })
+    return out
+
+
+def job_coinpaprika() -> dict[str, Any]:
+    return {"url": "https://api.coinpaprika.com/v1/tickers"}
+
+
+def register_coinpaprika() -> dict[str, Any]:
+    return {
+        "coin_use": "all",
+        "job": job_coinpaprika,
+        "parse": parse_coinpaprika,
     }
 
 # --- exir ---
@@ -1400,68 +1432,63 @@ def register_saraf() -> dict[str, Any]:
 
 # --- sarmayex ---
 
-def parse_sarmayex_page(html: str, coins: list[str]) -> list[dict[str, Any]]:
-    """Parse currencies from the page's `__NUXT_DATA__` payload. Every currency object holds
-    payload indices; `sell.marketPrice` is the Toman mid-market rate (`sell.price` is
-    Sarmayex's own marked-up quote).
+
+
+URL = "https://api.sarmayex.com/api/v2/currencies"
+
+
+def parse_sarmayex(data: Any, coins: list[str]) -> list[dict[str, Any]]:
+    """Parse currencies from the Sarmayex v2 JSON API. `sell.marketPrice` is the
+    Toman mid-market rate (`sell.price` is Sarmayex's own marked-up quote). Only
+    coins with a live `<symbol>_IRT` market are quoted in IRT.
     """
-    m = re.search(r'<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)</script>', html)
-    if not m:
-        raise RuntimeError("Sarmayex: Nuxt payload not found")
-    payload = json.loads(m.group(1))
-    if not isinstance(payload, list):
-        raise RuntimeError("Sarmayex: invalid Nuxt payload")
+    if not isinstance(data, dict):
+        raise RuntimeError("Sarmayex: invalid payload")
+    currencies = data.get("data", {}).get("currencies")
+    if not isinstance(currencies, list) or not currencies:
+        raise RuntimeError("Sarmayex: empty currencies")
 
-    # Nuxt payload (devalue) wrappers whose second element is the index of the wrapped value.
-    wrappers = {"Reactive", "ShallowReactive", "Ref", "ShallowRef"}
-
-    def deref(index: Any) -> Any:
-        if not isinstance(index, int) or isinstance(index, bool) or not 0 <= index < len(payload):
-            return None
-        value = payload[index]
-        while isinstance(value, list) and value and value[0] in wrappers:
-            value = payload[value[1]]
-        return value
+    wanted = None if not coins else {str(c).upper() for c in coins}
+    setting = data.get("data", {}).get("setting") or {}
+    last_update = setting.get("lastUpdate")
+    last_update = int(last_update) if isinstance(last_update, (int, str)) and str(last_update).isdigit() else 0
 
     out: list[dict[str, Any]] = []
-    seen: set[str] = set()
-
-    for node in payload:
-        if not isinstance(node, dict) or not {"symbol", "sell", "markets"} <= node.keys():
+    for c in currencies:
+        if not isinstance(c, dict):
             continue
-        symbol = str(deref(node["symbol"]) or "").upper()
-        if not symbol or symbol in seen or not coin_allowed(coins, symbol):
+        symbol = str(c.get("symbol") or "").upper()
+        if not symbol or (wanted is not None and symbol not in wanted):
             continue
-        markets = deref(node["markets"])
-        if not isinstance(markets, list) or f"{symbol}_IRT" not in [deref(i) for i in markets]:
+        markets = c.get("markets") if isinstance(c.get("markets"), list) else []
+        if f"{symbol}_IRT" not in markets:
             continue
-        sell = deref(node["sell"])
-        price_toman = num(deref(sell.get("marketPrice")) if isinstance(sell, dict) else 0)
+        sell = c.get("sell") if isinstance(c.get("sell"), dict) else None
+        price_toman = num(sell.get("marketPrice") if sell else 0)
         if price_toman <= 0:
             continue
-
-        seen.add(symbol)
         out.append({
             "currency": "IRR",
             "symbol": symbol,
             "price": num(price_toman, {"multiply": 10, "decimalPlaces": 8}),
             "volume_1d": 0,
             "coin_volume_1d": 0,
-            "change_1d": 0,
+            "change_1d": num(c.get("percentChange_24h"), {"decimalPlaces": 2}),
+            "change_7d": num(c.get("percentChange_7d"), {"decimalPlaces": 2}),
             "source": "sarmayex",
         })
-
     return out
 
 
-def scrape_sarmayex(coins: list[str]) -> list[dict[str, Any]]:
-    return parse_sarmayex_page(http_get_text("https://sarmayex.com/crypto-price"), coins)
+def job_sarmayex() -> dict[str, Any]:
+    return {"url": URL}
 
 
 def register_sarmayex() -> dict[str, Any]:
     return {
         "coin_use": "all",
-        "scrape": scrape_sarmayex,
+        "job": job_sarmayex,
+        "parse": parse_sarmayex,
     }
 
 # --- tabdeal ---
@@ -1634,8 +1661,8 @@ def scraper_registry():
     "bitimen": register_bitimen(),
     "bitmax": register_bitmax(),
     "bitpin": register_bitpin(),
-    "coinapi": register_coinapi(),
     "coinmarketcap": register_coinmarketcap(),
+    "coinpaprika": register_coinpaprika(),
     "exir": register_exir(),
     "hitobit": register_hitobit(),
     "huluex": register_huluex(),
@@ -1872,7 +1899,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  TIMEOUT EXCHANGES IGNORE_EXCHANGES PROXY_URL PROXY_API_KEY\n"
             "  FINALIZE_WAIT_SEC FINALIZE_POLL_SEC\n"
             "  Only one node should --finalize (Lambda).\n"
-            "  COINMARKETCAP_API_KEY COINAPI_KEY SSL_VERIFY_EXCHANGE SSL_VERIFY_INGEST\n\n"
+            "  COINMARKETCAP_API_KEY SSL_VERIFY_EXCHANGE SSL_VERIFY_INGEST\n\n"
             "Make executable: chmod +x track.py"
         ),
     )

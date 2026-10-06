@@ -11,7 +11,7 @@ def scrape_arzpaya(coins: list[str]) -> list[dict[str, Any]]:
             res = http_get_json(url)
             if isinstance(res, dict) and isinstance(res.get("Data"), list) and res["Data"]:
                 top_bid = res["Data"][0]
-                price = num(top_bid.get("p"), {"multiply": 10, "decimalPlaces": 8})
+                price = num(top_bid.get("p", top_bid.get("P")), {"multiply": 10, "decimalPlaces": 8})
                 if price > 0:
                     out.append({
                         "currency": "IRR",

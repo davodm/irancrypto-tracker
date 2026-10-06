@@ -5,8 +5,8 @@ import * as bidarz from "../scrapers/bidarz/scrape.js";
 import * as bitimen from "../scrapers/bitimen/scrape.js";
 import * as bitmax from "../scrapers/bitmax/scrape.js";
 import * as bitpin from "../scrapers/bitpin/scrape.js";
-import * as coinapi from "../scrapers/coinapi/scrape.js";
 import * as coinmarketcap from "../scrapers/coinmarketcap/scrape.js";
+import * as coinpaprika from "../scrapers/coinpaprika/scrape.js";
 import * as exir from "../scrapers/exir/scrape.js";
 import * as hitobit from "../scrapers/hitobit/scrape.js";
 import * as huluex from "../scrapers/huluex/scrape.js";
@@ -27,8 +27,8 @@ export const SCRAPERS = {
   "bitimen": bitimen,
   "bitmax": bitmax,
   "bitpin": bitpin,
-  "coinapi": coinapi,
   "coinmarketcap": coinmarketcap,
+  "coinpaprika": coinpaprika,
   "exir": exir,
   "hitobit": hitobit,
   "huluex": huluex,
@@ -50,8 +50,8 @@ export const SCRAPER_SLUGS = [
   "bitimen",
   "bitmax",
   "bitpin",
-  "coinapi",
   "coinmarketcap",
+  "coinpaprika",
   "exir",
   "hitobit",
   "huluex",
