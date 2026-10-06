@@ -12,6 +12,7 @@ def parse_bitimen(data: Any, coins: list[str]) -> list[dict[str, Any]]:
         price = num(raw_price, {"multiply": 10, "decimalPlaces": 8})
         raw_vol = str(item.get("volume", "0") or "0").replace(",", "")
         volume_1d = num(raw_vol, {"multiply": 10, "roundUp": True})
+        coin_volume_1d = num(volume_1d, {"divide": price, "decimalPlaces": 4}) if price > 0 else 0
         change_1d = num(item.get("change_display") or item.get("change") or 0, {"decimalPlaces": 2})
 
         out.append({
@@ -19,7 +20,7 @@ def parse_bitimen(data: Any, coins: list[str]) -> list[dict[str, Any]]:
             "symbol": symbol,
             "price": price,
             "volume_1d": volume_1d,
-            "coin_volume_1d": 0,
+            "coin_volume_1d": coin_volume_1d,
             "change_1d": change_1d,
             "source": "bitimen",
         })

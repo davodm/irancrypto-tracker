@@ -42,14 +42,17 @@ function processList($list, $coinsFilter = []) {
       const symbol = data.base_asset_ticker.toUpperCase();
       const rawPrice = data.last_price || data.best_bid_raw || 0;
       const rawVol = (data.volume || "").replace(/,/g, "");
+      const price = num(rawPrice, { multiply: 10, decimalPlaces: 8 }) || 0;
+      const volume_1d = num(rawVol, { multiply: 10, roundUp: true }) || 0;
+      const coinVolume = price > 0 ? num(volume_1d, { divide: price, decimalPlaces: 4 }) || 0 : 0;
 
       return {
         source: PLATFORM.toLowerCase(),
         currency: "IRR",
         symbol: symbol,
-        price: num(rawPrice, { multiply: 10, decimalPlaces: 8 }) || 0,
-        volume_1d: num(rawVol, { multiply: 10, roundUp: true }) || 0,
-        coin_volume_1d: 0,
+        price,
+        volume_1d,
+        coin_volume_1d: coinVolume,
         change_1d: num(data.change_display || data.change, { decimalPlaces: 2 }) || 0,
         last_update: {
           date: date.toISOString(),
