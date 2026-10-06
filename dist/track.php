@@ -82,7 +82,6 @@ define('USER_AGENT_POSTMAN', 'PostmanRuntime/7.26.10');
 define('PROXY_URL', env('PROXY_URL', ''));
 define('PROXY_API_KEY', env('PROXY_API_KEY', ''));
 define('COINMARKETCAP_API_KEY', env('COINMARKETCAP_API_KEY', ''));
-define('COINAPI_KEY', env('COINAPI_KEY', ''));
 // Exchange scrapes may hit broken certs; ingest calls always verify TLS.
 define('SSL_VERIFY', filter_var(env('SSL_VERIFY_EXCHANGE', 'false'), FILTER_VALIDATE_BOOLEAN));
 define('SSL_VERIFY_INGEST', filter_var(env('SSL_VERIFY_INGEST', 'true'), FILTER_VALIDATE_BOOLEAN));
@@ -198,7 +197,7 @@ Usage:
 Env:
   INGEST_SECRET (required) INGEST_URL INGEST_NODE LOG_DIR
   INGEST_URL defaults to https://irancrypto.market/api/ingest
-  EXCHANGES IGNORE_EXCHANGES PROXY_* COINMARKETCAP_API_KEY COINAPI_KEY
+  EXCHANGES IGNORE_EXCHANGES PROXY_* COINMARKETCAP_API_KEY
   FINALIZE_WAIT_SEC FINALIZE_POLL_SEC
   Only one node should --finalize (Lambda). Others scrape without --finalize.
 
@@ -1111,7 +1110,7 @@ function scrape_arzpaya(array $coins): array
         $topBid = is_array($response) && !empty($response['Data']) && is_array($response['Data'])
             ? $response['Data'][0]
             : null;
-        $price = is_array($topBid) ? num($topBid['p'] ?? 0, ['multiply' => 10, 'decimalPlaces' => 8]) : 0.0;
+        $price = is_array($topBid) ? num($topBid['p'] ?? $topBid['P'] ?? 0, ['multiply' => 10, 'decimalPlaces' => 8]) : 0.0;
         if ($price <= 0) {
             continue;
         }
@@ -1234,12 +1233,15 @@ function parse_bitimen(mixed $data, array $coins): array
         }
         $rawPrice = ($item['last_price'] ?? null) ?: ($item['best_bid_raw'] ?? 0);
         $rawVolume = str_replace(',', '', (string) ($item['volume'] ?? '0'));
+        $price = num($rawPrice, ['multiply' => 10, 'decimalPlaces' => 8]);
+        $volume_1d = num($rawVolume, ['multiply' => 10, 'roundUp' => true]);
+        $coinVolume = $price > 0 ? num($volume_1d, ['divide' => $price, 'decimalPlaces' => 4]) : 0;
         $out[] = [
             'currency' => 'IRR',
             'symbol' => $symbol,
-            'price' => num($rawPrice, ['multiply' => 10, 'decimalPlaces' => 8]),
-            'volume_1d' => num($rawVolume, ['multiply' => 10, 'roundUp' => true]),
-            'coin_volume_1d' => 0,
+            'price' => $price,
+            'volume_1d' => $volume_1d,
+            'coin_volume_1d' => $coinVolume,
             'change_1d' => num(($item['change_display'] ?? null) ?: ($item['change'] ?? 0), ['decimalPlaces' => 2]),
             'source' => 'bitimen',
             'last_update' => $lu,
@@ -1412,64 +1414,6 @@ function register_bitpin(): array
 }
 
 
-// --- coinapi ---
-
-/** @return list<array<string,mixed>> */
-function parse_coinapi(mixed $data, array $coins): array
-{
-    if (!is_array($data) || $data === []) {
-        throw new RuntimeException('CoinAPI: empty');
-    }
-    $out = [];
-    foreach ($data as $item) {
-        if (!is_array($item)) {
-            continue;
-        }
-        if (!isset($item['type_is_crypto']) || (int) $item['type_is_crypto'] !== 1) {
-            continue;
-        }
-        $symbol = strtoupper((string) ($item['asset_id'] ?? ''));
-        if ($symbol === '' || !coin_allowed($coins, $symbol)) {
-            continue;
-        }
-        $iso = $item['data_quote_end'] ?? $item['data_end'] ?? null;
-        $ts = $iso ? (int) (strtotime((string) $iso) ?: time()) : time();
-        $out[] = [
-            'currency' => 'USD',
-            'symbol' => $symbol,
-            'price' => num($item['price_usd'] ?? 0, ['decimalPlaces' => 8]),
-            'volume_1d' => num($item['volume_1day_usd'] ?? 0, ['roundUp' => true]),
-            'source' => 'coinapi',
-            'last_update' => ['date' => gmdate('c', $ts), 'timestamp' => $ts],
-        ];
-    }
-    return $out;
-}
-
-function skip_coinapi(): ?string
-{
-    return COINAPI_KEY === '' ? 'COINAPI_KEY empty' : null;
-}
-
-function job_coinapi(): array
-{
-    return [
-        'url' => 'https://rest.coinapi.io/v1/assets',
-        'headers' => ['X-CoinAPI-Key' => COINAPI_KEY],
-    ];
-}
-
-function register_coinapi(): array
-{
-    return [
-        'coin_use' => 'all',
-        'skip' => 'skip_coinapi',
-        'job' => 'job_coinapi',
-        'parse' => 'parse_coinapi',
-    ];
-}
-
-
 // --- coinmarketcap ---
 
 /** @return list<array<string,mixed>> */
@@ -1550,6 +1494,101 @@ function register_coinmarketcap(): array
         'skip' => 'skip_coinmarketcap',
         'job' => 'job_coinmarketcap',
         'parse' => 'parse_coinmarketcap',
+    ];
+}
+
+
+// --- coinpaprika ---
+
+/**
+ * Resolve ticker collisions. Several tokens share a ticker (USDT, TON, IOTA, …);
+ * keep the canonical one per symbol: the exact CoinPaprika id where known, else the
+ * highest-ranked entry.
+ *
+ * @param array $list
+ * @return array<string,array<string,mixed>> symbol -> ticker
+ */
+function coinpaprika_pick_by_symbol(array $list): array
+{
+    // Symbols whose canonical token is NOT the top-ranked one sharing the ticker.
+    $canonicalId = [
+        'TON' => 'ton-tokamak-network',
+        'IOTA' => 'miota-iota',
+        'BTT' => 'bttc-bittorrent-chain',
+    ];
+    $best = [];
+    foreach ($list as $t) {
+        if (!is_array($t)) {
+            continue;
+        }
+        $sym = strtoupper((string) ($t['symbol'] ?? ''));
+        if ($sym === '') {
+            continue;
+        }
+        $rank = is_numeric($t['rank'] ?? null) ? (int) $t['rank'] : PHP_INT_MAX;
+        if (isset($canonicalId[$sym]) && ($t['id'] ?? null) === $canonicalId[$sym]) {
+            $best[$sym] = $t;
+            continue;
+        }
+        $cur = $best[$sym] ?? null;
+        if ($cur === null || $rank < (is_numeric($cur['rank'] ?? null) ? (int) $cur['rank'] : PHP_INT_MAX)) {
+            $best[$sym] = $t;
+        }
+    }
+    return $best;
+}
+
+/** @return list<array<string,mixed>> */
+function parse_coinpaprika(mixed $data, array $coins): array
+{
+    if (!is_array($data) || $data === []) {
+        throw new RuntimeException('CoinPaprika: empty tickers');
+    }
+    $wanted = $coins === [] ? null : array_map(static fn($c) => strtoupper((string) $c), $coins);
+    $out = [];
+    foreach (coinpaprika_pick_by_symbol($data) as $sym => $t) {
+        if ($wanted !== null && !in_array(strtoupper($sym), $wanted, true)) {
+            continue;
+        }
+        $quote = $t['quotes']['USD'] ?? null;
+        if (!is_array($quote)) {
+            continue;
+        }
+        $price = num($quote['price'] ?? 0, ['decimalPlaces' => 8]);
+        $ts = !empty($t['last_updated']) ? (int) (strtotime((string) $t['last_updated']) ?: time()) : time();
+        $item = [
+            'currency' => 'USD',
+            'symbol' => $sym,
+            'price' => $price,
+            'volume_1d' => num($quote['volume_24h'] ?? 0, ['roundUp' => true]),
+            'coin_volume_1d' => $price > 0 ? num($quote['volume_24h'] ?? 0, ['divide' => $price, 'decimalPlaces' => 4]) : 0,
+            'change_1d' => num($quote['percent_change_24h'] ?? 0, ['decimalPlaces' => 2]),
+            'change_7d' => num($quote['percent_change_7d'] ?? 0, ['decimalPlaces' => 2]),
+            'cap' => num($quote['market_cap'] ?? 0, ['decimalPlaces' => 0, 'roundUp' => true]),
+            'market_cap' => num($quote['market_cap'] ?? 0, ['decimalPlaces' => 0, 'roundUp' => true]),
+            'supply' => num($t['circulating_supply'] ?? 0),
+            'max_supply' => num($t['max_supply'] ?? 0),
+            'source' => 'coinpaprika',
+            'last_update' => ['date' => gmdate('c', $ts), 'timestamp' => $ts],
+        ];
+        $out[] = $item;
+    }
+    return $out;
+}
+
+function job_coinpaprika(): array
+{
+    return [
+        'url' => 'https://api.coinpaprika.com/v1/tickers',
+    ];
+}
+
+function register_coinpaprika(): array
+{
+    return [
+        'coin_use' => 'all',
+        'job' => 'job_coinpaprika',
+        'parse' => 'parse_coinpaprika',
     ];
 }
 
@@ -2020,67 +2059,52 @@ function register_saraf(): array
 // --- sarmayex ---
 
 /**
- * Parse currencies from the page's `__NUXT_DATA__` payload. Every currency object holds
- * payload indices; `sell.marketPrice` is the Toman mid-market rate (`sell.price` is
- * Sarmayex's own marked-up quote).
+ * Parse currencies from the Sarmayex v2 JSON API. `sell.marketPrice` is the Toman
+ * mid-market rate (`sell.price` is Sarmayex's own marked-up quote). Only coins with
+ * a live `<symbol>_IRT` market are quoted in IRT.
  *
+ * @param mixed $data
+ * @param array $coins
  * @return list<array<string,mixed>>
  */
-function parse_sarmayex_page(string $html, array $coins): array
+function parse_sarmayex(mixed $data, array $coins): array
 {
-    if (!preg_match('/<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)<\/script>/', $html, $m)) {
-        throw new RuntimeException('Sarmayex: Nuxt payload not found');
+    $currencies = $data['data']['currencies'] ?? null;
+    if (!is_array($currencies) || $currencies === []) {
+        throw new RuntimeException('Sarmayex: empty currencies');
     }
-    $payload = json_decode($m[1], true);
-    if (!is_array($payload)) {
-        throw new RuntimeException('Sarmayex: invalid Nuxt payload');
-    }
-
-    // Nuxt payload (devalue) wrappers whose second element is the index of the wrapped value.
-    $wrappers = ['Reactive', 'ShallowReactive', 'Ref', 'ShallowRef'];
-    $deref = static function (mixed $index) use ($payload, $wrappers): mixed {
-        if (!is_int($index)) {
-            return null;
-        }
-        $value = $payload[$index] ?? null;
-        while (is_array($value) && array_is_list($value) && in_array($value[0] ?? null, $wrappers, true)) {
-            $value = $payload[$value[1]] ?? null;
-        }
-        return $value;
-    };
+    $wanted = $coins === [] ? null : array_map(static fn($c) => strtoupper((string) $c), $coins);
+    $lastUpdate = is_numeric($data['data']['setting']['lastUpdate'] ?? null)
+        ? (int) $data['data']['setting']['lastUpdate']
+        : 0;
+    $lu = $lastUpdate > 0 ? ['date' => gmdate('c', $lastUpdate), 'timestamp' => $lastUpdate] : last_update_now();
 
     $out = [];
-    $seen = [];
-    $lu = last_update_now();
-    foreach ($payload as $node) {
-        if (!is_array($node) || array_is_list($node)) {
+    foreach ($currencies as $c) {
+        if (!is_array($c)) {
             continue;
         }
-        if (!isset($node['symbol'], $node['sell'], $node['markets'])) {
+        $symbol = strtoupper((string) ($c['symbol'] ?? ''));
+        if ($symbol === '' || ($wanted !== null && !in_array($symbol, $wanted, true))) {
             continue;
         }
-        $symbol = strtoupper((string) $deref($node['symbol']));
-        if ($symbol === '' || isset($seen[$symbol]) || !coin_allowed($coins, $symbol)) {
+        $markets = is_array($c['markets'] ?? null) ? $c['markets'] : [];
+        if (!in_array("{$symbol}_IRT", $markets, true)) {
             continue;
         }
-        $markets = $deref($node['markets']);
-        if (!is_array($markets) || !in_array("{$symbol}_IRT", array_map($deref, $markets), true)) {
-            continue;
-        }
-        $sell = $deref($node['sell']);
-        $priceToman = is_array($sell) ? num($deref($sell['marketPrice'] ?? null) ?? 0) : 0.0;
+        $sell = is_array($c['sell'] ?? null) ? $c['sell'] : null;
+        $priceToman = is_array($sell) ? num($sell['marketPrice'] ?? 0) : 0.0;
         if ($priceToman <= 0) {
             continue;
         }
-
-        $seen[$symbol] = true;
         $out[] = [
             'currency' => 'IRR',
             'symbol' => $symbol,
             'price' => num($priceToman, ['multiply' => 10, 'decimalPlaces' => 8]),
             'volume_1d' => 0,
             'coin_volume_1d' => 0,
-            'change_1d' => 0,
+            'change_1d' => num($c['percentChange_24h'] ?? 0, ['decimalPlaces' => 2]),
+            'change_7d' => num($c['percentChange_7d'] ?? 0, ['decimalPlaces' => 2]),
             'source' => 'sarmayex',
             'last_update' => $lu,
         ];
@@ -2088,17 +2112,19 @@ function parse_sarmayex_page(string $html, array $coins): array
     return $out;
 }
 
-/** @return list<array<string,mixed>> */
-function scrape_sarmayex(array $coins): array
+function job_sarmayex(): array
 {
-    return parse_sarmayex_page(http_get_text('https://sarmayex.com/crypto-price'), $coins);
+    return [
+        'url' => 'https://api.sarmayex.com/api/v2/currencies',
+    ];
 }
 
 function register_sarmayex(): array
 {
     return [
         'coin_use' => 'all',
-        'scrape' => 'scrape_sarmayex',
+        'job' => 'job_sarmayex',
+        'parse' => 'parse_sarmayex',
     ];
 }
 
@@ -2307,8 +2333,8 @@ function scraper_registry(): array
     'bitimen' => register_bitimen(),
     'bitmax' => register_bitmax(),
     'bitpin' => register_bitpin(),
-    'coinapi' => register_coinapi(),
     'coinmarketcap' => register_coinmarketcap(),
+    'coinpaprika' => register_coinpaprika(),
     'exir' => register_exir(),
     'hitobit' => register_hitobit(),
     'huluex' => register_huluex(),
