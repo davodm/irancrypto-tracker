@@ -1,0 +1,233 @@
+[
+  {
+    "id": "btc-bitcoin",
+    "name": "Bitcoin",
+    "symbol": "BTC",
+    "rank": 1,
+    "total_supply": 20094050,
+    "max_supply": 21000000,
+    "beta_value": 1.0305,
+    "first_data_at": "2010-07-17T00:00:00Z",
+    "last_updated": "2026-10-05T23:58:15Z",
+    "quotes": {
+      "USD": {
+        "price": 85807.56013237935,
+        "volume_24h": 24505035861.283092,
+        "volume_24h_change_24h": 62.52000045776367,
+        "market_cap": 1724221146255,
+        "market_cap_change_24h": -0.9300000071525574,
+        "percent_change_15m": 0.07999999821186066,
+        "percent_change_30m": -0.07999999821186066,
+        "percent_change_1h": -0.23999999463558197,
+        "percent_change_6h": 0.5099999904632568,
+        "percent_change_12h": -0.3199999928474426,
+        "percent_change_24h": -0.9300000071525574,
+        "percent_change_7d": 3.190000057220459,
+        "percent_change_30d": 0,
+        "percent_change_1y": 0,
+        "ath_price": 126173.1777846797,
+        "ath_date": "2025-10-06T19:00:40Z",
+        "percent_from_price_ath": -32.05
+      }
+    },
+    "tags": []
+  },
+  {
+    "id": "eth-ethereum",
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "rank": 2,
+    "total_supply": 120232214,
+    "max_supply": 0,
+    "beta_value": 1.39383,
+    "first_data_at": "2015-08-07T00:00:00Z",
+    "last_updated": "2026-10-05T23:58:15Z",
+    "quotes": {
+      "USD": {
+        "price": 2712.306086697593,
+        "volume_24h": 9496055049.888157,
+        "volume_24h_change_24h": 95.55999755859375,
+        "market_cap": 331193040247,
+        "market_cap_change_24h": -0.6100000143051147,
+        "percent_change_15m": -0.019999999552965164,
+        "percent_change_30m": -0.11999999731779099,
+        "percent_change_1h": -0.23000000417232513,
+        "percent_change_6h": 0.23999999463558197,
+        "percent_change_12h": -0.11999999731779099,
+        "percent_change_24h": -0.6100000143051147,
+        "percent_change_7d": 1.2899999618530273,
+        "percent_change_30d": 0,
+        "percent_change_1y": 0,
+        "ath_price": 4946.229669645212,
+        "ath_date": "2025-08-24T19:24:38Z",
+        "percent_from_price_ath": -45.17
+      }
+    },
+    "tags": []
+  },
+  {
+    "id": "usdt-tether",
+    "name": "Tether",
+    "symbol": "USDT",
+    "rank": 3,
+    "total_supply": 189555241730,
+    "max_supply": 0,
+    "beta_value": 0.000681686,
+    "first_data_at": "2015-02-25T00:00:00Z",
+    "last_updated": "2026-10-05T23:58:15Z",
+    "quotes": {
+      "USD": {
+        "price": 1.0000881794360044,
+        "volume_24h": 61246987396.293816,
+        "volume_24h_change_24h": 129.50999450683594,
+        "market_cap": 184104528142,
+        "market_cap_change_24h": 0.009999999776482582,
+        "percent_change_15m": 0,
+        "percent_change_30m": 0,
+        "percent_change_1h": 0,
+        "percent_change_6h": 0.009999999776482582,
+        "percent_change_12h": 0.019999999552965164,
+        "percent_change_24h": 0.009999999776482582,
+        "percent_change_7d": 0.05999999865889549,
+        "percent_change_30d": 0,
+        "percent_change_1y": 0,
+        "ath_price": 1.21549,
+        "ath_date": "2015-02-25T17:04:00Z",
+        "percent_from_price_ath": -17.72
+      }
+    },
+    "tags": []
+  },
+  {
+    "id": "ton-tontoken",
+    "name": "TONToken",
+    "symbol": "TON",
+    "rank": 134,
+    "total_supply": 400000000,
+    "max_supply": 0,
+    "beta_value": -18.9654,
+    "first_data_at": "2021-12-19T00:00:00Z",
+    "last_updated": "2026-10-05T23:58:15Z",
+    "quotes": {
+      "USD": {
+        "price": 1.51105802140266,
+        "volume_24h": 62237.48950881898,
+        "volume_24h_change_24h": -57.58000183105469,
+        "market_cap": 407985665,
+        "market_cap_change_24h": -1.1299999952316284,
+        "percent_change_15m": -0.6399999856948853,
+        "percent_change_30m": -0.18000000715255737,
+        "percent_change_1h": -0.5,
+        "percent_change_6h": -0.25999999046325684,
+        "percent_change_12h": -1.3799999952316284,
+        "percent_change_24h": -1.1299999952316284,
+        "percent_change_7d": -3.549999952316284,
+        "percent_change_30d": 0,
+        "percent_change_1y": 0,
+        "ath_price": 8.27864640077597,
+        "ath_date": "2024-06-15T00:36:22Z",
+        "percent_from_price_ath": -81.74
+      }
+    },
+    "tags": []
+  },
+  {
+    "id": "ton-tokamak-network",
+    "name": "Tokamak Network",
+    "symbol": "TON",
+    "rank": 596,
+    "total_supply": 92959881,
+    "max_supply": 0,
+    "beta_value": 0.92103,
+    "first_data_at": "2021-08-24T00:00:00Z",
+    "last_updated": "2026-10-05T23:58:15Z",
+    "quotes": {
+      "USD": {
+        "price": 0.37732823805422927,
+        "volume_24h": 91248.98199928598,
+        "volume_24h_change_24h": -26.469999313354492,
+        "market_cap": 24254840,
+        "market_cap_change_24h": -0.07000000029802322,
+        "percent_change_15m": 0.2199999988079071,
+        "percent_change_30m": 0.1899999976158142,
+        "percent_change_1h": 0.10000000149011612,
+        "percent_change_6h": 0.17000000178813934,
+        "percent_change_12h": 0.17000000178813934,
+        "percent_change_24h": -0.07000000029802322,
+        "percent_change_7d": 1.649999976158142,
+        "percent_change_30d": 0,
+        "percent_change_1y": 0,
+        "ath_price": 15.374613574609361,
+        "ath_date": "2021-09-05T02:30:00Z",
+        "percent_from_price_ath": -97.55
+      }
+    },
+    "tags": []
+  },
+  {
+    "id": "miota-iota",
+    "name": "IOTA",
+    "symbol": "IOTA",
+    "rank": 173,
+    "total_supply": 4831556199,
+    "max_supply": 2779530283,
+    "beta_value": 1.36392,
+    "first_data_at": "2017-06-13T00:00:00Z",
+    "last_updated": "2026-10-05T23:58:15Z",
+    "quotes": {
+      "USD": {
+        "price": 0.058168895504852096,
+        "volume_24h": 5776279.3090857845,
+        "volume_24h_change_24h": -78,
+        "market_cap": 250824215,
+        "market_cap_change_24h": -3.180000066757202,
+        "percent_change_15m": -0.2199999988079071,
+        "percent_change_30m": -0.1599999964237213,
+        "percent_change_1h": 0.07000000029802322,
+        "percent_change_6h": -0.550000011920929,
+        "percent_change_12h": -1.2799999713897705,
+        "percent_change_24h": -3.180000066757202,
+        "percent_change_7d": 7.619999885559082,
+        "percent_change_30d": 0,
+        "percent_change_1y": 0,
+        "ath_price": 5.69002,
+        "ath_date": "2017-12-19T20:09:00Z",
+        "percent_from_price_ath": -98.98
+      }
+    },
+    "tags": []
+  },
+  {
+    "id": "bttc-bittorrent-chain",
+    "name": "BitTorrent",
+    "symbol": "BTT",
+    "rank": 141,
+    "total_supply": 990000000000000,
+    "max_supply": 990000000000000,
+    "beta_value": 0.73513,
+    "first_data_at": "2022-02-17T00:00:00Z",
+    "last_updated": "2026-10-05T23:58:15Z",
+    "quotes": {
+      "USD": {
+        "price": 3.750496682097258e-07,
+        "volume_24h": 11528969.676737163,
+        "volume_24h_change_24h": 21.34000015258789,
+        "market_cap": 370188231,
+        "market_cap_change_24h": -0.15000000596046448,
+        "percent_change_15m": -0.03999999910593033,
+        "percent_change_30m": 0,
+        "percent_change_1h": 0.009999999776482582,
+        "percent_change_6h": 0,
+        "percent_change_12h": -0.1599999964237213,
+        "percent_change_24h": -0.15000000596046448,
+        "percent_change_7d": -0.36000001430511475,
+        "percent_change_30d": 0,
+        "percent_change_1y": 0,
+        "ath_price": 2.33094463490954e-06,
+        "ath_date": "2022-03-31T10:45:00Z",
+        "percent_from_price_ath": -83.92
+      }
+    },
+    "tags": []
+  }
+]
