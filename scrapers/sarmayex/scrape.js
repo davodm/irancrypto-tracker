@@ -1,86 +1,58 @@
-import axios from "axios";
 import dayjs from "dayjs";
 import num from "../../runtime/js/num.js";
+import { axiosRequest } from "../../runtime/js/request.js";
 
 const PLATFORM = "Sarmayex";
-const URL = "https://sarmayex.com/crypto-price";
+const URL = "https://api.sarmayex.com/api/v2/currencies";
 
 export const COIN_USE = "all";
 
-// Nuxt payload (devalue) wrappers whose second element is the index of the wrapped value.
-const NUXT_WRAPPERS = new Set(["Reactive", "ShallowReactive", "Ref", "ShallowRef"]);
-
-export async function scrape($coins = []) {
-  return await getLatest($coins);
-}
-
-export async function getLatest($filterCoins = []) {
-  const response = await axios.get(URL, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    },
-    responseType: "text",
-    timeout: 15000,
-  });
-
-  if (!response.data) {
-    throw new Error("Response data is empty");
+/**
+ * @param {string[]} $filterCoins
+ * @returns {Promise<any[]>}
+ */
+export async function scrape($filterCoins = []) {
+  const data = await axiosRequest({ method: "get", url: URL });
+  const currencies = data?.data?.currencies;
+  if (!Array.isArray(currencies) || currencies.length === 0) {
+    throw new Error("Sarmayex: empty currencies");
   }
-  return parsePage(response.data, $filterCoins);
+  const lastUpdate = Number(data?.data?.setting?.lastUpdate) || 0;
+  return processList(currencies, $filterCoins, lastUpdate);
 }
 
 /**
- * Parse currencies from the page's `__NUXT_DATA__` payload. Every currency object holds
- * payload indices; `sell.marketPrice` is the Toman mid-market rate (`sell.price` is
- * Sarmayex's own marked-up quote).
+ * `sell.marketPrice` is the Toman mid-market rate (`sell.price` is Sarmayex's own
+ * marked-up quote). Only coins with a live `<symbol>_IRT` market are quoted in IRT.
  *
- * @param {string} $html
+ * @param {any[]} $list
  * @param {string[]} $coinsFilter
+ * @param {number} $lastUpdate
+ * @returns {any[]}
  */
-export function parsePage($html, $coinsFilter = []) {
-  const json = String($html).match(/<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)<\/script>/)?.[1];
-  if (!json) {
-    throw new Error("Nuxt payload not found");
-  }
-  const payload = JSON.parse(json);
-  const deref = (index) => {
-    let value = payload[index];
-    while (Array.isArray(value) && NUXT_WRAPPERS.has(value[0])) {
-      value = payload[value[1]];
-    }
-    return value;
-  };
-
-  const date = dayjs();
-  const seen = new Set();
-  const results = [];
-
-  for (const node of payload) {
-    if (!node || typeof node !== "object" || Array.isArray(node)) continue;
-    if (!("symbol" in node && "sell" in node && "markets" in node)) continue;
-
-    const symbol = String(deref(node.symbol) ?? "").toUpperCase();
-    if (!symbol || seen.has(symbol)) continue;
-    if ($coinsFilter.length > 0 && !$coinsFilter.includes(symbol)) continue;
-
-    const markets = deref(node.markets);
-    if (!Array.isArray(markets) || !markets.some((i) => deref(i) === `${symbol}_IRT`)) continue;
-
-    const sell = deref(node.sell);
-    const priceToman = num(sell && deref(sell.marketPrice));
+export function processList($list, $coinsFilter = [], $lastUpdate = 0) {
+  const wanted =
+    $coinsFilter.length > 0 ? new Set($coinsFilter.map((c) => String(c).toUpperCase())) : null;
+  const date = $lastUpdate > 0 ? dayjs.unix($lastUpdate) : dayjs();
+  const out = [];
+  for (const c of $list) {
+    if (!c || typeof c !== "object" || Array.isArray(c)) continue;
+    const symbol = String(c.symbol ?? "").toUpperCase();
+    if (!symbol || (wanted && !wanted.has(symbol))) continue;
+    const markets = Array.isArray(c.markets) ? c.markets : [];
+    if (!markets.includes(`${symbol}_IRT`)) continue;
+    const sell = c.sell && typeof c.sell === "object" ? c.sell : null;
+    const priceToman = num(sell?.marketPrice);
     if (priceToman <= 0) continue;
-
-    seen.add(symbol);
-    results.push({
+    out.push({
       source: PLATFORM.toLowerCase(),
       currency: "IRR",
       symbol,
       price: num(priceToman, { multiply: 10, decimalPlaces: 8 }),
       volume_1d: 0,
       coin_volume_1d: 0,
-      change_1d: 0,
+      change_1d: num(c.percentChange_24h, { decimalPlaces: 2 }) || 0,
+      change_7d: num(c.percentChange_7d, { decimalPlaces: 2 }) || 0,
       last_update: {
         date: date.toISOString(),
         timestamp: date.unix(),
@@ -88,6 +60,5 @@ export function parsePage($html, $coinsFilter = []) {
       },
     });
   }
-
-  return results;
+  return out;
 }

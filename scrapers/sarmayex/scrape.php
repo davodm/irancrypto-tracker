@@ -1,67 +1,52 @@
 <?php
 
 /**
- * Parse currencies from the page's `__NUXT_DATA__` payload. Every currency object holds
- * payload indices; `sell.marketPrice` is the Toman mid-market rate (`sell.price` is
- * Sarmayex's own marked-up quote).
+ * Parse currencies from the Sarmayex v2 JSON API. `sell.marketPrice` is the Toman
+ * mid-market rate (`sell.price` is Sarmayex's own marked-up quote). Only coins with
+ * a live `<symbol>_IRT` market are quoted in IRT.
  *
+ * @param mixed $data
+ * @param array $coins
  * @return list<array<string,mixed>>
  */
-function parse_sarmayex_page(string $html, array $coins): array
+function parse_sarmayex(mixed $data, array $coins): array
 {
-    if (!preg_match('/<script[^>]*id="__NUXT_DATA__"[^>]*>([^<]*)<\/script>/', $html, $m)) {
-        throw new RuntimeException('Sarmayex: Nuxt payload not found');
+    $currencies = $data['data']['currencies'] ?? null;
+    if (!is_array($currencies) || $currencies === []) {
+        throw new RuntimeException('Sarmayex: empty currencies');
     }
-    $payload = json_decode($m[1], true);
-    if (!is_array($payload)) {
-        throw new RuntimeException('Sarmayex: invalid Nuxt payload');
-    }
-
-    // Nuxt payload (devalue) wrappers whose second element is the index of the wrapped value.
-    $wrappers = ['Reactive', 'ShallowReactive', 'Ref', 'ShallowRef'];
-    $deref = static function (mixed $index) use ($payload, $wrappers): mixed {
-        if (!is_int($index)) {
-            return null;
-        }
-        $value = $payload[$index] ?? null;
-        while (is_array($value) && array_is_list($value) && in_array($value[0] ?? null, $wrappers, true)) {
-            $value = $payload[$value[1]] ?? null;
-        }
-        return $value;
-    };
+    $wanted = $coins === [] ? null : array_map(static fn($c) => strtoupper((string) $c), $coins);
+    $lastUpdate = is_numeric($data['data']['setting']['lastUpdate'] ?? null)
+        ? (int) $data['data']['setting']['lastUpdate']
+        : 0;
+    $lu = $lastUpdate > 0 ? ['date' => gmdate('c', $lastUpdate), 'timestamp' => $lastUpdate] : last_update_now();
 
     $out = [];
-    $seen = [];
-    $lu = last_update_now();
-    foreach ($payload as $node) {
-        if (!is_array($node) || array_is_list($node)) {
+    foreach ($currencies as $c) {
+        if (!is_array($c)) {
             continue;
         }
-        if (!isset($node['symbol'], $node['sell'], $node['markets'])) {
+        $symbol = strtoupper((string) ($c['symbol'] ?? ''));
+        if ($symbol === '' || ($wanted !== null && !in_array($symbol, $wanted, true))) {
             continue;
         }
-        $symbol = strtoupper((string) $deref($node['symbol']));
-        if ($symbol === '' || isset($seen[$symbol]) || !coin_allowed($coins, $symbol)) {
+        $markets = is_array($c['markets'] ?? null) ? $c['markets'] : [];
+        if (!in_array("{$symbol}_IRT", $markets, true)) {
             continue;
         }
-        $markets = $deref($node['markets']);
-        if (!is_array($markets) || !in_array("{$symbol}_IRT", array_map($deref, $markets), true)) {
-            continue;
-        }
-        $sell = $deref($node['sell']);
-        $priceToman = is_array($sell) ? num($deref($sell['marketPrice'] ?? null) ?? 0) : 0.0;
+        $sell = is_array($c['sell'] ?? null) ? $c['sell'] : null;
+        $priceToman = is_array($sell) ? num($sell['marketPrice'] ?? 0) : 0.0;
         if ($priceToman <= 0) {
             continue;
         }
-
-        $seen[$symbol] = true;
         $out[] = [
             'currency' => 'IRR',
             'symbol' => $symbol,
             'price' => num($priceToman, ['multiply' => 10, 'decimalPlaces' => 8]),
             'volume_1d' => 0,
             'coin_volume_1d' => 0,
-            'change_1d' => 0,
+            'change_1d' => num($c['percentChange_24h'] ?? 0, ['decimalPlaces' => 2]),
+            'change_7d' => num($c['percentChange_7d'] ?? 0, ['decimalPlaces' => 2]),
             'source' => 'sarmayex',
             'last_update' => $lu,
         ];
@@ -69,16 +54,18 @@ function parse_sarmayex_page(string $html, array $coins): array
     return $out;
 }
 
-/** @return list<array<string,mixed>> */
-function scrape_sarmayex(array $coins): array
+function job_sarmayex(): array
 {
-    return parse_sarmayex_page(http_get_text('https://sarmayex.com/crypto-price'), $coins);
+    return [
+        'url' => 'https://api.sarmayex.com/api/v2/currencies',
+    ];
 }
 
 function register_sarmayex(): array
 {
     return [
         'coin_use' => 'all',
-        'scrape' => 'scrape_sarmayex',
+        'job' => 'job_sarmayex',
+        'parse' => 'parse_sarmayex',
     ];
 }

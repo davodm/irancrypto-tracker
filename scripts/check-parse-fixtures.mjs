@@ -14,7 +14,7 @@ import num from "../runtime/js/num.js";
 import { JSONizeResponse } from "../runtime/js/request.js";
 import { parsePage as parseBidarzPage } from "../scrapers/bidarz/scrape.js";
 import { parseMarkets as parseOmpfinexMarkets } from "../scrapers/ompfinex/scrape.js";
-import { parsePage as parseSarmayexPage } from "../scrapers/sarmayex/scrape.js";
+import { processList as parseSarmayexList } from "../scrapers/sarmayex/scrape.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const fixtures = path.join(root, "fixtures/parse");
@@ -134,7 +134,12 @@ function run(bin, args, label) {
     "bidarz js idle market",
   );
 
-  const sarmayex = parseSarmayexPage(readText("sarmayex-page.html"), []);
+  const sarmayexData = readJson("sarmayex-currencies.json");
+  const sarmayex = parseSarmayexList(
+    sarmayexData.data.currencies,
+    [],
+    Number(sarmayexData.data.setting.lastUpdate) || 0,
+  );
   const price = (symbol) => sarmayex.find((r) => r.symbol === symbol)?.price;
   assert(sarmayex.length === 2, `sarmayex js expected 2 rows, got ${sarmayex.length}`);
   assert(price("USDT") === UNITS.sarmayexUsdtPrice, `sarmayex js USDT price ${price("USDT")}`);
@@ -188,7 +193,7 @@ $bidarz = parse_bidarz_page(file_get_contents(${JSON.stringify(path.join(fixture
 expect(($bidarz['price'] ?? 0) == ${UNITS.bidarzUsdtPrice}, 'bidarz php USDT price');
 expect(($bidarz['volume_1d'] ?? 0) == ${UNITS.bidarzUsdtVolume}, 'bidarz php USDT volume');
 expect(parse_bidarz_page(file_get_contents(${JSON.stringify(path.join(fixtures, "bidarz-xrp-idle.html"))}), 'xrp') === null, 'bidarz php idle market');
-$sarmayex = parse_sarmayex_page(file_get_contents(${JSON.stringify(path.join(fixtures, "sarmayex-page.html"))}), []);
+$sarmayex = parse_sarmayex(json_decode(file_get_contents(${JSON.stringify(path.join(fixtures, "sarmayex-currencies.json"))}), true), []);
 expect(count($sarmayex) === 2, 'sarmayex php count '.count($sarmayex));
 expect(by_symbol($sarmayex, 'USDT')['price'] == ${UNITS.sarmayexUsdtPrice}, 'sarmayex php USDT price');
 expect(by_symbol($sarmayex, 'BTC')['price'] == ${UNITS.sarmayexBtcPrice}, 'sarmayex php BTC price');
@@ -279,7 +284,8 @@ bidarz = parse_bidarz_page(open(${JSON.stringify(path.join(fixtures, "bidarz-usd
 assert bidarz and bidarz["price"] == ${UNITS.bidarzUsdtPrice}, bidarz
 assert bidarz["volume_1d"] == ${UNITS.bidarzUsdtVolume}, bidarz
 assert parse_bidarz_page(open(${JSON.stringify(path.join(fixtures, "bidarz-xrp-idle.html"))}, encoding="utf-8").read(), "xrp") is None
-sarmayex = parse_sarmayex_page(open(${JSON.stringify(path.join(fixtures, "sarmayex-page.html"))}, encoding="utf-8").read(), [])
+_sarmayex_data = json.load(open(${JSON.stringify(path.join(fixtures, "sarmayex-currencies.json"))}))
+sarmayex = parse_sarmayex(_sarmayex_data, [])
 assert len(sarmayex) == 2, sarmayex
 assert by_symbol(sarmayex, "USDT")["price"] == ${UNITS.sarmayexUsdtPrice}, sarmayex
 assert by_symbol(sarmayex, "BTC")["price"] == ${UNITS.sarmayexBtcPrice}, sarmayex
