@@ -270,6 +270,8 @@ The Node.js worker (`track.cjs`) exposes an async entry point (`track.handler`) 
 | `FINALIZE_POLL_SEC` | `15` | Finalizer only: Poll interval (seconds) while awaiting missing sources |
 | `FINALIZE_SAFETY_SEC` | `45` | Finalizer only: Headroom reserved for the finalize POST, so the wait never outlives the host limit |
 | `SCRIPT_MAX_SEC` | `0` | Docker/host wall-clock limit; `0` disables the check. JS uses the Lambda context deadline instead. |
+| `INGEST_RETRY_COUNT` | `3` | Ingest API retries (1s, 2s, 4s backoff) when the request never reached the server: DNS failure/timeout, connection refused. HTTP errors are not retried. |
+| `REQUEST_RETRY_COUNT` | `0` | Exchange scrapes only: retries after the first attempt on network errors |
 | `SSL_VERIFY_INGEST` | `true` | Set to `false` to disable SSL certificate checks for Ingest API |
 | `SSL_VERIFY_EXCHANGE` | `false` | Set to `true` to enforce strict SSL verification on exchange APIs |
 | `LOG_DIR` | `./logs` | Directory for writing JSONL execution logs |

@@ -15,6 +15,12 @@ export function getTimeoutSec() {
   return Number.isFinite(n) && n > 0 ? n : 10;
 }
 
+/** Retries after the first ingest attempt on connection-level failures; falls back to 3. */
+export function getIngestRetryCount() {
+  const n = Number.parseInt(process.env.INGEST_RETRY_COUNT ?? "3", 10);
+  return Number.isFinite(n) && n >= 0 ? n : 3;
+}
+
 export function getUserAgent() {
   return (
     process.env.USER_AGENT ||
