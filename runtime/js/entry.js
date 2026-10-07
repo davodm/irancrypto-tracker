@@ -9,7 +9,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { SCRAPERS } from "../../generated/js-scraper-imports.js";
 import { logError, logInfo } from "./logger.js";
-import { envBool, getTimeoutSec } from "./vars.js";
+import { envBool, getIngestRetryCount, getTimeoutSec } from "./vars.js";
 
 function resolveBaseDir() {
   // Prefer directory of the running script (dist/track.js on workers)
@@ -236,6 +236,32 @@ function pruneLogs(logDir, days) {
   return removed;
 }
 
+const INGEST_RETRY_BASE_MS = 1000;
+// Failures where no request reached the server, so a retry cannot duplicate an ingest write.
+const INGEST_RETRYABLE =
+  /ENOTFOUND|EAI_AGAIN|ETIMEOUT\b|ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|ConnectionRefused|UND_ERR_CONNECT_TIMEOUT|getaddrinfo/;
+
+function isRetryableIngestError(error) {
+  if (error?.response) return false;
+  return INGEST_RETRYABLE.test(`${error?.code} ${error?.cause?.code} ${error?.message}`);
+}
+
+async function withIngestRetry(label, send) {
+  const retries = getIngestRetryCount();
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await send();
+    } catch (error) {
+      if (attempt > retries || !isRetryableIngestError(error)) throw error;
+      const delay = INGEST_RETRY_BASE_MS * 2 ** (attempt - 1);
+      logInfo(
+        `Ingest ${label} failed: ${error.message} — retry ${attempt}/${retries} in ${delay}ms`,
+      );
+      await sleep(delay);
+    }
+  }
+}
+
 async function ingestRequest(method, urlPath, body) {
   const secret = process.env.INGEST_SECRET || "";
   if (!secret) {
@@ -265,20 +291,18 @@ async function ingestRequest(method, urlPath, body) {
       validateStatus: (s) => s >= 200 && s < 300,
     };
     if (body !== undefined) conf.data = body;
-    const res = await axios(conf);
+    const res = await withIngestRetry(`${method} ${urlPath}`, () => axios(conf));
     return res.data || {};
   }
 
-  const init = {
-    method,
-    headers,
-    signal: AbortSignal.timeout(timeoutMs),
-  };
+  const init = { method, headers };
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
     init.body = JSON.stringify(body);
   }
-  const res = await fetch(url, init);
+  const res = await withIngestRetry(`${method} ${urlPath}`, () =>
+    fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) }),
+  );
   const text = await res.text();
   let json = null;
   try {

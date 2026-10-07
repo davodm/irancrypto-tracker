@@ -72,6 +72,7 @@ define('HTTP_TIMEOUT_SEC', max(1, (int) env('TIMEOUT', '10')));
 define('SCRIPT_MAX_SEC', max(0, (int) env('SCRIPT_MAX_SEC', '0')));
 define('REQUEST_RETRY_COUNT', max(0, (int) env('REQUEST_RETRY_COUNT', '0')));
 define('REQUEST_RETRY_BASE_MS', max(50, (int) env('REQUEST_RETRY_BASE_MS', '300')));
+define('INGEST_RETRY_COUNT', max(0, (int) env('INGEST_RETRY_COUNT', '3')));
 define('IGNORE_EXCHANGES', env('IGNORE_EXCHANGES', ''));
 define('EXCHANGES_ALLOW', env('EXCHANGES', ''));
 define('FINALIZE_WAIT_SEC', max(0, (int) env('FINALIZE_WAIT_SEC', '90')));
@@ -294,32 +295,44 @@ function ingest_request(string $method, string $path, ?array $body = null): arra
         $headers[] = 'Content-Type: application/json';
     }
 
-    $ch = curl_init($url);
-    if ($ch === false) {
-        throw new RuntimeException("curl_init failed for {$url}");
-    }
-    curl_setopt_array($ch, [
-        CURLOPT_CUSTOMREQUEST => strtoupper($method),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS => 3,
-        CURLOPT_CONNECTTIMEOUT => HTTP_TIMEOUT_SEC,
-        CURLOPT_TIMEOUT => max(HTTP_TIMEOUT_SEC, 60),
-        CURLOPT_HTTPHEADER => $headers,
-        CURLOPT_SSL_VERIFYPEER => SSL_VERIFY_INGEST,
-        CURLOPT_SSL_VERIFYHOST => SSL_VERIFY_INGEST ? 2 : 0,
-        CURLOPT_ENCODING => '',
-    ]);
-    if ($payload !== null) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-    }
-    $raw = curl_exec($ch);
-    $errno = curl_errno($ch);
-    $err = curl_error($ch);
-    $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($errno !== 0) {
-        throw new RuntimeException("Ingest cURL error ({$errno}): {$err}");
+    for ($attempt = 1; ; $attempt++) {
+        $ch = curl_init($url);
+        if ($ch === false) {
+            throw new RuntimeException("curl_init failed for {$url}");
+        }
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => strtoupper($method),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 3,
+            CURLOPT_CONNECTTIMEOUT => HTTP_TIMEOUT_SEC,
+            CURLOPT_TIMEOUT => max(HTTP_TIMEOUT_SEC, 60),
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_SSL_VERIFYPEER => SSL_VERIFY_INGEST,
+            CURLOPT_SSL_VERIFYHOST => SSL_VERIFY_INGEST ? 2 : 0,
+            CURLOPT_ENCODING => '',
+        ]);
+        if ($payload !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        }
+        $raw = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $err = curl_error($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $connected = curl_getinfo($ch, CURLINFO_CONNECT_TIME) > 0;
+        curl_close($ch);
+        if ($errno === 0) {
+            break;
+        }
+        // Retry only when nothing reached the server: proxy/host resolution, refused connect, or a timeout before connecting.
+        $retryable = in_array($errno, [CURLE_COULDNT_RESOLVE_PROXY, CURLE_COULDNT_RESOLVE_HOST, CURLE_COULDNT_CONNECT], true)
+            || ($errno === CURLE_OPERATION_TIMEDOUT && !$connected);
+        if (!$retryable || $attempt > INGEST_RETRY_COUNT) {
+            throw new RuntimeException("Ingest cURL error ({$errno}): {$err}");
+        }
+        $delayMs = 1000 * (2 ** ($attempt - 1));
+        log_info("Ingest {$method} {$path} failed: {$err} — retry {$attempt}/" . INGEST_RETRY_COUNT . " in {$delayMs}ms");
+        usleep($delayMs * 1000);
     }
     $json = null;
     if (is_string($raw) && $raw !== '') {

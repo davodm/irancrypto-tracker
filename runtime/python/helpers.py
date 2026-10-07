@@ -141,6 +141,7 @@ SSL_VERIFY_EXCHANGE = env_bool("SSL_VERIFY_EXCHANGE", False)
 SSL_VERIFY_INGEST = env_bool("SSL_VERIFY_INGEST", True)
 REQUEST_RETRY_COUNT = env_int("REQUEST_RETRY_COUNT", 0, minimum=0)
 REQUEST_RETRY_BASE_MS = env_int("REQUEST_RETRY_BASE_MS", 300, minimum=50)
+INGEST_RETRY_COUNT = env_int("INGEST_RETRY_COUNT", 3, minimum=0)
 FINALIZE_WAIT_SEC = env_int("FINALIZE_WAIT_SEC", 90, minimum=0)
 FINALIZE_POLL_SEC = env_int("FINALIZE_POLL_SEC", 15, minimum=1)
 FINALIZE_SAFETY_SEC = env_int("FINALIZE_SAFETY_SEC", 45, minimum=5)
@@ -320,6 +321,7 @@ def http_request(
     timeout: float | None = None,
     retry_403: bool = True,
     expect_json: bool = True,
+    retries: int | None = None,
 ) -> dict[str, Any]:
     if use_proxy and PROXY_URL and PROXY_API_KEY:
         return http_via_proxy(method, url, query or {}, headers or {}, body)
@@ -338,7 +340,7 @@ def http_request(
         hdrs.update(headers)
 
     to = timeout if timeout is not None else float(HTTP_TIMEOUT_SEC)
-    max_attempts = 1 + REQUEST_RETRY_COUNT
+    max_attempts = 1 + (REQUEST_RETRY_COUNT if retries is None else retries)
     last_error: Exception | None = None
 
     for attempt in range(1, max_attempts + 1):
@@ -504,16 +506,36 @@ def ingest_request(method: str, url_path: str, body: dict[str, Any] | None = Non
         headers["Content-Type"] = "application/json"
         payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
 
-    result = http_request(
-        method,
-        url,
-        headers=headers,
-        body=payload,
-        verify_ssl=SSL_VERIFY_INGEST,
-        timeout=float(max(HTTP_TIMEOUT_SEC, 60)),
-        retry_403=False,
-    )
-    return result["json"] if result["json"] is not None else {}
+    attempt = 1
+    while True:
+        try:
+            result = http_request(
+                method,
+                url,
+                headers=headers,
+                body=payload,
+                verify_ssl=SSL_VERIFY_INGEST,
+                timeout=float(max(HTTP_TIMEOUT_SEC, 60)),
+                retry_403=False,
+                retries=0,
+            )
+            return result["json"] if result["json"] is not None else {}
+        except RuntimeError as e:
+            if attempt > INGEST_RETRY_COUNT or not _is_retryable_ingest_error(e.__cause__):
+                raise
+            delay_ms = 1000 * (2 ** (attempt - 1))
+            log_info(
+                f"Ingest {method} {url_path} failed: {e} — retry {attempt}/{INGEST_RETRY_COUNT} in {delay_ms}ms"
+            )
+            time.sleep(delay_ms / 1000.0)
+            attempt += 1
+
+
+def _is_retryable_ingest_error(cause: BaseException | None) -> bool:
+    """urllib wraps failures before a response (DNS, refused, connect timeout) in URLError; retrying those cannot duplicate a write."""
+    if not isinstance(cause, urllib.error.URLError) or isinstance(cause, urllib.error.HTTPError):
+        return False
+    return isinstance(cause.reason, (socket.gaierror, ConnectionRefusedError, TimeoutError))
 
 
 def wait_for_ingest_ready(run_id: str, logger: RunLogger | None = None) -> dict[str, Any]:
